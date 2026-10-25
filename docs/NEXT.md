@@ -125,6 +125,66 @@ screenshots", "The desk file".)
   a raid the player's regions the foot cuts are still left out (they could be read in part with a "+", as the LOOT
   pane's are: the glance's to decide).
 
+**Built (step 1b, 2026-10-25, after the owner's second test).** (Binding: DESIGN.md §2, "For the stash desk", *The layout
+round*, its paragraph *After the owner's second test*; §4, *What it mirrors* ("A container in a grid", "A region read in
+part keeps the page's rest", "What leaves the page"), *The cell* ("A cell that fits several items"); §8, "Menu
+screenshots", "The desk file".) The owner's second test that evening left four GEAR screenshots the reading got wrong:
+the Beta 2 backpack's window over the backpack's grid with the game's tooltip over its CR MK2 (R) rig (14), the CR MK2
+(R) window opened over the Beta 2 window (15: not the same without the tooltip, as the brief had it), that window
+dragged over the stash pane (16), and the column scrolled to its top with the Zhuk rig (17), renamed so into the
+git-ignored test set (`14-gear-beta-window-tooltip.png`, `15-gear-beta-window.png`, `16-gear-beta-rig-windows.png`,
+`17-gear-rig-top.png`), with `regions-*.txt` each and `truth-*.txt` for 15 and 17 (129 and 51 items).
+
+- What was found, measured (`shturmap-cli desk --why`, the pictures' pixels): the rows "swallowed" under the Beta 2
+  window's lower edge were the POUCH's grid (Gamma, three by three: Grizzly, OScope, Director's), not the backpack's,
+  taken because the window grew by frames a third of a cell from its own; the backpack's grid (the Tri-Zip's, five by
+  six) showed its top row above the window and its left side beside it, the Beta 2 a five-by-five cell in it; "Ø/17" was
+  an M9A3's rounds "0/17" in the stash; the window in 14 was one shape because its compartment was framed on its
+  outline, six pixels off its grid's line, not because of the tooltip; the pointer's highlight (a light grey over the
+  hovered rig) hides the lines round it, so the Water and the GPU joined the rig; the tooltip is a black box with a grey
+  border; the Zhuk slot's frame came out five pixels short of its label's "k" ("Zhi-o"); the magazine read "6L311", its
+  orange highlight a "1" (not "GL31"); "Marksma" was read "Marksme" and lost to the digits rule; the stash's first row in
+  17 holds the lower halves of an armour plate and the Blueprints, their labels under the pane's head; the Beta 2
+  window's labels in 15 are dimmed behind the CR MK2 (R) window (100 to 149 grey).
+- The reading (`DeskLayout.Panel`, `Tooltips`, `TitleLetters`, the windows found by their panels and their compartments
+  inside them, a window over another; `DeskFrames.Find` under windows, a corner showing both its lines and no side running
+  on past its corner; `DeskReader` reading by the labels in a shape's cells, `LabelRect`, `LabelInk`, the stash's first
+  row; `DeskMatch` one lookalike swapped, a label cut before the name's digits; `StashGrids.Snap` bounded): DESIGN.md §2
+  lists each rule. The page (`DeskLedger.Junk`, `Filled`): a window with no cell read whose title names no container is
+  never kept, read or loaded; a page's cell the rows read overlap gives way to them. The CLI's `--why` prints what each
+  region's reading covered.
+- Measured (`shturmap-cli desk`, before → after): the four pictures' regions 18 → 29 of 29 of their size (missing 4 → 0,
+  made up 6 → 0, of another size 7 → 0); their cells named / one of N / unread: 14 77/24/4 → 94/26/0, 15 82/24/3 →
+  100/28/0, 16 71/26/2 → 83/29/0, 17 37/9/7 → 39/10/2 (366 → 411 cells; one odd shape left on each of the first three,
+  the fourth pocket's "Tatu03", which the catalogue doesn't hold); the two truths 116 → 139 of 180 named right, one of N
+  33 → 38, no cell read 25 → 1, 0 wrong. The Beta 2 window attaches to its cell in the backpack in 14 to 16 and to the
+  stash's in 17; the CR MK2 (R) window to its rig in the Beta 2 window in 16, and in 17 "2 of its name" (the rig in the
+  stash, and in the Beta 2 window's page, unseen since). The whole session folder (18 pictures, 95 regions): 82 → 93 of
+  their size, missing 4 → 0, made up 6 → 0, of another size 9 → 2 (step 1's two); its five truths 243 → 270 of 338
+  named, one of N 51 → 56, unread 16 → 10, no cell 28 → 2, 0 wrong; the first 14 pictures' regions as before and their
+  cells better or the same (`00-gear-armband.png` 85/6/7 → 85/7/6). The Keys page's truth and the GEAR truth of
+  2026-10-19 unchanged (61 and 30 right, 0 wrong). The 22 raid screenshots: the same regions, one more POCKETS (on one,
+  which the old window reckoning covered), cells named up on eight. About 8 % slower, back to back (4.3 → 4.65 s a
+  picture under that evening's load).
+- The "one of N" on the four pictures, for the coordinator's proposal to the owner (the cell's picture against the
+  candidates' catalogue icons): 93 cells, 33 Bandage (of 2), 18 RIP (of 6), 6 SP BT (of 2), 4 each of the armband (of
+  11), the dog tag USEC (of 27), the Trooper (of 2) and the Tri-Zip (of 2) slots, 3 each of Cabin (of 2), M856 (of 3),
+  the Gamma (of 5), CR MK2 (R) (of 2), M9A3 (of 2) and SpecterDR (of 2), one FMJ (of 26; the game prints "FMJ" alone on
+  the cell) and one Zhuk (of 2).
+- Tests: drawn, beside the class's, each failing on the reading of before (the four on new methods aside): a window's
+  compartments stop at its panel and the POUCH's grid under its edge is the POUCH's; a grid under a window found as tall
+  as its sides run; an item running under a window or a tooltip read by its label and footprint, the window attached,
+  its count unread; a rectangle whose label names smaller items read by its cells' labels; the tooltip's box covered and
+  its words no title; a title's letters; a lookalike swap; a label read up to its ink; a cut label's beginning; the
+  bounded snap; in `DeskLedgerTests`, the junk window read and loaded and a page's cell giving way to the rows read.
+  `DeskRealPictureTests` reads the four with the rest (floors 91 of 95 regions, 260 named).
+- Open: the PS and F-1 in the rig in 17 (labels of two and three glyphs, crisp; Windows' recognition reads neither in
+  any of the nine ways, tiled three times or binarized; once "PS" at six times the zoom, tiled), so the "?" stays; the CR
+  MK2 (R) behind its window in 15 (its dimmed label over the CR MK2 (R) window's gold edge reads "cp MK2"); the plate
+  and the Blueprints at the stash's top in 17 are now said nothing (the page keeps its last reading) rather than a "?"
+  two by one, and can't be named (their labels under the pane's head); the "one of N" above, the coordinator's to
+  propose; the reading's time.
+
 **Built (step 3, 2026-10-25: the trader's task view).** Binding: DESIGN.md §2 (the OPERATIONAL paragraph: which
 pictures, how much, what is kept, the player's say), §1, §3 (the fixtures), §4 (principle 7, principle 11's DAILIES AND
 WEEKLIES, *Operational tasks*: "As of" and the cue), §8 ("The operational tasks file", "Menu screenshots", the
@@ -274,7 +334,8 @@ language" (*The stash desk's marks*, a region's place), *Text size*, §8 (`-Desk
   2560 monitor's desk (four columns, unscrolled; 72 on a desk of 2544 × 1401), at 40 at 1600×900 in three columns (its
   two windows under the stash take that column past the desk, so the page scrolls; LOADOUT, 426 DIP, and the middle
   column, 552, fit the 760), at 40 in one column at 900×560 (LOADOUT fills the first screen). Its three readings take one
-  shape at every desk; a page of its cells taken out too.
+  shape at every desk; a page of its cells taken out too (one size and one set of columns, not one place for every row:
+  a head its date made wrap moved what was under it, until the UI QA pass, F1, below).
 - The fold is gone: `Rules.DeskFold` and its tests, the board's `Unfolded`, the fold line and its text `DeskUnchanged`,
   the developer script's `desk open <region>` (now a script error). The replay's `fold` and `unfold` stills became
   `kept`; its `kept` after the raid is `back`. The stems: a window two or more columns right of its cell (the backpack's
@@ -296,14 +357,189 @@ language" (*The stash desk's marks*, a region's place), *Text size*, §8 (`-Desk
 - Checked: the snapshots of the three readings at 900×560, 1600×900 and 2560×1400 (English; German at 1600×900); the
   replay (`tools\qa\desk.devscript`, its stills `kept` and `same` for the fold's, `back` for the old `kept`) at the
   work area's size, 1600×900, 900×560 and in German; the layout check of the desk view in en-US, de-DE and qps-ploc at
-  900×560 and 1600×900: no problem found. Tests: `DeskPageRulesTests` rewritten (the size and the columns at the four
-  desks, one shape over the three readings, every region in its place, a placeholder and a kept region counted, the
-  windows' column, the slot grid, a slot's name fitted, the dated heads, what comes in), `DeskExampleTests`,
-  `DeskSwitchTests`, `DevToolsTests`; `DeskFoldTests` gone.
+  900×560 and 1600×900: no problem found (its first screen only: F4, below). Tests: `DeskPageRulesTests` rewritten
+  (the size and the columns at the four desks, one shape over the three readings, every region in its place, a
+  placeholder and a kept region counted, the windows' column, the slot grid, a slot's name fitted, the dated heads,
+  what comes in), `DeskExampleTests`, `DeskSwitchTests`, `DevToolsTests`; `DeskFoldTests` gone.
 - Open: at 1600×900 the made-up desk scrolls by its windows under the stash (the decision's rule; a real page without
   windows fits); at 900×560 LOADOUT takes the first screen and the stash is two screens down; a weapon's grid image
   leaves the lower half of its box empty; the replay's `entry` still shows every cell already in while the totals
   count up (not compared with the build before); the UI QA pass and the senior translator's review.
+
+**Built (the readings log, 2026-10-25).** The owner, after testing the dev build: "Can't you write out logs of what was
+detected and link it to the screenshot so we can troubleshoot it afterwards?"; the coordinator's answer: a readings log,
+one text file per menu screenshot read, named after the screenshot, in the data folder. Binding: DESIGN.md §8, "Data
+folders" (*The readings log*) and "Developer aids" (*Readings log*), §2's three "What is kept".
+
+- The writer (`Shturmap.Game.Screenshots.ReadingLog`, `ReadingLogEntry`, `OperationalTaken`): `readings\<screenshot's
+  file name>.txt`, plain lines in the order the reading went (the head; the Tasks screen with its rows or a trader's
+  header, entries and objectives, each band's votes, what the set did and the set after it; What You Have's items; the
+  desk's screen, layout in pixels, each cell's place, label as read, fit and match, and what the page in hand did),
+  written as a temporary file and one move, the last 50 kept by their time written. A picture that couldn't be opened, or
+  that showed none of the screens, gets a short file.
+- What reaches it: the menus' reader hands what it saw on the way (`MenuReading.Seen`, `MenuSeen`: the picture's size,
+  the Tasks screen told, the bands' votes from `TasksReader.ReadPageAsync`'s note, the desk's look); for that
+  `MenuScreenshotReader` calls `DeskReader.LookAsync` and makes the `DeskReading` from it as `DeskReader.ReadAsync` does
+  (the readers' logic unchanged). The session (`GameSession.TakeMenu`, `ReadingLogOf`, `WriteReadingLog`) adds the head
+  (the build kind from the app, `GameSession.BuildKind`) and what it did (`TakeDesk`'s `DeskChange`, `TakeTasks`' and
+  `TakeTrader`'s `OperationalTaken`, the marks changed), and writes the file after the gate. A file that can't be written
+  is a WARN line.
+- Kept out: pixels; the quoted words of the layout's notes other than the game's headings and the page's window titles
+  (a word refused as a title is written "a word of 8 characters"), so nothing of the player's name or money could slip in
+  by a note; the screenshot's folder (its file name only). Never in a report or the diagnostics.
+- Texts (English and German in the same commit, for the senior translator): AppTexts `SettingsReadStashNote` (", a log
+  of the last 50 screenshots read" in its parenthesis; „, ein Log der letzten 50 gelesenen Screenshots“; its comment
+  says what the log is) and ViewTexts `HelpPrivacy` ("which items, how many and where are kept, with a log of the last
+  50 screenshots read" for "only which items, how many and where are kept"; „gespeichert wird, welche Items, wie viele
+  und wo, dazu ein Log der letzten 50 gelesenen Screenshots“); PRIVACY.md's "What stays on your PC" and the README's
+  "It never" list name the folder.
+- Tests: `ReadingLogTests` (a drawn GEAR reading cell by cell, the layout's lines, a refused word said by its length;
+  a table's rows, bands and set; a trader's tab; a screenshot that gave nothing; the 50 kept and one read again written
+  over; nothing the log is given can hold a picture), `ReadingLogSessionTests` (a desk reading's file named after its
+  screenshot, which deleting the screenshot leaves, nothing of it in the diagnostics; a table's rows and set; the tick
+  off: no file), `SafetyTests.Nothing_that_makes_a_report_or_the_diagnostics_reads_the_readings_log`.
+- Tried on four of the owner's pictures (outside the session, the readers as the app has them; the layout round's test
+  set and the trader folder): two GEAR tabs with the Keys window, 98 and 103 cells, 20 and 22 KB (the headings' note
+  shows ARMBAND read "ÄRMBANI" under the window's edge); a trader's tab with its daily, 1 KB; an OPERATIONAL table of
+  three rows, 1.3 KB. Fifty GEAR pages are about a megabyte.
+- Not as the ask wrote it: the log is in every build, the release's too (the ask's data folder, and the player's texts
+  say it); the study log stays the developer builds' alone. The owner's to overrule.
+- Open: `shturmap-cli desk --why` and `tasks --bands` print the same facts in their own words, not the writer's lines
+  (a later change); What You Have's reading lists the items it matched, not the labels it read (the stash reader's
+  looks don't leave it); raid screenshots (the extract list, the in-raid glance) have no readings log; if the desk's
+  `ReadAsync` changes, `MenuScreenshotReader` makes its reading the same way and must follow; the UI QA pass on the
+  settings note and help's privacy text (en and de, 900×560 and 1600×900) and the senior translator's review.
+
+**UI QA pass of step 2 (2026-10-25, on 121e0f2) and its fixes.** The pass (its pictures outside the repository): FAIL, 0
+blocks, 5 should, 1 nit. Binding: DESIGN.md §4, *The stash desk* (*Its place*: the scroll mark; *What it mirrors*:
+LOADOUT's names, *A region not in the last screenshot*: the heads' room; *As built*, *The page*), *Text size*, "Design
+system" (*Motion*), §8 (`-Desk`: the layout check's screens); docs/QA.md; `tools\qa\desk.md`.
+
+- F1 (should), a dated head that wraps moved the rows under it: after reading 2 at 40 DIP SPECIAL SLOTS' head, "SPECIAL
+  SLOTS · 1 JAN 14:02" in UTC, wrapped to a second line and everything under the POCKETS and SPECIAL SLOTS row stood
+  13 px lower (POCKETS' grid at 227, then 240; BACKPACK's head 293, then 306; POUCH 534, then 547); at 125 % the
+  German TASCHEN's too. Fixed: every head takes the lines of its name with the longest date the language writes ("28 SEP
+  23:58", „28. SEPT., 23:58“) from the first reading, whether it is dated or not (`DeskPageRules.HeadRoomLines`,
+  `Reserved`, `WidestSince`); the layout counts them and no longer reads the dates, so a date can't change the shape
+  either; the page holds them with an unseen copy of that dated head under each head (`DeskBoard.HeadCell`: transparent,
+  no pointer, nothing for a screen reader, passed over by the layout check). On the first reading POCKETS and SPECIAL
+  SLOTS stand over a line left empty for their date: the rows under them where 121e0f2's reading 2 had them. Measured
+  on the snapshots by the rows where the brightness steps (the dimming leaves them in place): readings 1 and 2 in
+  English and German at 900×560 (each of its five screens) and 1600×900, in German at 1600×900 at 125 %, and the
+  replay's `first` and `kept` at 1600×900 and the work area's size: no row moved; 121e0f2's middle column 13 px.
+  `DeskPageRulesTests`: SPECIAL SLOTS' room two lines at 40 where its name takes one, every fixed region's room holding
+  every month's date at a day of one and of two figures at every cell size and at 100, 125 and 150 % in English and
+  German, the columns as tall at reading 2 as at reading 1 at the four desks and three text sizes.
+- F3 (should), nothing said the page scrolls (at 900×560 the first screen LOADOUT alone, its last boxes flush with the
+  window's foot; at 1600×900 the windows past it). Fixed by the coordinator's rule, the owner's to overrule: where the
+  page runs past the desk's foot, "MORE BELOW ▾" at the foot, over the page, muted in the eyebrows' style at the page's
+  left margin, on the desk's ground with a 16 DIP fade of the page under it, gone once the page is scrolled to its end
+  (`DeskPageRules.MoreBelow`, `DeskBoard.MoreBelowMark`); no pointer, no motion; PgUp and PgDn as before. In the replay
+  at 900×560 and 1600×900 it stands in `first` and is gone in the new still `end` (the WZ window's cell, the page's
+  last, pointed at); at 2560×1440 the page fits and it doesn't stand. `DeskPageRulesTests`: the mark's rule, and the
+  made-up desk's page at the three desks.
+- F4 (should), the layout check didn't look below the first screen (at 900×560 PASSED with 95 texts not in view, 68 in
+  qps-ploc). Fixed: in a developer build's `--snapshot` with the desk up, where the page runs past the desk, the page is
+  scrolled down by the desk's room less the scroll mark's band at a time (`DeskPageRules.ScreenOffsets`), so what the
+  mark covers at one screen's foot stands in the next, and the window pictured and checked at each,
+  `screen-2\window.png` and on, until the page's end shows (`MainWindow.LayoutCheck.DeskScreensAsync`);
+  `tools\layout-check.ps1` takes each as a view of its own, `desk-2`, `desk-3` …, and its summary says "desk in 5
+  screens"; the scroll mark is a layer to the check (`LayoutCheck.Layers`). Run for the desk in en-US, de-DE and
+  qps-ploc at 900×560 (five screens) and 1600×900 (two): passed, no problem in any screen; every text below the first
+  screen is in view in some screen (by its words; the figures that stand several times by the screens' steps). The
+  rail, help and settings, whose lists scroll too, are not taken in screens (docs/QA.md says so): their texts below
+  the fold are checked for overflow and translation, not for text over text, and are in no picture. Open.
+- F5 (nit), the smaller slot name's baseline: "GESICHTSBEDECKUNG" a pixel lower than its row at 100 %, two higher at
+  125 %. Fixed: a row's names stand on one baseline, each name's top moved by its baseline as drawn
+  (`DeskBoard.OnOneBaseline`); the pixel at 100 % was WinUI's: a text of no letter spacing is laid out with its baseline
+  a pixel lower (its `BaselineOffset` saying 0.2 DIP higher), so a name without its spacing keeps a thousandth of an
+  em. The fit is now measured as drawn and in 64ths of a pixel as written (`DeskPageRules.SlotHead`'s `wide`,
+  `DeskBoard.NameWidth`), so the name stands at its row's 9 px without the spacing at 100 % (8.5 before) and 9.4 px
+  at 125 % (8.8; its row 12). Measured by the ink: at 100 % and 125 % the row's names end on one pixel row (121e0f2: one
+  lower; three higher). At 150 % WinUI's curve draws nothing written at 4 px or more under 11 px, so the name stands
+  about 14 DIP past its box, on the row's baseline, short of TACTICAL RIG (DESIGN.md *Text size*; open, the owner's
+  call).
+- F2 (should, not this change's): the replay's `entry` shows every cell whole 0.4–1.1 s after `desk 1` while the totals
+  count up. Unchanged, and found why: a still (`RenderTargetBitmap`, `--snapshot` and the developer script's
+  `snapshot`) draws a storyboard's opacity whole, the compositor running it where that render doesn't look. Measured with
+  a probe build (not committed): the window's thread read the 26th of 52 cells at 0 until 1.4 s and the 52nd until
+  2.4 s, each then easing to 1, while the still taken in the first second showed both whole, the head line mid-count. So
+  the cells' entry is unchecked headless and awaits the owner's eye on the dev build (DESIGN.md *Motion*, docs/QA.md,
+  `desk.md`'s `entry` say so). A headless check would need the entry driven from the window's thread in developer runs
+  (a timer setting each cell's opacity) or a capture of Shturmap's own window: the owner's call. Open.
+- F6 (not run): the replay run on the Debug build of this branch at the work area's size (2544×1401 inside), 1600×900,
+  2560×1440 and 900×560, English: 21 stills each, no WARN or ERROR; `entry`, `first`, `end`, `window`, `kept` and the
+  rail's stills looked at, as `desk.md` says (the stems, the linked head's light as wide as its words, the dated heads,
+  the scroll mark). Nothing new found.
+- Texts (English and German, for the senior translator): RuleTexts `DeskMoreBelow` (new: "MORE BELOW ▾", „MEHR
+  DARUNTER ▾“, the glance's `GlanceMoreBelow` words with an arrow).
+- Noticed, not this pass's: at 150 % text in German at 1600×900 the layout check finds a cell's figure over its count in
+  three 1×1 cells at 40 DIP ("27k" over "60", "5k" over "4/4", "54k" over "120"; *Text size*'s open point on a cell's
+  price at 150 %); docs/LANGUAGES.md's "Layout check" lists no `desk` view and no screens.
+- Open: F2 (the owner's eye on the entry); F4's other scrolling views; F5 at 150 %; the review of `DeskMoreBelow`; the
+  owner's say on the scroll mark (the coordinator's rule).
+
+**Re-check of step 2's fixes (2026-10-25, on 2b375d9).** The UI QA re-check (its pictures outside the repository):
+F1, F3, F4 and F5 confirmed fixed (the desk's layout check in screens passed in en-US, de-DE and qps-ploc at 900×560
+and 1600×900); one nit, fixed; F2 unchanged, for the owner's eye on the dev build. With it the code review's 0×0
+region. Binding: DESIGN.md §4, *The stash desk* (*A region never read*, *A region not in the last screenshot*, *As
+built*, *The page*); `tools\qa\desk.md` (`first`, `kept`).
+
+- The nit: a head whose dated form takes two lines kept that room from the first reading with its name at the room's
+  top: on reading 1 at 1600×900 POCKETS and SPECIAL SLOTS (whose dated head wraps at 40 DIP; POCKETS levelled with it)
+  stood 23 px over their grids, where every other head stands 10 to 11 px over its own, and read as parted from them.
+  Fixed: the head as drawn stands at the foot of its room, right over its grid, the empty line above it
+  (`DeskBoard.HeadCell`); where the date wraps it, the name's line goes up into that line and the date's line stands
+  where the name stood, so the grid still never moves. Measured on the snapshots of readings 1 and 2 at 1600×900 in
+  English and German by the rows where the brightness steps: no row of a grid or a box moved between the readings, nor
+  from 2b375d9's reading 1 (the best shift 0, in the middle column and over the page); POCKETS' and SPECIAL SLOTS'
+  names 12 px lower than at 2b375d9, their ink ending 10 px over their grids; in German at 900×560 alike, by eye.
+  `DeskPageRulesTests`' room tests unchanged, passing.
+- The 0×0 region (the code review's): a POCKETS, SPECIAL SLOTS or STASH of no grid and no cell, as the layout gives one
+  on a first reading when the region's frames all lie under a window or under no heading, was drawn as a bare head over
+  nothing, POCKETS and SPECIAL SLOTS a DIP wide (by the code: their heads wrapping a letter a line; not pictured). Now
+  it stands, and is counted, as a region never read: the dashed frame, "NOT IN A SCREENSHOT YET"
+  (`DeskPageRules.HeadingAlone`, in `Blocks`); it counts nothing, having no cell. Not TACTICAL RIG, BACKPACK and
+  POUCH (the coordinator's call): one of no grid and no cell is also a slot seen empty, its grid gone with it
+  (DESIGN.md §4, *A region read in part keeps the page's rest*), which the game draws as the empty slot box and the
+  page as before, and the page can't tell the two apart. `DeskPageRulesTests`: one more (the two pages with those
+  three regions 0×0: their blocks, widths, shape and columns' heights those of the regions never read at the four
+  desks; a container's and LOADOUT's 0×0 read; the totals less theirs).
+- `docs/LANGUAGES.md`'s "Layout check" lists the `desk` view and its screens (`desk-2`, `desk-3` …), the step 2 pass's
+  note.
+- Open: a container's region made from its heading alone, no frame and no slot read, drawn on a first reading as its
+  empty slot box, so saying "empty" for "not read": the reading's to keep off the page (a region made from its heading
+  alone left off a page that has no version of it, the ledger's rule; DESIGN.md §4, *A region never read*); F2; the UI
+  QA pass of the two changes (the 0×0 placeholder has no picture: the made-up desk has no such region).
+
+**Code review of the day's merges (2026-10-25, 66fd15d..6f895a9, high).**
+
+- Fixed: a trader's list entry could take a kept task's expiry away. It refreshes the one task kept by its name whatever
+  its map, and a countdown more than 5 s off the kept expiry left none, though the entry may be another task of the name
+  (the table's "Exit the location" on Customs; another trader's in the list). Now an entry never takes an expiry away:
+  one that disagrees is left, counted as not taken; one that agrees refreshes it; a task without one takes it
+  (`OperationalLedger.ApplyTrader`; DESIGN.md §2). The header's task's own countdown keeps its rule (it is the task by
+  name and map). `OperationalTasksTests`: one more (the three cases), and the list's refresh test's last step now keeps
+  the expiry.
+- Fixed: a readings log that failed other than by the file system (a null or an unexpected value in an entry while its
+  lines are built) escaped into the screenshot's failure handler, which said the reading failed though it was taken.
+  The write (`GameSession.WriteReadingLog`) now catches everything but `OutOfMemoryException`, writes one WARN line
+  ("Readings log not written: <type>: <message>") and goes on; `GameSession.ReadingLogWriter` lets a test give a writer
+  that fails. `ReadingLogSessionTests`: one more (a writer that throws: the reading taken, no failure said, the next
+  screenshot's log written).
+- Being fixed (by other agents): a 0×0 region drawn as a bare head instead of the placeholder; the CLI's regions truth
+  throwing on a repeated key.
+- Accepted limits, for the record:
+  - A percentage read with one ring of the "%" lost ("100/0" for 100 %) parses as a tenfold-smaller vote; the 14-way
+    vote guards it.
+  - `MisreadCount` drops an objective's last word starting with a slashed zero, or with a digit after the progress bar's
+    gap; no such word is known in the game's objectives.
+  - A trader's list drops an entry within two units of the one before; the game's entries stand 2.6 apart at 1440p.
+  - A fuzzy heading match has no closeness check for one-word headings; the headings' columns bound it.
+  - A dated head isn't re-dated at midnight until the page is built again.
+- Cleanups left for later: the two paths that keep a page's cells (`Filled` and the covered branch); the "why kept"
+  words in three places; the container kinds spelled out in three assemblies; the count's vote replacing
+  `MisreadCount`'s patterns; `Layout` arranging the smallest size twice.
 
 ## 2026-10-19: text size: Windows' own, honoured everywhere
 

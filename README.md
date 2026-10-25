@@ -112,7 +112,8 @@ It never:
   only network traffic downloads the public data above and asks GitHub for a newer version of Shturmap at start
   (turn that off in settings, under Updates), and what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log,
   and the items it saw in your screenshots and logs, as ids with a count and a date (for the desk, with where each
-  lay).
+  lay), and what it read from each of your last 50 menu screenshots (a text file each, named after it, to look into a
+  reading that went wrong; never sent).
   (The Microsoft runtime it is built on has its own terms; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
 
 To report a problem or suggest an idea, use the **feedback** button at the top right: write what happened, keep

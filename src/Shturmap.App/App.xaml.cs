@@ -461,14 +461,14 @@ public partial class App : Application
                 : Path.Combine(Path.GetTempPath(), "shturmap-nogame-" + Guid.NewGuid().ToString("N")[..8], "app");
             AppLog.Debug("No game: only a folder chosen in this session counts");
             paths = new AppPaths(app, AppPaths.Default.CacheRoot);
-            return new GameSession(paths) { NoGame = true };
+            return new GameSession(paths) { NoGame = true, BuildKind = BuildKind };
         }
 #endif
         var at = Array.IndexOf(cli, "--fake-game");
         if (at < 0 || at + 1 >= cli.Length)
         {
             paths = AppPaths.Default;
-            return new GameSession(paths);
+            return new GameSession(paths) { BuildKind = BuildKind };
         }
         var root = cli[at + 1];
         var install = new Shturmap.Game.Install.InstallCandidate(Shturmap.Game.Install.InstallKind.Manual, root, Path.Combine(root, "Logs"),
@@ -477,6 +477,6 @@ public partial class App : Application
         AppLog.Debug("Using a fake game folder: " + root);
         paths = new AppPaths(Path.Combine(root, "app"), AppPaths.Default.CacheRoot);
         return new GameSession(paths,
-            new Shturmap.Game.Install.GameLocations(install, [install], Path.Combine(root, "Screenshots"), settings));
+            new Shturmap.Game.Install.GameLocations(install, [install], Path.Combine(root, "Screenshots"), settings)) { BuildKind = BuildKind };
     }
 }

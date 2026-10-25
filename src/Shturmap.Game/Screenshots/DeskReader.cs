@@ -168,7 +168,8 @@ public sealed class DeskReader
                     looks.Add(read with { Region = key, Cell = cell });
                 }
             }
-            var over = place.Area is { } own ? layout.Over.Where(o => o != own).ToList() : layout.Over.ToList();
+            // A window's cells are hidden by what lies over it, never by itself or by the windows it lies over.
+            var over = place.Area is { } own ? layout.Over.Where(o => o != own && !place.Over.Contains(o)).ToList() : layout.Over.ToList();
             // The special slots take their own items only; a pocket's or a rig's item may be bound to a quick slot, whose
             // number covers its label's start.
             var kind = place.Kind == DeskRegionKind.SpecialSlots ? DeskSlotKind.Special : DeskSlotKind.Any;
@@ -212,7 +213,7 @@ public sealed class DeskReader
                 }
             }
             var (grid, covered, gridOdd, unread) = await CellsAsync(bitmap, "stash", stash, hidden, 0, 0, lines, highPassed, pitch, catalogue, looks,
-                DeskSlotKind.Any, false, ct);
+                DeskSlotKind.Any, false, layout.Over, ct, openTop: true);
             odd += gridOdd;
             regions.Add(new DeskRegion("stash", DeskRegionKind.Stash, stash.Cols, stash.Rows, grid) { Covered = covered, Unread = unread });
         }
@@ -305,7 +306,7 @@ public sealed class DeskReader
     // bottom right; no footprint. Null for an empty slot (no label read).
     private async Task<DeskCellLook?> SlotAsync(SKBitmap bitmap, SKRectI box, int pitch, DeskCatalogue catalogue, DeskSlotKind kind, CancellationToken ct)
     {
-        var (label, fit, best) = await _labels.ReadLabelAsync(bitmap, box, pitch,
+        var (label, fit, best) = await _labels.ReadLabelAsync(bitmap, LabelRect(bitmap, box, pitch, reach: 6), pitch,
             text => catalogue.Match.Match(text, (int)Math.Round(box.Width / (double)pitch), kind), DeskMatch.Enough, ct);
         if (label is null || (fit < DeskMatch.Enough && label.Count(char.IsLetterOrDigit) < 3))
             return null;
@@ -356,7 +357,7 @@ public sealed class DeskReader
                 }
             }
             var (read, hiddenRects, gridOdd, gridUnread) = await CellsAsync(bitmap, region, grid, hidden, i0, j0, lines, highPassed, pitch, catalogue,
-                looks, kind, quickSlots, ct);
+                looks, kind, quickSlots, over, ct);
             cells.AddRange(read);
             covered.AddRange(hiddenRects);
             odd += gridOdd;
@@ -388,23 +389,36 @@ public sealed class DeskReader
     }
 
     // A grid's item rectangles, each read: named, "one of N", or nothing said. A rectangle next to a hidden cell may run
-    // under the window: covered, as the hidden cells are. The items are of the kind the grid takes (the special slots');
+    // under the window: read by the labels that show in it (since 2026-10-25), else covered, as the hidden cells are; so
+    // is one in the stash's first row running on under the pane's head (openTop). The items are of the kind the grid takes
+    // (the special slots');
     // where quick slots may stand (pockets, a rig), a label whose cell shows a quick slot's number may have lost its start.
     private async Task<(List<DeskCell> Cells, List<DeskRect> Covered, int Odd, int Unread)> CellsAsync(SKBitmap bitmap, string region, StashGrid grid, bool[] hidden,
         int i0, int j0, StashLines lines, StashGray highPassed, int pitch, DeskCatalogue catalogue, List<DeskCellLook> looks, DeskSlotKind kind,
-        bool quickSlots, CancellationToken ct)
+        bool quickSlots, IReadOnlyList<SKRectI> over, CancellationToken ct, bool openTop = false)
     {
+        // Whether a part of the picture lies in part under a window, a toast or a tooltip.
+        bool UnderAny(SKRectI r) => over.Any(o => o.IntersectsWith(r));
         var cells = new List<DeskCell>();
         var covered = new List<DeskRect>();
         var odd = 0;
         var unread = 0;
         var empty = StashGrids.Empty(grid, highPassed, pitch);
+        // A cell whose band shows a label is an item's top right, whatever its art (owner's second test, 2026-10-25: the
+        // Beta 2 backpack's top right cell, plain purple under its label "Beta 2", read as empty).
+        for (var k = 0; k < grid.Area; k++)
+        {
+            if (empty[k] && !hidden[k] && LabelInk(bitmap, SKRectI.Create(grid.X0 + k % grid.Cols * pitch, grid.Y0 + k / grid.Cols * pitch, pitch, pitch), pitch))
+                empty[k] = false;
+        }
         for (var k = 0; k < grid.Area; k++)
         {
             if (hidden[k])
                 covered.Add(new DeskRect(i0 + k % grid.Cols, j0 + k / grid.Cols, 1, 1));
         }
         SKRectI Pixels(int i, int j, int w, int h) => SKRectI.Create(grid.X0 + i * pitch, grid.Y0 + j * pitch, w * pitch, h * pitch);
+        // A cell's label band, the line right of it with it.
+        SKRectI Band(int i, int j) => SKRectI.Create(grid.X0 + i * pitch, grid.Y0 + j * pitch, pitch + 2, (int)Math.Round(0.2 * pitch));
 
         // A special slot holds its item in one cell whatever its footprint (the Surv12, three by one): no footprint there.
         var footprints = kind != DeskSlotKind.Special;
@@ -419,23 +433,102 @@ public sealed class DeskReader
                 return known;
             var at = Pixels(r.I0, r.J0, r.W, r.H);
             var cutAtStart = quickSlots && QuickSlotNumber(bitmap, at, pitch);
-            var read = await _labels.ReadLabelAsync(bitmap, at, pitch, text => catalogue.Match.Match(text, r.W, kind, cutAtStart), DeskMatch.Enough, ct, Confirm);
+            var read = await _labels.ReadLabelAsync(bitmap, LabelRect(bitmap, at, pitch), pitch, text => catalogue.Match.Match(text, r.W, kind, cutAtStart),
+                DeskMatch.Enough, ct, Confirm);
             labels[(r.I0, r.J0, r.W, r.H)] = read;
             return read;
         }
         List<DeskCandidate> Named((string? Label, double Fit, List<DeskCandidate>? Best) read) =>
             read.Fit >= DeskMatch.Enough && read.Best is not null ? read.Best : [];
-        var queue = new Queue<StashRect>(StashGrids.Items(grid, lines, hidden, empty, pitch));
+        IReadOnlyList<(int I, int J)> CellsOf(StashRect r) => r.Cells.Count > 0 ? r.Cells
+            : Enumerable.Range(r.J0, r.H).SelectMany(j => Enumerable.Range(r.I0, r.W).Select(i => (i, j))).ToList();
+        var itemRects = StashGrids.Items(grid, lines, hidden, empty, pitch);
+        // The cells read as empty that no rectangle took: dark art an item's footprint may take (as Claims does).
+        var occupied = itemRects.SelectMany(CellsOf).ToHashSet();
+        bool Free(int i, int j) => empty[j * grid.Cols + i] && !occupied.Contains((i, j));
+        // A shape read by the labels in its cells (owner's second test, 2026-10-25): each cell whose band shows a label, right
+        // to left and top row first (a label stands at its item's top right), names its item, which takes its footprint from
+        // there over the shape's cells, the cells read as empty no rectangle took (dark art) and the cells a window or a
+        // tooltip hides; a cell whose label's band a window covers in part is never read so (its label may run on under the
+        // window). The items found, and the cells no label took.
+        async Task<(List<(StashRect Rect, string? Label, double Fit, List<DeskCandidate> Fitting)> Items, List<(int I, int J)> Left)> ByLabelsAsync(
+            IReadOnlyList<(int I, int J)> shape)
+        {
+            var inShape = shape.ToHashSet();
+            var claimed = new HashSet<(int, int)>();
+            var items = new List<(StashRect, string?, double, List<DeskCandidate>)>();
+            bool Hidden(int i, int j) => hidden[j * grid.Cols + i];
+            foreach (var (ci, cj) in shape.OrderBy(c => c.J).ThenByDescending(c => c.I))
+            {
+                var one = Pixels(ci, cj, 1, 1);
+                // Its label's band must show whole: a window over it may hide the label's end, or the label is another's.
+                if (claimed.Contains((ci, cj)) || UnderAny(Band(ci, cj)))
+                    continue;
+                if (!LabelInk(bitmap, one, pitch))
+                    continue;
+                var cut = quickSlots && QuickSlotNumber(bitmap, one, pitch);
+                var (l1, f1, b1) = await _labels.ReadLabelAsync(bitmap, LabelRect(bitmap, one, pitch), pitch, text => catalogue.Match.Match(text, 1, kind, cut),
+                    DeskMatch.Enough, ct, Confirm);
+                if (f1 < DeskMatch.Enough || b1 is not { Count: > 0 })
+                    continue;
+                // The largest footprint the label's items take from here (the shape's cells joined: one item rather than
+                // a smaller one and cells of nothing), its items those of that footprint.
+                var shapes = (footprints ? b1.SelectMany(c => new[] { (W: c.W, H: c.H), (W: c.H, H: c.W) }) : [(W: 1, H: 1)]).Distinct()
+                    .Select(f => (I: ci - f.W + 1, J: cj, f.W, f.H))
+                    .Where(a => a.I >= 0 && a.I + a.W <= grid.Cols && a.J + a.H <= grid.Rows &&
+                                Enumerable.Range(a.I, a.W).SelectMany(i => Enumerable.Range(a.J, a.H).Select(j => (i, j)))
+                                    .All(c => !claimed.Contains(c) && (inShape.Contains(c) || Hidden(c.i, c.j) || Free(c.i, c.j))))
+                    .OrderByDescending(a => a.W * a.H).ToList();
+                if (shapes.Count == 0)
+                    continue;
+                var area = shapes[0];
+                var named = footprints ? b1.Where(c => Fits(c, area.W, area.H)).ToList() : b1;
+                items.Add((new StashRect(area.I, area.J, area.W, area.H, false), l1, f1, named));
+                for (var i = area.I; i < area.I + area.W; i++)
+                {
+                    for (var j = area.J; j < area.J + area.H; j++)
+                    {
+                        claimed.Add((i, j));
+                        occupied.Add((i, j));
+                    }
+                }
+            }
+            return (items, shape.Where(c => !claimed.Contains(c)).ToList());
+        }
+        var queue = new Queue<StashRect>(itemRects);
+        var touching = new List<(int I, int J)>();
         while (queue.Count > 0)
         {
             var rect = queue.Dequeue();
             ct.ThrowIfCancellationRequested();
-            if (Touches(grid, rect, hidden))
+            // In the stash's first row, an item with no line along its top runs on above it, under the stash pane's head
+            // (owner's second test, 2026-10-25, picture 17: an armour plate and the Blueprints, two by two, their top rows
+            // and labels under the head, read as a "?" two by one each): what lies under the head isn't read, as under a
+            // window.
+            var runsAbove = openTop && rect.J0 == 0 && Pixels(rect.I0, 0, rect.W, 1) is var top &&
+                            lines.Horizontal(top.Top, top.Left + 4, top.Right - 4) < 0.4;
+            if (runsAbove || Touches(grid, rect, hidden))
             {
-                covered.Add(new DeskRect(i0 + rect.I0, j0 + rect.J0, rect.W, rect.H));
+                // It may run on under the window: read with the others that do, below.
+                touching.AddRange(CellsOf(rect));
                 continue;
             }
             var (label, fit, best) = await LabelOf(rect);
+            if (!rect.Odd && rect.W * rect.H > 1 && footprints && Named((label, fit, best)) is { Count: > 0 } named0 && Sized(named0, rect.W, rect.H).Count == 0 &&
+                named0.All(c => (c.W <= rect.W && c.H <= rect.H) || (c.H <= rect.W && c.W <= rect.H)))
+            {
+                // Its label names items smaller than it only: several items read as one, the line between them unseen (a
+                // highlight's frame; the owner's second test of 2026-10-25, picture 16, a Bloodset over a Bandage in the CR
+                // MK2 (R) window). It is read by the labels in its cells; what no label takes stays a shape of nothing said.
+                var (items, left) = await ByLabelsAsync(CellsOf(rect));
+                if (items.Count > 0)
+                {
+                    rects.AddRange(items);
+                    if (left.Count > 0)
+                        rects.Add((new StashRect(rect.I0, rect.J0, rect.W, rect.H, true) { Cells = left }, label, fit, []));
+                    continue;
+                }
+            }
             if (rect.Pieces.Count > 0 && footprints && Sized(Named((label, fit, best)), rect.W, rect.H).Count == 0)
             {
                 // Joined across faint lines, and its label names no item of its size: two items whose frame between them
@@ -451,32 +544,41 @@ public sealed class DeskReader
                     continue;
                 }
             }
-            if (rect.Odd && (fit < DeskMatch.Enough || best is null) && rect.Cells.Count is > 1 and <= OddCellsRead)
+            // (An odd shape is no item, whatever its bounding box's label fits, unless that names an item of the box's size: a
+            // gun whose dark art reads as empty cells.)
+            if (rect.Odd && rect.Cells.Count is > 1 and <= OddCellsRead &&
+                (footprints ? Sized(Named((label, fit, best)), rect.W, rect.H).Count == 0 : fit < DeskMatch.Enough || best is null))
             {
                 // An odd shape whose label fits nothing: the lines between its items didn't show (a hover highlight, light
                 // art; the Keys window of 2026-10-19, 20:22, RB-VO, RB-AK and RB-PP with Dorm 103 and Container in one
-                // cross). Each of its cells is read on its own, and stands as an item of one cell where its label fits one.
-                var left = new List<(int I, int J)>();
-                foreach (var (ci, cj) in rect.Cells)
-                {
-                    var one = Pixels(ci, cj, 1, 1);
-                    var cut = quickSlots && QuickSlotNumber(bitmap, one, pitch);
-                    var (l1, f1, b1) = await _labels.ReadLabelAsync(bitmap, one, pitch,
-                        text => catalogue.Match.Match(text, 1, kind, cut), DeskMatch.Enough, ct, Confirm);
-                    var fitting = f1 >= DeskMatch.Enough && b1 is not null ? b1.Where(c => kind == DeskSlotKind.Special || Fits(c, 1, 1)).ToList() : [];
-                    if (fitting.Count == 0)
-                    {
-                        left.Add((ci, cj));
-                        continue;
-                    }
-                    rects.Add((new StashRect(ci, cj, 1, 1, false), l1, f1, fitting));
-                }
+                // cross; the owner's second test of 2026-10-25, picture 14, the Water, the CR MK2 (R) and the GPU round the
+                // rig the pointer lit). It is read by the labels in its cells, each item taking its footprint from its
+                // label's cell (until 2026-10-25 items of one cell only).
+                var (items, left) = await ByLabelsAsync(rect.Cells);
+                rects.AddRange(items);
                 // What is left of it stays an odd shape: nothing said there.
                 if (left.Count > 0)
                     rects.Add((rect with { Cells = left }, label, fit, []));
                 continue;
             }
             rects.Add((rect, label, fit, fit >= DeskMatch.Enough && best is not null ? best : []));
+        }
+        // A cell a window hides whose label's band shows above the window (the owner's second test of 2026-10-25, picture
+        // 15: the Beta 2 window's CR MK2 (R), its label over the CR MK2 (R) window's top edge) is read with them.
+        if (touching.Count > 0 || hidden.Any(x => x))
+        {
+            touching.AddRange(Enumerable.Range(0, grid.Area).Where(k => hidden[k] && !UnderAny(Band(k % grid.Cols, k / grid.Cols)))
+                .Select(k => (k % grid.Cols, k / grid.Cols)));
+        }
+        if (touching.Count > 0)
+        {
+            // What may run on under a window or a tooltip, all together (an item's cells may stand in several of its pieces):
+            // read by the labels that show in it, an item taking the hidden cells its footprint needs (owner's second
+            // test, 2026-10-25: the Beta 2 backpack in the backpack's grid, its top row over the Beta 2 window, its label
+            // "Beta 2" at its top right; the CR MK2 (R) under the game's tooltip); the rest is covered, as before.
+            var (under, rest) = await ByLabelsAsync(touching);
+            rects.AddRange(under);
+            covered.AddRange(rest.Select(c => new DeskRect(i0 + c.I, j0 + c.J, 1, 1)));
         }
 
         // The item file's footprint, either way round (an item may lie turned), is the tie-break and a check. Where the
@@ -530,7 +632,10 @@ public sealed class DeskReader
             DeskPrint? print = null;
             var count = 1;
             bool? fir = null;
-            if (ids.Count > 0)
+            // An item running on under a window: its count and mark at its bottom right are the window's pixels, not read.
+            var bottomHidden = hidden[(at.J + at.H - 1) * grid.Cols + at.I + at.W - 1] ||
+                               UnderAny(SKRectI.Create(pixels.Right - pitch, pixels.Bottom - (int)Math.Round(0.3 * pitch), pitch, (int)Math.Round(0.3 * pitch)));
+            if (ids.Count > 0 && !bottomHidden)
             {
                 (countText, print) = await CountAsync(bitmap, pixels, pitch, ct);
                 count = print is null ? StashLabels.Count(countText) : 1;
@@ -546,8 +651,56 @@ public sealed class DeskReader
     }
 
     // The most cells of an odd shape read one by one (a cross of five keys under a hover highlight; a bigger shape is
-    // more likely large items cut into cells, whose cells alone fit nothing).
-    private const int OddCellsRead = 12;
+    // more likely large items cut into cells, whose cells alone fit nothing). Only the cells whose band shows a label's
+    // ink are read (LabelInk).
+    private const int OddCellsRead = 24;
+
+    /// <summary>
+    /// Where a label is read: the cell's rectangle ending three pixels past its label's ink (the light pixels in its top
+    /// band, the game's labels near white), so that no line or highlight right of the label is read as a letter (owner's
+    /// second test, 2026-10-25: the 6L31 magazine's orange highlight read as a "1" after it, "6L311"); up to
+    /// <paramref name="reach"/> pixels past the rectangle where a frame came out narrower than its box (the Zhuk rig's
+    /// slot, its label's "k" past the frame found: "Zhi-o"). The rectangle as it is where no ink shows.
+    /// </summary>
+    internal static SKRectI LabelRect(SKBitmap bitmap, SKRectI rect, int pitch, int reach = 0)
+    {
+        int y0 = Math.Max(0, rect.Top + 3), y1 = Math.Min(bitmap.Height, rect.Top + (int)Math.Round(0.2 * pitch));
+        var left = rect.Left + (int)Math.Round(0.3 * pitch);
+        for (var x = Math.Min(bitmap.Width - 1, rect.Right - 1 + reach); x >= left; x--)
+        {
+            for (var y = y0; y < y1; y++)
+            {
+                var c = bitmap.GetPixel(x, y);
+                if (Math.Min(c.Red, Math.Min(c.Green, c.Blue)) >= LabelInkLevel)
+                    return rect with { Right = Math.Min(rect.Right + reach, x + 3) };
+            }
+        }
+        return rect;
+    }
+
+    // The least of a label's ink's channels: the game's labels are near white (214 grey), dimmed in a window behind another
+    // (100 to 149: the Beta 2 window's "Water" under the CR MK2 (R) window, picture 15); its lines 73 to 96, a window's gold
+    // outline 97, its orange highlight 69 at the least.
+    private const int LabelInkLevel = 110;
+
+    /// <summary>Whether a cell's label band shows ink a label may be: a few light pixels (<see cref="LabelInkLevel"/>) in its
+    /// top band, right of where a quick slot's plate stands. A cell without is no item's top right.</summary>
+    internal static bool LabelInk(SKBitmap bitmap, SKRectI cell, int pitch)
+    {
+        int x0 = cell.Left + (int)Math.Round(0.3 * pitch), x1 = cell.Right - 2;
+        int y0 = cell.Top + 3, y1 = cell.Top + (int)Math.Round(0.2 * pitch);
+        var light = 0;
+        for (var y = Math.Max(0, y0); y < Math.Min(bitmap.Height, y1); y++)
+        {
+            for (var x = Math.Max(0, x0); x < Math.Min(bitmap.Width, x1); x++)
+            {
+                var c = bitmap.GetPixel(x, y);
+                if (Math.Min(c.Red, Math.Min(c.Green, c.Blue)) >= LabelInkLevel)
+                    light++;
+            }
+        }
+        return light >= 6;
+    }
 
     /// <summary>Whether a cell shows a quick slot's number at its top left: the game's light plate, about a third of a
     /// cell square, with the slot's digit on it ("6" over "Alu splint"). Measured on the screenshots of 2026-10-19: the

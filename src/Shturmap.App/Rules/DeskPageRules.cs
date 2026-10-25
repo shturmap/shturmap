@@ -7,7 +7,8 @@ namespace Shturmap.App.Rules;
 /// <summary>One block of the desk's page in its place (owner, 2026-10-25: the GEAR tab mirrored and fixed): a fixed
 /// region (LOADOUT, TACTICAL RIG, POCKETS, SPECIAL SLOTS, BACKPACK, POUCH, STASH) or a container's window, with its
 /// region as the page in hand has it; <see cref="Region"/> null for a fixed region no reading of the mode has shown (its
-/// head over a dashed frame, "NOT IN A SCREENSHOT YET").</summary>
+/// head over a dashed frame, "NOT IN A SCREENSHOT YET"), or one a reading made from its heading alone
+/// (<see cref="DeskPageRules.HeadingAlone"/>).</summary>
 public sealed record DeskBlock(string Key, DeskRegionKind Kind, DeskRegion? Region)
 {
     /// <summary>A fixed region never read: its head and a dashed frame stand in its place.</summary>
@@ -98,16 +99,30 @@ public static class DeskPageRules
     public static bool HasBox(DeskRegionKind kind) => kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch;
 
     /// <summary>The page's blocks in their places: the seven fixed regions in the game's order, each as the page in hand has
-    /// it or a placeholder where no reading showed it, then the windows in reading order (each after the region its
-    /// container is in, those attached to none at the end; <see cref="DeskPage.InReadingOrder"/>).</summary>
+    /// it or a placeholder where no reading showed it (or one made from its heading alone, <see cref="HeadingAlone"/>), then
+    /// the windows in reading order (each after the region its container is in, those attached to none at the end;
+    /// <see cref="DeskPage.InReadingOrder"/>).</summary>
     public static IReadOnlyList<DeskBlock> Blocks(IReadOnlyList<DeskRegion> regions)
     {
-        var blocks = Fixed.Select(kind => regions.FirstOrDefault(r => r.Kind == kind) is { } region
+        var blocks = Fixed.Select(kind => regions.FirstOrDefault(r => r.Kind == kind) is { } region && !HeadingAlone(region)
             ? new DeskBlock(region.Key, kind, region)
             : new DeskBlock(DeskRegion.KeyOf(kind), kind, null)).ToList();
         blocks.AddRange(regions.Where(r => r.Kind == DeskRegionKind.ContainerWindow).Select(r => new DeskBlock(r.Key, r.Kind, r)));
         return blocks;
     }
+
+    /// <summary>
+    /// Whether a region on the page is one a reading made from its heading alone, no grid and no cell in it: POCKETS,
+    /// SPECIAL SLOTS or STASH of no columns or no rows, as the layout gives one on a first reading when the region's frames
+    /// are all under a window or under no heading (code review of 2026-10-25: drawn as a bare head over nothing, POCKETS and
+    /// SPECIAL SLOTS a DIP wide, their heads wrapping a letter a line). It stands as a region never read: the placeholder,
+    /// counted as one in the layout; it counts nothing in the totals, having no cell. Not TACTICAL RIG, BACKPACK or POUCH,
+    /// whose grid goes with a slot seen empty (docs/DESIGN.md §4, *A region read in part keeps the page's rest*): such a
+    /// region is its empty slot box with no grid, as the game shows it. Not LOADOUT, which has no grid of its own.
+    /// </summary>
+    public static bool HeadingAlone(DeskRegion region) =>
+        region.Kind is DeskRegionKind.Pockets or DeskRegionKind.SpecialSlots or DeskRegionKind.Stash && region.Cells.Count == 0 &&
+        Grid(region) is not (> 0, > 0);
 
     /// <summary>
     /// The page laid out at a cell size: its blocks (<see cref="Blocks"/>) and the column each stands in, each column's
@@ -162,7 +177,9 @@ public static class DeskPageRules
     /// <param name="regions">The page in hand's regions in reading order.</param>
     /// <param name="deskHeight">The page's room under the head line; infinity for the width alone.</param>
     /// <param name="textScale">The size text is drawn at against the size written (the heads' and lines' heights).</param>
-    /// <param name="head">Each region's head as drawn (dated where it is kept), to tell where one wraps; its name without.</param>
+    /// <param name="head">Each region's head without its date ("ZHUK · IN THE BACKPACK"), its name without: each head
+    /// takes the room of its dated form at its widest (<see cref="Reserved"/>) whether it is dated or not, so a date never
+    /// moves what is under it (UI QA pass of step 2, F1).</param>
     public static Arrangement Layout(IReadOnlyList<DeskRegion> regions, double deskWidth, double deskHeight = double.PositiveInfinity, double textScale = 1,
         Func<DeskRegion, string>? head = null)
     {
@@ -255,12 +272,13 @@ public static class DeskPageRules
         };
     }
 
-    /// <summary>A block's height in DIP: its head (wrapping in <paramref name="width"/>), a window's "Not attached" line or
-    /// a LOADOUT never read's line, what it holds.</summary>
+    /// <summary>A block's height in DIP: its head's room (its dated form's at its widest, wrapping in
+    /// <paramref name="width"/>: <see cref="HeadRoomLines"/>), a window's "Not attached" line or a LOADOUT never read's line,
+    /// what it holds.</summary>
     public static double BlockHeight(DeskBlock block, double size, double width, double textScale = 1, Func<DeskRegion, string>? head = null)
     {
         var words = block.Region is { } region ? head?.Invoke(region) ?? Name(region) : Name(block.Kind);
-        var height = HeadLines(words, size, textScale, width) * HeadHeight(size, textScale);
+        var height = HeadRoomLines(words, size, width, textScale) * HeadHeight(size, textScale);
         if (block.Region is { Kind: DeskRegionKind.ContainerWindow, AttachedTo: null } window)
             height += HeadGap + NoteHeight((window.Title ?? "").Length + 70, textScale, width);
         if (block is { Placeholder: true, Kind: DeskRegionKind.Loadout })
@@ -283,9 +301,31 @@ public static class DeskPageRules
     // A head's line: an eyebrow about 1.4 of its size.
     private static double HeadHeight(double size, double textScale) => Math.Ceiling(HeadSize(size) * textScale * 1.4);
 
-    // How many lines a head takes in a column this wide: its capitals about 0.53 em a letter, its spacing 0.14.
-    private static int HeadLines(string words, double size, double textScale, double width) =>
+    /// <summary>How many lines a head takes in a column this wide, by an estimate a little over: its capitals about 0.53 em
+    /// a letter, its spacing 0.14.</summary>
+    public static int HeadLines(string words, double size, double width, double textScale = 1) =>
         Math.Max(1, (int)Math.Ceiling(words.Length * HeadSize(size) * textScale * 0.67 / Math.Max(1, width)));
+
+    /// <summary>
+    /// The lines a region's head takes on the page whether it is dated or not (UI QA pass of step 2, F1: after reading 2 at
+    /// 40 DIP SPECIAL SLOTS' dated head wrapped to a second line and moved everything under POCKETS and SPECIAL SLOTS 13 px
+    /// down; at 125 % German TASCHEN's too): those of its dated form at its widest (<see cref="Reserved"/>), from the first
+    /// reading, so the date comes into room kept for it and nothing under a head moves.
+    /// </summary>
+    public static int HeadRoomLines(string head, double size, double width, double textScale = 1) =>
+        Math.Max(HeadLines(head, size, width, textScale), HeadLines(Reserved(head), size, width, textScale));
+
+    /// <summary>A head in its dated form at its widest, the room a head keeps for its date (<see cref="HeadRoomLines"/>, the
+    /// page's unseen copy under each head): "SPECIAL SLOTS · 28 SEP 23:58".</summary>
+    public static string Reserved(string head) => RuleTexts.DeskHeadSince(head: head, time: WidestSince());
+
+    /// <summary>The longest date and time a head can say in the language in use (<see cref="Since"/> of another day): a day of
+    /// two figures and the month written longest ("28 SEP 23:58", German "28. SEPT., 23:58"), of the months of one length
+    /// the one with the most of the wide M and W.</summary>
+    public static string WidestSince() =>
+        Enumerable.Range(1, 12)
+            .Select(month => UiLanguage.Upper(UiLanguage.DayMonthTime(new DateTime(2026, month, 28, 23, 58, 0, DateTimeKind.Unspecified))).Replace(' ', ' '))
+            .OrderByDescending(s => s.Length).ThenByDescending(s => s.Count(c => c is 'M' or 'W')).First();
 
     // A note's height in a column this wide: 12.5 px, about half an em a letter, 1.4 of its size a line.
     private static double NoteHeight(int letters, double textScale, double width) =>
@@ -346,22 +386,56 @@ public static class DeskPageRules
 
     /// <summary>
     /// A slot's name over its box, fitted to the box's width: at <see cref="SlotHeadSize"/>, letter-spaced 0.1 em; where
-    /// that is wider than the box, without the spacing; then half a pixel smaller at a time, never drawn under 8 px (the
-    /// German FACE COVER, "GESICHTSBEDECKUNG", over a box of 80 DIP at 40: 8.5 px, no spacing). Bahnschrift's semi-condensed
-    /// semibold capitals run about 0.51 em (measured); 0.53 is taken, a little over.
+    /// that is wider than the box, without the spacing; then as large as the box takes it, never drawn under 8 px. The fit
+    /// is made at the size the text is drawn, so a larger text size grows a long name as far as its box allows (UI QA pass
+    /// of step 2, F5: in steps of half a pixel as written it stopped short of the box). By the estimate below, the German
+    /// FACE COVER, "GESICHTSBEDECKUNG", over a box of 80 DIP at 40 is set at 8.875 px; the page measures the name as drawn
+    /// (DeskBoard), which takes it at 9 px without its spacing, the size of its row.
     /// </summary>
     /// <param name="drawn">A size as written to the size the window's text size draws it.</param>
-    /// <returns>The size as written and the spacing in thousandths of an em (a TextBlock's CharacterSpacing).</returns>
-    public static (double Size, int Spacing) SlotHead(string name, double width, double cell, Func<double, double>? drawn = null)
+    /// <param name="wide">The name's width in DIP at a size as drawn and a spacing in ems; by default an estimate:
+    /// Bahnschrift's semi-condensed semibold capitals run about 0.51 em (measured), 0.53 is taken, a little over.</param>
+    /// <returns>The size as written (in 64ths of a pixel) and the spacing in thousandths of an em (a TextBlock's
+    /// CharacterSpacing).</returns>
+    public static (double Size, int Spacing) SlotHead(string name, double width, double cell, Func<double, double>? drawn = null,
+        Func<double, double, double>? wide = null)
     {
         drawn ??= s => s;
-        double Wide(double at, double spacing) => name.Length * drawn(at) * (0.53 + spacing);
+        wide ??= (at, spacing) => name.Length * at * (0.53 + spacing);
+        bool Fits(double at, double spacing) => wide(drawn(at), spacing) <= width;
         var size = SlotHeadSize(cell);
-        if (Wide(size, 0.1) <= width)
+        if (Fits(size, 0.1))
             return (size, 100);
-        while (Wide(size, 0) > width && size - 0.5 >= 4 && drawn(size - 0.5) >= DeskCells.LeastFigure - 1e-9)
-            size -= 0.5;
-        return (size, 0);
+        if (Fits(size, 0))
+            return (size, 0);
+        // The least size as written that is drawn at 8 px (the drawn size grows with the written); a name too long even at
+        // that stands at it.
+        double low = 4, high = size;
+        if (drawn(low) < DeskCells.LeastFigure)
+        {
+            for (var i = 0; i < 30; i++)
+            {
+                var mid = (low + high) / 2;
+                if (drawn(mid) >= DeskCells.LeastFigure)
+                    high = mid;
+                else
+                    low = mid;
+            }
+            low = Math.Ceiling(high * 64) / 64;
+        }
+        if (!Fits(low, 0))
+            return (low, 0);
+        high = size;
+        for (var i = 0; i < 30; i++)
+        {
+            var mid = (low + high) / 2;
+            if (Fits(mid, 0))
+                low = mid;
+            else
+                high = mid;
+        }
+        // In 64ths, rounded down: never over the box; never under the least, itself a 64th.
+        return (Math.Floor(low * 64) / 64, 0);
     }
 
     // ---- when a region was read: one the last screenshot didn't show ----
@@ -396,6 +470,39 @@ public static class DeskPageRules
         !newReading ? new HashSet<string>(StringComparer.Ordinal)
         : first ? keys.ToHashSet(StringComparer.Ordinal)
         : keys.Where(changed.Contains).ToHashSet(StringComparer.Ordinal);
+
+    // ---- the page's scroll ----
+
+    /// <summary>
+    /// Whether the page runs on past the desk's foot, so the scroll mark stands there, "MORE BELOW ▾" (UI QA pass of step 2,
+    /// F3: at 900×560 the first screen showed LOADOUT alone, its last boxes flush with the window's foot, and at 1600×900 the
+    /// windows ran past it, with no bar or mark to say the page scrolls; the coordinator's rule, after the in-raid glance's
+    /// "MORE BELOW +"): more than a DIP of what the page holds lies under the desk's foot, the room under the page
+    /// (<see cref="PageBottom"/>) not counted, so it is gone once the page is scrolled to its end.
+    /// </summary>
+    /// <param name="extent">The page's height, its padding included (the scroll's extent).</param>
+    /// <param name="viewport">The desk's room for the page (the scroll's viewport).</param>
+    /// <param name="offset">How far the page is scrolled down.</param>
+    public static bool MoreBelow(double extent, double viewport, double offset) => extent - PageBottom - (offset + viewport) > 1;
+
+    /// <summary>
+    /// The page in screens, for the layout check (UI QA pass of step 2, F4: at 900×560 the desk's check passed with 95 texts
+    /// below the first screen, none of them in a picture): the offsets to scroll the page to, from its top, each the last
+    /// plus the desk's room less the scroll mark's band (what the mark covers at one screen's foot stands in the next),
+    /// until the page's end shows; the last at the page's end. One where the page fits.
+    /// </summary>
+    /// <param name="band">The scroll mark's height, its fade included.</param>
+    public static IReadOnlyList<double> ScreenOffsets(double extent, double viewport, double band)
+    {
+        var offsets = new List<double> { 0 };
+        if (viewport <= 0)
+            return offsets;
+        var step = Math.Max(viewport / 2, viewport - Math.Max(0, band));
+        var end = Math.Max(0, extent - viewport);
+        while (MoreBelow(extent, viewport, offsets[^1]) && offsets[^1] < end && offsets.Count < 64)
+            offsets.Add(Math.Min(offsets[^1] + step, end));
+        return offsets;
+    }
 
     /// <summary>The space between a grid's compartments, in DIP, as the game sets a rig's pockets a few pixels apart: 2 at
     /// 40 DIP, 4 at 56.</summary>

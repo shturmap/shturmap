@@ -173,6 +173,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private static string ShortVersion(string version) =>
         version.IndexOf('+') is var plus and >= 0 && version.Length > plus + 8 ? version[..(plus + 8)] : version;
 
+    /// <summary>The kind of build as the app log's first line says it ("installed", "dev build", "folder build"), for the
+    /// readings log's head; null where nobody said (tests).</summary>
+    public string? BuildKind { get; init; }
+
     // Every study line says where in the game the player was.
     private IEnumerable<(string, object?)> StudyContext()
     {

@@ -247,55 +247,108 @@ public sealed partial class GameSession
             return;
         var started = Stopwatch.GetTimestamp();
         var menu = await read(seen.Path, candidates, catalogue, new DateTimeOffset(seen.CreatedAt), _stop.Token);
-        if (menu is null)
-            return;
+        ReadingLogEntry? log;
         await _gate.WaitAsync();
         try
         {
-            if (!_readStash || _data is null)
-                return;
-            var ms = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
-            if (menu.Tasks is { } page)
-            {
-                TakeTasks(page, seen.CreatedAt, ms);
-                return;
-            }
-            if (menu.Desk is { } desk)
-            {
-                TakeDesk(desk, desk.Ms);
-                if (menu.Stash is null)
-                    Publish();
-            }
-            if (menu.Stash is not { } reading)
-                return;
-            if (reading.IsTradingScreen)
-            {
-                // The trading screen writes prices on the stash's cells, not names: nothing to read.
-                Study.Game("stash.trading", ("ms", ms));
-                return;
-            }
-            var items = reading.Grids.SelectMany(g => g.Items).Select(i => (i.ItemId, i.Count, i.FoundInRaid)).ToList();
-            var stashPage = reading.Grids.Any(g => g.Kind == StashGridKind.Stash);
-            var changed = _ledger.ApplyScreenshot(new DateTimeOffset(seen.CreatedAt), stashPage, items);
-            Study.Game("stash.read", ("grids", reading.Grids.Count), ("stashPage", stashPage), ("cells", items.Count), ("changed", changed.Count), ("ms", ms));
-            AppLog.Info($"Stash read from a menu screenshot: {reading.Grids.Count} grids, {items.Count} cells with items the quests need ({ms:0} ms)");
-            SaveStashIfDirty();
-            if (items.Count > 0)
-            {
-                // The SEEN IN YOUR STASH cue (owner, 2026-10-11: "a little eyecandy animation when the app recognises
-                // the player updates the stash"; docs/DESIGN.md §4, principle 11): the needed items it showed, each
-                // once with the most seen of it. Nothing for a screenshot that showed none.
-                var kinds = NeededKinds();
-                var shown = items.GroupBy(i => i.ItemId, StringComparer.Ordinal)
-                    .Select(g => new CueItem(g.Key, kinds.GetValueOrDefault(g.Key, RequirementKind.Bring), Count: g.Max(i => i.Count)))
-                    .ToList();
-                Announce(new ViewCue(CueKind.StashSeen, "", Kit: shown.Take(StashCueShown).ToList(), KitMore: Math.Max(0, shown.Count - StashCueShown)));
-            }
-            Publish();
+            log = TakeMenu(seen, menu, Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
         finally
         {
             _gate.Release();
+        }
+        if (log is not null)
+            WriteReadingLog(log);
+    }
+
+    // Under the gate: what a menu screenshot's readings showed, taken into the operational tasks, the desk's page and What
+    // You Have's marks; the readings log's entry of it all (null when the reading was turned off meanwhile).
+    private ReadingLogEntry? TakeMenu(ScreenshotSeen seen, MenuReading? menu, double ms)
+    {
+        if (!_readStash || _data is null)
+            return null;
+        var log = ReadingLogOf(seen, menu, ms);
+        if (menu is null)
+            return log;
+        if (menu.Tasks is { } page)
+            return log with { Tasks = TakeTasks(page, seen.CreatedAt, ms) };
+        if (menu.Desk is { } desk)
+        {
+            log = log with { Desk = TakeDesk(desk, desk.Ms) };
+            if (menu.Stash is null)
+                Publish();
+        }
+        if (menu.Stash is not { } reading)
+            return log;
+        if (reading.IsTradingScreen)
+        {
+            // The trading screen writes prices on the stash's cells, not names: nothing to read.
+            Study.Game("stash.trading", ("ms", ms));
+            return log;
+        }
+        var items = reading.Grids.SelectMany(g => g.Items).Select(i => (i.ItemId, i.Count, i.FoundInRaid)).ToList();
+        var stashPage = reading.Grids.Any(g => g.Kind == StashGridKind.Stash);
+        var changed = _ledger.ApplyScreenshot(new DateTimeOffset(seen.CreatedAt), stashPage, items);
+        Study.Game("stash.read", ("grids", reading.Grids.Count), ("stashPage", stashPage), ("cells", items.Count), ("changed", changed.Count), ("ms", ms));
+        AppLog.Info($"Stash read from a menu screenshot: {reading.Grids.Count} grids, {items.Count} cells with items the quests need ({ms:0} ms)");
+        SaveStashIfDirty();
+        if (items.Count > 0)
+        {
+            // The SEEN IN YOUR STASH cue (owner, 2026-10-11: "a little eyecandy animation when the app recognises
+            // the player updates the stash"; docs/DESIGN.md §4, principle 11): the needed items it showed, each
+            // once with the most seen of it. Nothing for a screenshot that showed none.
+            var kinds = NeededKinds();
+            var shown = items.GroupBy(i => i.ItemId, StringComparer.Ordinal)
+                .Select(g => new CueItem(g.Key, kinds.GetValueOrDefault(g.Key, RequirementKind.Bring), Count: g.Max(i => i.Count)))
+                .ToList();
+            Announce(new ViewCue(CueKind.StashSeen, "", Kit: shown.Take(StashCueShown).ToList(), KitMore: Math.Max(0, shown.Count - StashCueShown)));
+        }
+        Publish();
+        return log with { MarksChanged = changed.Count };
+    }
+
+    // ---- the readings log (owner, 2026-10-25: "Can't you write out logs of what was detected and link it to the screenshot
+    // so we can troubleshoot it afterwards?"; docs/DESIGN.md §8, "Developer aids", *Readings log*) ----
+
+    // Under the gate: the log's head (the screenshot, the build as the app log's first line says it, the mode, the ticks)
+    // with what the readers gave; the items named as the data names them.
+    private ReadingLogEntry ReadingLogOf(ScreenshotSeen seen, MenuReading? menu, double ms)
+    {
+        var data = _data;
+        return new ReadingLogEntry(seen.Path, new DateTimeOffset(seen.CreatedAt))
+        {
+            Shturmap = $"{Version} ({BuildKind ?? "build not said"}, {paths.KindText} data folder) on {Diagnostics.WindowsVersion()}",
+            Mode = _mode.ToString(),
+            ReadOn = _readStash,
+            DeleteOn = _deleteScreenshots,
+            Reading = menu,
+            Ms = ms,
+            NameOf = id => data is not null && data.ItemNames.TryGetValue(id, out var name)
+                ? data.ItemShortNames.TryGetValue(id, out var shortName) && shortName.Length > 0 && shortName != name ? $"{name} ({shortName})" : name
+                : null,
+        };
+    }
+
+    /// <summary>Writes a menu screenshot's readings log into the folder: <see cref="ReadingLog.Write"/> unless a test gives
+    /// its own (one that fails).</summary>
+    public Action<string, ReadingLogEntry>? ReadingLogWriter { get; init; }
+
+    // Outside the gate: the screenshot's file in the data folder's "readings", the last 50 kept (ReadingLog). Never in a
+    // report or the diagnostics; "Delete screenshots after reading" leaves it. Whatever fails here, a file that can't be
+    // written or an entry its lines stumble over, is one WARN line and the session goes on: the readings were taken, and
+    // their log never fails them (code review, 2026-10-25).
+    private void WriteReadingLog(ReadingLogEntry log)
+    {
+        try
+        {
+            if (ReadingLogWriter is { } write)
+                write(paths.Readings, log);
+            else
+                ReadingLog.Write(paths.Readings, log);
+        }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        {
+            AppLog.Warn($"Readings log not written: {e.GetType().Name}: {e.Message}");
         }
     }
 

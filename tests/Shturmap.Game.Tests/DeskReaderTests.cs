@@ -632,6 +632,249 @@ public sealed class DeskReaderTests : IDisposable
         }
     }
 
+    // ---- the owner's second test of 2026-10-25 (step 1b): windows by their panels, what lies under them, the tooltip ----
+
+    // A container's window as the game draws it (the owner's screenshots of 2026-10-25 at 1440p): a one-pixel grey outline
+    // with four pixels of black inside it, the bar (25 grey) at its top, and its grid with two-pixel lines 34 px under the
+    // outline's top and 5 px in from its left. The grid's top left.
+    private static (int X, int Y) Panel(StashReaderTests.Page page, int x, int y, int cols, int rows)
+    {
+        var p = page.Pitch;
+        int gx = x + 5, gy = y + 34;
+        int right = gx + cols * p + 7, bottom = gy + rows * p + 7;
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var outline = new SKPaint { Color = new SKColor(88, 93, 96) })
+        using (var black = new SKPaint { Color = SKColors.Black })
+        using (var bar = new SKPaint { Color = new SKColor(25, 26, 27) })
+        {
+            canvas.DrawRect(x, y, right - x + 1, bottom - y + 1, outline);
+            canvas.DrawRect(x + 1, y + 1, right - x - 1, bottom - y - 1, black);
+            canvas.DrawRect(x + 4, y + 3, right - x - 7, 27, bar);
+        }
+        page.Grid(gx, gy, cols, rows, 2);
+        return (gx, gy);
+    }
+
+    // The window's bar as the recognition reads it: the magnifier, and the title right of it.
+    private static IEnumerable<DeskWord> Bar(int x, int y, string title, int line) =>
+        [Word("P", x + 10, y + 7, line, 19), Word(title, x + 48, y + 10, line, 15)];
+
+    // Picture 16 of the owner's second test (2026-10-25): the POUCH's grid right under the Beta 2 window's lower edge was taken for
+    // three more rows of the window (5×8 for its 5×6), its frames touching the window's; the grid's top row under the window.
+    // The window's compartments are found inside its panel only: the POUCH's grid is the POUCH's.
+    [Fact]
+    public void A_windows_compartments_stop_at_its_panel_and_a_grid_under_its_lower_edge_is_the_pages()
+    {
+        var (page, words) = Tab();
+        words.Add(Word("POUCH", 880, 909, 7, 14));
+        page.Grid(875, 930, 2, 2, 1);
+        page.Grid(1051, 930, 3, 3, 1);
+        // The window over the pouch grid's top row: its outline at 993, the grid's second row's line at 1014.
+        Panel(page, 1063, 446, 5, 6);
+        words.AddRange(Bar(1063, 446, "Beta", 8));
+        var layout = Layout(page, words);
+        var window = Assert.Single(layout.Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        var part = Assert.Single(window.Parts);
+        Assert.Equal((5, 6), ((int)Math.Round(part.Width / 84.0), (int)Math.Round(part.Height / 84.0)));
+        Assert.InRange(window.Area!.Value.Bottom, 990, 997);
+        Assert.InRange(window.Area!.Value.Left, 1060, 1064);
+        // The POUCH's grid, its top row under the window and its corner beside it, is the POUCH's, three by three.
+        var pouch = Assert.Single(layout.Regions, r => r.Kind == DeskRegionKind.Pouch);
+        var grid = Assert.Single(pouch.Parts);
+        Assert.Equal((1051, 3, 3), (grid.Left, (int)Math.Round(grid.Width / 84.0), (int)Math.Round(grid.Height / 84.0)));
+    }
+
+    // Pictures 14 to 16 of the owner's second test (2026-10-25): the backpack's grid under the Beta 2 window, its top row above
+    // the window and its left side beside it, was "not in view". Found by its corner and its sides that show, as tall as its
+    // left side runs (not on down the POUCH grid's line under it).
+    [Fact]
+    public void A_grid_a_window_lies_over_is_found_by_its_sides_that_show_as_tall_as_they_run()
+    {
+        var (page, words) = Tab();
+        words.Add(Word("BACKPACK", 880, 342, 7));
+        words.Add(Word("POUCH", 880, 909, 9, 14));
+        page.Grid(875, 364, 2, 2, 1);
+        page.Grid(1051, 364, 5, 6, 1);
+        page.Grid(875, 930, 2, 2, 1);
+        page.Grid(1051, 930, 3, 3, 1);
+        Panel(page, 1063, 446, 5, 6);
+        words.AddRange(Bar(1063, 446, "Beta", 8));
+        var layout = Layout(page, words);
+        var backpack = Assert.Single(layout.Regions, r => r.Kind == DeskRegionKind.Backpack);
+        var grid = Assert.Single(backpack.Parts);
+        Assert.Equal((5, 6), ((int)Math.Round(grid.Width / 84.0), (int)Math.Round(grid.Height / 84.0)));
+        Assert.False(backpack.Cut);
+    }
+
+    // Picture 14 of the owner's second test (2026-10-25): the pistol's rounds "0/17" in the stash, its slashed zero read as the
+    // letter Ø, made the window "Ø/17". A title needs two letters that are no digit's lookalike.
+    [Theory]
+    [InlineData("Ø/17", false)]
+    [InlineData("0/10", false)]
+    [InlineData("SØ/S", false)]
+    [InlineData("Beta", true)]
+    [InlineData("Keys", true)]
+    [InlineData("SICC", true)]
+    [InlineData("Zhuk", true)]
+    public void A_title_needs_two_letters_that_are_no_digits_lookalike(string text, bool title) =>
+        Assert.Equal(title, DeskLayout.TitleLetters(text) >= 2);
+
+    // The game's tooltip in picture 14 of the owner's second test (2026-10-25): the pointer over the CR MK2 (R) in the Beta 2
+    // window, its full name in a black box with a grey border over the window and the stash pane. What it covers isn't
+    // read, and its words are no title.
+    [Fact]
+    public void A_tooltips_black_box_is_covered_and_its_words_are_no_title()
+    {
+        var (page, words) = Tab();
+        var (x, y) = page.StashOrigin;
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var border = new SKPaint { Color = new SKColor(82, 89, 90) })
+        using (var black = new SKPaint { Color = SKColors.Black })
+        {
+            canvas.DrawRect(x - 330, y + 480, 400, 74, border);
+            canvas.DrawRect(x - 329, y + 481, 398, 72, black);
+        }
+        words.AddRange([Word("Stich", x - 306, y + 499, 7), Word("Profi", x - 256, y + 499, 7), Word("Chest", x - 206, y + 499, 7),
+            Word("TACS", x - 306, y + 521, 8), Word("FG)", x - 256, y + 521, 8)]);
+        var layout = Layout(page, words);
+        var tooltip = Assert.Single(DeskLayout.Tooltips(words, StashGray.Of(page.Bitmap), new StashLines(StashGray.Of(page.Bitmap)), page.Pitch));
+        Assert.Equal(SKRectI.Create(x - 330, y + 480, 400, 74), tooltip);
+        Assert.Contains(layout.Over, o => o.Contains(x + 20, y + 500));
+        Assert.DoesNotContain(layout.Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        // A window's panel is no tooltip: its bar is grey.
+        var panel = Panel(page, 1100, 700, 3, 2);
+        Assert.Empty(DeskLayout.Tooltips([Word("Ostrel", 1148, 710, 9)], StashGray.Of(page.Bitmap), new StashLines(StashGray.Of(page.Bitmap)), page.Pitch));
+        Assert.Equal((1105, 734), panel);
+    }
+
+    // An item running on under a window, its label showing above it, is read with its footprint (picture 14 of the owner's
+    // second test: the Beta 2 backpack in the backpack's grid, its top row over the Beta 2 window); the window attaches to it. Under
+    // the game's tooltip, a window's item is read the same (the CR MK2 (R)), and the items the pointer's highlight joined
+    // to it by their labels (the Water and the GPU round it). Its count, under the window, is not read.
+    [Fact]
+    public async Task An_item_running_under_a_window_or_a_tooltip_is_read_by_its_label_and_footprint()
+    {
+        var gear = Gear(backpackGrid: false);
+        var p = gear.Pitch;
+        gear.Grid(1051, 360, 5, 5, 1);
+        gear.Item(1051, 360, 1, 0, 0, 5, 3, "Quillon", "17");
+        // The Quillon's window over its rows 1 and 2 (its count among them), the backpack's grid left of it showing.
+        var (wx, wy) = Panel(gear, 1063, 442, 5, 2);
+        Text(gear, "Q", 1073, 450, 18);
+        Text(gear, "Quillon", 1111, 452, 18);
+        gear.Item(wx, wy, 2, 0, 0, 1, 1, "Marl 214");
+        // A tooltip under the stash's Drevak (2×1 at its cells 4 and 5 of row 2): its box over the cells' lower part and the
+        // row under them, the Drevak's count under it.
+        var (sx, sy) = gear.StashOrigin;
+        using (var canvas = new SKCanvas(gear.Bitmap))
+        using (var border = new SKPaint { Color = new SKColor(82, 89, 90) })
+        using (var black = new SKPaint { Color = SKColors.Black })
+        {
+            canvas.DrawRect(sx + 4 * p + 10, sy + 2 * p + 50, 330, 80, border);
+            canvas.DrawRect(sx + 4 * p + 11, sy + 2 * p + 51, 328, 78, black);
+        }
+        Text(gear, "Drevak", sx + 4 * p + 34, sy + 2 * p + 70, 16);
+        Text(gear, "carbine stock", sx + 4 * p + 100, sy + 2 * p + 70, 16);
+        Dump(gear, "gear-under.png");
+        using var picture = gear.Bitmap.Copy();
+        var reading = await Reader().ReadAsync(picture, new DeskCatalogue([.. Catalogue, Item(17, "Quillon", 5, 3, DeskHolds.Contents)]), DateTimeOffset.MinValue, Ct);
+        var page = DeskLedger.Attach(reading.Page!);
+        var quillon = In(page, "backpack", c => c.Ids.Contains(Id(17)));
+        Assert.Equal((0, 0, 5, 3), (quillon.I, quillon.J, quillon.W, quillon.H));
+        Assert.Equal(1, quillon.Count);
+        var window = Assert.Single(page.Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        Assert.Equal(new DeskAnchor("backpack", 0, 0), window.AttachedTo);
+        var drevak = In(page, "stash", c => c.Ids.Contains(Id(6)));
+        Assert.Equal((4, 2, 2, 1, 1), (drevak.I, drevak.J, drevak.W, drevak.H, drevak.Count));
+        Assert.DoesNotContain(page.Regions, r => r.Title is { } t && t.Contains("carbine", StringComparison.OrdinalIgnoreCase));
+    }
+
+    // A shape of several items whose lines between them didn't show (the pointer's highlight round the CR MK2 (R) in picture
+    // 14; a Bloodset over a Bandage in the CR MK2 (R) window in 16, one rectangle) is read by the labels in its cells, each
+    // item taking its footprint from its label's cell.
+    [Fact]
+    public async Task A_rectangle_whose_label_names_smaller_items_is_read_by_the_labels_in_its_cells()
+    {
+        var page = new StashReaderTests.Page(2560, 1440).Start();
+        var (x, y) = page.StashOrigin;
+        page.Grid(x, y, 10, 12, 1);
+        // Two items one over the other in one frame, no line between them: Tessaril (1×2) over... a Hollin and a Quenvik.
+        page.Item(x, y, 1, 3, 1, 1, 2, "Hollin");
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var face = SKTypeface.FromFamilyName("Bahnschrift", SKFontStyle.Bold) ?? SKTypeface.Default)
+        using (var font = new SKFont(face, 13.5f * page.K))
+        using (var ink = new SKPaint { Color = new SKColor(226, 229, 231), IsAntialias = true })
+        using (var outline = new SKPaint { Color = new SKColor(10, 12, 14), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.2f * page.K })
+        {
+            var left = x + 4 * page.Pitch - 3 * page.K - font.MeasureText("Quenvik");
+            var baseline = y + 2 * page.Pitch + 1 + 13 * page.K;
+            canvas.DrawText("Quenvik", left, baseline, SKTextAlign.Left, font, outline);
+            canvas.DrawText("Quenvik", left, baseline, SKTextAlign.Left, font, ink);
+        }
+        using var picture = page.Bitmap.Copy();
+        var reading = await Reader().ReadAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
+        var stash = reading.Page!.Region("stash")!;
+        Assert.Equal((3, 1, 1, 1), Assert.Single(stash.Cells, c => c.Ids.Contains(Id(5))) is var h ? (h.I, h.J, h.W, h.H) : default);
+        Assert.Equal((3, 2, 1, 1), Assert.Single(stash.Cells, c => c.Ids.Contains(Id(2))) is var q ? (q.I, q.J, q.W, q.H) : default);
+    }
+
+    // Picture 17 of the owner's second test (2026-10-25): the recognition may read the game's 6 as a G ("GL31" for the 6L31
+    // magazine); a digit and a letter that look alike are swapped once where the label as read fits nothing.
+    [Fact]
+    public void A_label_with_a_digit_read_as_its_lookalike_letter_names_the_item()
+    {
+        var match = new DeskMatch([Item(1, "6L31", 1, 2), Item(2, "GL40"), Item(3, "SB-5")]);
+        var (fit, best) = match.Match("GL31");
+        Assert.True(fit >= DeskMatch.Enough);
+        Assert.Equal(Id(1), Assert.Single(best).ItemId);
+        Assert.Equal(Id(3), Assert.Single(match.Match("S8-5").Best).ItemId);
+        // As read, a label that fits keeps its item: no swap tried.
+        Assert.Equal(Id(2), Assert.Single(match.Match("GL40").Best).ItemId);
+        // Two swaps are no lookalike.
+        Assert.True(match.Match("GLEI").Fit < DeskMatch.Enough);
+    }
+
+    // Picture 17 of the owner's second test (2026-10-25): "Marksma", the stash's Marksman 3x30 on a cell one wide, cut at its right
+    // edge before the name's digits, its last letter read "e" as often: the name's beginning. A label with digits must still
+    // have all of the name's ("Dorm 10" is no Dorm 104).
+    [Fact]
+    public void A_label_cut_at_the_cells_edge_before_the_names_digits_is_its_beginning()
+    {
+        var match = new DeskMatch([Item(1, "Marksman 3x30", 2, 1), Item(2, "Dorm 104")]);
+        Assert.Equal(Id(1), Assert.Single(match.Match("Marksma").Best).ItemId);
+        var (fit, best) = match.Match("Marksme");
+        Assert.True(fit >= DeskMatch.Enough);
+        Assert.Equal(Id(1), Assert.Single(best).ItemId);
+        Assert.True(match.Match("Dorm 10").Fit < DeskMatch.Enough);
+        // On a cell two wide the same label isn't cut.
+        Assert.True(match.Match("Marksma", cells: 2).Fit < DeskMatch.Enough);
+        // A name the label begins exactly outranks one it begins but for its last letter.
+        var two = new DeskMatch([Item(1, "Marksman 3x30", 2, 1), Item(3, "Marksmen")]);
+        Assert.Equal(Id(1), Assert.Single(two.Match("Marksma").Best).ItemId);
+    }
+
+    // Picture 17 of the owner's second test (2026-10-25): the 6L31 magazine's orange highlight right of its label read as a "1"
+    // ("6L311"), and the Zhuk rig's slot, its frame found five pixels short, cut its label's "k" ("Zhi-o"). A label is read
+    // up to three pixels past its ink, and a slot's a few pixels past its frame.
+    [Fact]
+    public void A_label_is_read_up_to_its_ink_and_no_line_right_of_it()
+    {
+        var page = new StashReaderTests.Page(2560, 1440).Start();
+        page.Grid(1000, 400, 1, 2, 1);
+        page.Item(1000, 400, 1, 0, 0, 1, 2, "6L31");
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var orange = new SKPaint { Color = new SKColor(197, 141, 69) })
+            canvas.DrawRect(1000 + page.Pitch - 2, 400, 2, 2 * page.Pitch, orange);
+        var cell = SKRectI.Create(1000, 400, page.Pitch, 2 * page.Pitch);
+        var read = DeskReader.LabelRect(page.Bitmap, cell, page.Pitch);
+        // The label is read from its rectangle's left to a pixel short of its right: the orange line is left out.
+        Assert.True(read.Right - 1 <= 1000 + page.Pitch - 2, $"{read}");
+        Assert.True(read.Right >= 1000 + page.Pitch - 8, $"{read}");
+        // A frame found short of its label: the slot's rectangle widened to it.
+        var shortBox = SKRectI.Create(1000, 400, page.Pitch - 6, 2 * page.Pitch);
+        Assert.True(DeskReader.LabelRect(page.Bitmap, shortBox, page.Pitch, reach: 6).Right > shortBox.Right);
+    }
+
     // ---- the raid's inventory screen, drawn (the in-raid glance) ----
 
     // The GEAR tab in a raid (22 screenshots of 2026-10-19): the character screen's tabs at the top, the loadout and the

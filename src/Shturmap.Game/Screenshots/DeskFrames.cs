@@ -52,6 +52,11 @@ internal static class DeskFrames
                 var left = Share(lines, false, x, y + 2, y + pitch - 2, over);
                 if (left < Framed)
                     continue;
+                // Under windows a side mostly hidden counts as shown, so a corner must show both its lines right by it: else
+                // any point of a line running under a window is one (owner's second test, 2026-10-25, picture 14: a frame
+                // three by eight down the POUCH grid's left line, its top under the Beta 2 window).
+                if (under && !(Shows(lines, true, y, x + 2, x + 9, over) && Shows(lines, false, x, y + 2, y + 9, over)))
+                    continue;
                 corners.Add((x, y, top + left));
             }
         }
@@ -78,7 +83,7 @@ internal static class DeskFrames
                     // Under windows only a rectangle that reaches one is looked for.
                     if (under && !over.Any(o => x < o.Right && x + cols * pitch > o.Left && y < o.Bottom && y + rows * pitch > o.Top))
                         continue;
-                    if (FramedAt(lines, x, y, cols, rows, pitch, over, area) is { } rect)
+                    if (FramedAt(lines, x, y, cols, rows, pitch, over, area) is { } rect && !(under && RunsOn(lines, rect, over)))
                         framed.Add(rect);
                 }
             }
@@ -160,6 +165,19 @@ internal static class DeskFrames
             return null;
         return new SKRectI(x, y, right, bottom);
     }
+
+    // Whether a frame's left side runs on below its bottom corner, or its top past its right corner, where that shows: a
+    // frame running under a window has sides the window hides, which count as shown, so a rectangle too tall or too wide
+    // frames as well as the real one; the real one's sides end at its corners (owner's second test, 2026-10-25, picture
+    // 14: the backpack's grid under the Beta 2 window, five by six, framed as five by eight down the POUCH grid's left
+    // line).
+    private static bool RunsOn(StashLines lines, SKRectI frame, IReadOnlyList<SKRectI> over) =>
+        Enumerable.Range(-1, 3).Any(d => Shows(lines, false, frame.Left + 2 * d, frame.Bottom + 2, frame.Bottom + 6, over)) ||
+        Enumerable.Range(-1, 3).Any(d => Shows(lines, true, frame.Top + 2 * d, frame.Right + 2, frame.Right + 6, over));
+
+    // Whether a short stretch of a side shows its line: four pixels of it visible at least, the line on most of them.
+    private static bool Shows(StashLines lines, bool horizontal, int at, int from, int to, IReadOnlyList<SKRectI> over) =>
+        Visible(horizontal, at, from, to, over) >= 4 && Share(lines, horizontal, at, from, to, over) >= 0.8;
 
     // Where a compartment's left side, from a corner, runs on to the area's foot without a break (a compartment the foot cuts:
     // the middle column's view ends there, about a quarter of a cell above the QUICK USE bar's top): the row its line ends

@@ -156,4 +156,26 @@ public class StashGridsTests
         var rects = StashGrids.Items(window, lines, new bool[window.Area], StashGrids.Empty(window, gray.HighPass(5), p), p);
         Assert.Equal(77, rects.Count(r => r is { W: 1, H: 1, Odd: false }));
     }
+
+    // The owner's second test of 2026-10-25, picture 16: a window's compartment, found two pixels off its grid's line, was moved
+    // onto the window's outline five pixels further out (brighter than the line), and its cells read blank. Moved within
+    // the window's inside only, it stands on its grid's line.
+    [Fact]
+    public void A_windows_compartment_moves_onto_its_grids_line_and_never_onto_its_outline()
+    {
+        var page = new StashReaderTests.Page(2560, 1440).Start();
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var outline = new SKPaint { Color = new SKColor(231, 201, 97) })
+        using (var black = new SKPaint { Color = SKColors.Black })
+        {
+            canvas.DrawRect(800, 400, 5 * page.Pitch + 14, 3 * page.Pitch + 14, outline);
+            canvas.DrawRect(801, 401, 5 * page.Pitch + 12, 3 * page.Pitch + 12, black);
+        }
+        page.Grid(806, 406, 5, 3, 2);
+        var gray = StashGray.Of(page.Bitmap);
+        Assert.Equal((800, 400), StashGrids.Snap(gray, 803, 403, 5, 3, page.Pitch));
+        var (x, y) = StashGrids.Snap(gray, 803, 403, 5, 3, page.Pitch, minX: 803, minY: 403);
+        Assert.InRange(x, 806, 807);
+        Assert.InRange(y, 406, 407);
+    }
 }
