@@ -129,9 +129,13 @@ public class DeskRealPictureTests
     // order without their time (00-gear-armband.png … 13-gear-keys.png in tests\fixtures\ocr\desk\session, ignored by git).
     // Beside each, the regions it should make (regions-<picture>.txt: its screen, then each region and the size of its grid
     // in view, "backpack 5x4"), and beside three, every item whose label shows (truth-<picture>.txt, by the page's regions:
-    // "backpack 1,0 Triton", "loadout [earpiece] ComTac II"). No screen told wrong, no region made up and none missing, no
-    // name wrong; the sizes and the names right held to a floor under what was measured on 2026-10-25 (64 of 66 regions
-    // of their size, 127 of 158 items named), as another Windows' recognition may read a letter otherwise.
+    // "backpack 1,0 Triton", "loadout [earpiece] ComTac II"). With them since the owner's second test of 2026-10-25 (step
+    // 1b), four more of that evening: the Beta 2 window over the backpack's grid with the game's tooltip over its rig
+    // (14-gear-beta-window-tooltip.png), the CR MK2 (R) window over it (15-gear-beta-window.png, with a truth), that window
+    // over the stash pane (16-gear-beta-rig-windows.png), and the column scrolled to its top with the rig
+    // (17-gear-rig-top.png, with a truth). No screen told wrong, no region made up and none missing, no name wrong; the
+    // sizes and the names right held to a floor under what was measured on 2026-10-25 (93 of 95 regions of their size, 269
+    // of 338 items named), as another Windows' recognition may read a letter otherwise.
     [Fact]
     public async Task The_layout_rounds_test_set_makes_its_regions_and_nothing_else_and_names_nothing_wrongly()
     {
@@ -191,8 +195,8 @@ public class DeskRealPictureTests
         }
         Assert.Empty(faults);
         Assert.Equal(0, wrong);
-        Assert.True(sized >= 62, $"{sized} of {regions} regions of their size");
-        Assert.True(named >= 120, $"{named} of {items} items named right");
+        Assert.True(sized >= 91, $"{sized} of {regions} regions of their size");
+        Assert.True(named >= 260, $"{named} of {items} items named right");
     }
 
     // A truth file's lines, "#" a comment.
