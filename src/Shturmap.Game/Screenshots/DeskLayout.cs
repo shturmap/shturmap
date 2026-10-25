@@ -32,8 +32,13 @@ internal sealed record DeskPlace(DeskRegionKind Kind, SKRectI? SlotBox, IReadOnl
     /// <summary>A LOOT part's search state (<see cref="DeskLoot"/>).</summary>
     public DeskSearch Search { get; init; }
 
-    /// <summary>A LOOT part whose grid the pane's scrolling cut at its foot.</summary>
+    /// <summary>A LOOT part whose grid the pane's scrolling cut at its foot; on the GEAR tab, a middle region whose grid
+    /// the column's foot cut, or whose frames ran on past what shows (<see cref="DeskLayout"/>).</summary>
     public bool Cut { get; init; }
+
+    /// <summary>A container's slot box taken from its heading's place, no frame having shown it (a frame across the slot
+    /// and its grid, the slot under a window): no label there says nothing of an empty slot.</summary>
+    public bool SlotDerived { get; init; }
 }
 
 /// <summary>What the layout found on a picture: the screen, the loadout's slot boxes, the regions, the stash's grid, the
@@ -43,6 +48,10 @@ internal sealed record DeskLayoutFound(DeskScreen Screen, IReadOnlyList<DeskSlot
     IReadOnlyList<SKRectI> Over, int Unplaced, IReadOnlyList<SKRectI> Frames)
 {
     public DeskLootFound? Loot { get; init; }
+
+    /// <summary>What the layout left out and why, for measuring (shturmap-cli desk --why): a frame under no heading, a
+    /// region cut at the column's foot, a title refused.</summary>
+    public IReadOnlyList<string> Notes { get; init; } = [];
 }
 
 /// <summary>
@@ -73,6 +82,37 @@ internal static class DeskLayout
         _ => (2, 2.05),
     };
 
+    /// <summary>Whether a word as read is a heading's word: in capitals, the same folded, or, for a word of four letters
+    /// or more, one letter off (dropped, added or changed, the first one too; accents aside). Owner, 2026-10-25: the
+    /// recognition read FACE COVER as "*ACE COVER" and ARMBAND, half under a window, as "ÄRMBANI" on the screenshots of
+    /// 2026-10-19, and the slot box under each became a window. "BACK" alone stays the screen's own button: ON BACK needs
+    /// its "ON", which, two letters, must be read as it is.</summary>
+    internal static bool HeadingWord(string text, string wanted)
+    {
+        if (!text.Any(char.IsUpper) || text.Any(char.IsLower))
+            return false;
+        var read = ExitList.Fold(Plain(text));
+        return read == wanted || (wanted.Length >= 4 && OneOff(read, wanted));
+    }
+
+    // The letters without their accents ("Ä" → "A").
+    private static string Plain(string text) =>
+        new(text.Normalize(System.Text.NormalizationForm.FormD).Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark).ToArray());
+
+    // Whether two words are one letter apart: one dropped, added or changed.
+    private static bool OneOff(string a, string b)
+    {
+        if (Math.Abs(a.Length - b.Length) > 1)
+            return false;
+        if (a.Length == b.Length)
+            return a.Zip(b).Count(p => p.First != p.Second) == 1;
+        var (shorter, longer) = a.Length < b.Length ? (a, b) : (b, a);
+        var i = 0;
+        while (i < shorter.Length && shorter[i] == longer[i])
+            i++;
+        return shorter.AsSpan(i).SequenceEqual(longer.AsSpan(i + 1));
+    }
+
     /// <summary>The headings found: each phrase with its first word's box (<paramref name="all"/> gets every word of them).</summary>
     internal static List<(string Heading, DeskWord Word)> Headings(IReadOnlyList<DeskWord> words, IEnumerable<string> phrases, HashSet<DeskWord>? all = null)
     {
@@ -89,7 +129,7 @@ internal static class DeskLayout
                         continue;
                     var same = true;
                     for (var k = 0; k < parts.Length && same; k++)
-                        same = ExitList.Fold(list[i + k].Text) == parts[k] && list[i + k].Text.Any(char.IsUpper) && !list[i + k].Text.Any(char.IsLower);
+                        same = HeadingWord(list[i + k].Text, parts[k]);
                     // The words of one heading stand close: "ON" and "BACK" of ON BACK, not "ON" of ON SLING and the top BACK.
                     for (var k = 1; k < parts.Length && same; k++)
                         same = list[i + k].X - list[i + k - 1].Right < 3 * list[i].H;
@@ -139,17 +179,49 @@ internal static class DeskLayout
         }
 
         // The windows first: their frames lie over everything, so they are whole; what they cover is found around them.
-        // Down to the QUICK USE bar: its slots are framed too, and are no grid.
-        var quickUse = words.FirstOrDefault(x => ExitList.Fold(x.Text) == "qu1ck" && x.Y > h * 0.75);
+        // Down to the QUICK USE bar: its slots are framed too, and are no grid. (Its word folds to "0u1ck": until 2026-10-25
+        // it was looked for as "qu1ck", never found, and the foot was always 88.5 % of the picture's height.)
+        var quickUse = words.FirstOrDefault(x => ExitList.Fold(x.Text) == ExitList.Fold("QUICK") && x.Y > h * 0.75);
         var whole = new SKRectI(0, (int)(h * 0.05), w, quickUse is not null ? quickUse.Y + (int)(0.3 * pitch) : (int)(h * 0.885));
+        // The middle column's foot: where its view ends, its scrolling cutting what runs on below.
+        var foot = quickUse is not null ? quickUse.Y + (int)(0.25 * pitch) : (int)(h * 0.885);
+        var notes = new List<string>
+        {
+            "headings " + string.Join(", ", loadout.Concat(middle).Select(x => $"{x.Heading} \"{x.Word.Text}\" ({x.Word.X},{x.Word.Y} {x.Word.W}x{x.Word.H})")) +
+            $"; foot {foot}" + (quickUse is { } q ? $" (QUICK USE at {q.Y})" : ""),
+        };
+        // The middle column, between the loadout and the stash pane, and its headings (the GEAR tab's; in a raid the same).
+        var column = gear && middle.Count > 0
+            ? new SKRectI(middle.Min(m => m.Word.X) - pitch / 2, whole.Top, stash is not null ? stash.X0 - (int)(0.6 * pitch) : (int)(w * 0.66), whole.Bottom)
+            : SKRectI.Empty;
+        var heads = middle.Select(m => (Kind: Middle.First(x => x.Heading == m.Heading).Kind, m.Word)).ToList();
+        bool InColumn(SKRectI r) => !column.IsEmpty && r.Left >= column.Left && r.Right <= column.Right + pitch / 4;
+        // The lowest heading above a rectangle that starts left of it.
+        (DeskRegionKind Kind, DeskWord Word)? HeadOf(SKRectI r) =>
+            heads.Where(x => x.Word.Bottom <= r.Top + 4 && x.Word.X - 0.4 * pitch <= r.Left)
+                .OrderByDescending(x => x.Word.Y).ThenByDescending(x => x.Word.X).Select(x => ((DeskRegionKind, DeskWord)?)x).FirstOrDefault();
+
         // Inside the stash, frames on its own lattice are its cells, never a window's.
         var stashRect = stash is null ? SKRectI.Empty : SKRectI.Create(stash.X0, stash.Y0, stash.Cols * pitch, stash.Rows * pitch);
         bool StashCell(int x, int y) => stash is not null && stashRect.Contains(x + 2, y + 2) && OnLattice(x - stash.X0, pitch) && OnLattice(y - stash.Y0, pitch);
-        var frames = Snapped(DeskFrames.Find(lines, pitch, whole, over, skip: StashCell), gray, pitch);
+        // In the menus' middle column a compartment may run past the foot (DeskFrames.OpenAt); the raid's glance keeps to
+        // whole ones.
+        SKRectI? open = screen == DeskScreen.Gear && !column.IsEmpty ? column : null;
+        var cutFound = new HashSet<SKRectI>();
+        var frames = Snapped(DeskFrames.Find(lines, pitch, whole, over, skip: StashCell, open: open, cutFound: cutFound), gray, pitch, cutFound);
         frames.RemoveAll(f => StashCell(f.Left, f.Top));
         // The windows' lattices stand on their cells' lines (StashGrids.Aligned).
         var lattices = grids.Where(g => g.Place == StashGridPlace.Window).Select(g => SKRectI.Create(g.X0, g.Y0, g.Cols * pitch, g.Rows * pitch)).ToList();
-        var windows = Windows(words, gray, frames, lattices, headingWords, w, h, pitch);
+        // A lattice in the middle column under one of its headings is that region's grid (the layout round's test
+        // set, 02-gear.png and 09-gear.png: the POUCH's grid, its lines two pixels wide as a window's, read as a window of no
+        // name, the POUCH left out); one inside a larger compartment is some of that one's cells. In a raid the glance keeps
+        // its reading of before: a region the foot cuts is left out there, and its grid would go with it.
+        var columnLattices = screen == DeskScreen.Gear
+            ? lattices.Where(l => InColumn(l) && HeadOf(l) is not null && !InsideCompartment(l, frames, pitch)).ToList()
+            : [];
+        var loadoutRows = loadout.Select(x => x.Word.MidY).ToList();
+        var paneLeft = stash is not null ? stash.X0 - (int)(0.6 * pitch) : lootHead is not null ? lootHead.X - pitch : (int)(w * 0.66);
+        var windows = Windows(words, gray, frames, lattices, columnLattices, headingWords, loadoutRows, paneLeft, w, h, pitch, notes, cutFound);
         // The LOOT pane's grids have a window's two-pixel lines and no title, or a part's "SEARCHING ✕" over them: the
         // pane's, not windows.
         if (lootHead is not null)
@@ -159,8 +231,10 @@ internal static class DeskLayout
         if (windows.Count > 0)
         {
             // What a window covers: the frames running under it found again, their parts under it not asked for.
+            var cutUnder = new HashSet<SKRectI>();
             frames = DeskFrames.Largest(frames.Where(f => !windowAreas.Any(a => a.IntersectsWith(f)) || windows.Any(x => x.Parts.Contains(f)))
-                .Concat(Snapped(DeskFrames.Find(lines, pitch, whole, over, under: true, skip: StashCell), gray, pitch)).ToList());
+                .Concat(Snapped(DeskFrames.Find(lines, pitch, whole, over, under: true, skip: StashCell, open: open, cutFound: cutUnder), gray, pitch, cutUnder)).ToList());
+            cutFound.UnionWith(cutUnder);
         }
         var taken = new HashSet<SKRectI>(windows.SelectMany(x => x.Parts));
 
@@ -173,64 +247,131 @@ internal static class DeskLayout
             slots.Add(new DeskSlotBox(key, SKRectI.Create(word.X - (int)Math.Round(5 * k), word.Bottom + (int)Math.Round(4 * k), (int)Math.Round(sw * pitch), (int)Math.Round(sh * pitch))));
         }
 
-        // The middle column: the compartments between the loadout and the stash pane, each under the lowest heading above it
-        // that starts left of it. A frame that runs into the column's bottom is cut by its scrolling: its region is left out
-        // (the page keeps what it had), as one whose heading scrolled away above.
         var unplaced = 0;
-        if (gear && middle.Count > 0)
-        {
-            var left = middle.Min(m => m.Word.X) - pitch / 2;
-            var right = stash is not null ? stash.X0 - (int)(0.6 * pitch) : (int)(w * 0.66);
-            var bottom = quickUse is not null ? quickUse.Y + (int)(0.25 * pitch) : (int)(h * 0.885);
-            var heads = middle.Select(m => (Kind: Middle.First(x => x.Heading == m.Heading).Kind, m.Word)).ToList();
-            var placed = new Dictionary<DeskRegionKind, (SKRectI? Slot, List<SKRectI> Parts, bool Cut)>();
-            foreach (var (kind, _) in heads)
-                placed.TryAdd(kind, (null, [], false));
-            foreach (var frame in frames.Where(f => !taken.Contains(f) && f.Left >= left && f.Right <= right + pitch / 4))
-            {
-                var head = heads.Where(x => x.Word.Bottom <= frame.Top + 4 && x.Word.X - 0.4 * pitch <= frame.Left)
-                    .OrderByDescending(x => x.Word.Y).ThenByDescending(x => x.Word.X).Select(x => ((DeskRegionKind, DeskWord)?)x).FirstOrDefault();
-                if (head is not { } found)
-                {
-                    unplaced++;
-                    continue;
-                }
-                var (kind, hw) = found;
-                var entry = placed[kind];
-                if (frame.Bottom >= bottom || Continues(lines, frame, pitch))
-                {
-                    placed[kind] = entry with { Cut = true };
-                    continue;
-                }
-                var isSlot = kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch && entry.Slot is null &&
-                             Math.Abs(frame.Left - hw.X) < 0.4 * pitch && frame.Top - hw.Bottom < 0.6 * pitch && Math.Abs(frame.Width - 2 * pitch) < 0.3 * pitch;
-                if (isSlot)
-                    placed[kind] = entry with { Slot = frame };
-                else
-                    entry.Parts.Add(frame);
-            }
-            foreach (var (kind, (slot, parts, cut)) in placed)
-            {
-                if (cut)
-                    continue;
-                // A container's slot with no grid found beside it: its grid is under a window or out of view; only an
-                // empty slot (no container) has none.
-                regions.Add(new DeskPlace(kind, slot, parts));
-            }
-        }
+        if (!column.IsEmpty)
+            regions.AddRange(Column(lines, frames, cutFound, columnLattices.Where(l => !taken.Contains(l) && !windowAreas.Any(a => a.IntersectsWith(l))).ToList(),
+                taken, windowAreas, heads, InColumn, HeadOf, foot, raid, k, pitch, notes, ref unplaced));
         var loot = lootHead is null ? null
             : DeskLoot.Find(words, lootHead, frames.Where(f => !taken.Contains(f)).ToList(),
-                lattices.Where(l => !taken.Contains(l)).ToList(), w, quickUse is not null ? quickUse.Y + (int)(0.25 * pitch) : (int)(h * 0.885), pitch);
-        return new DeskLayoutFound(screen, slots, regions, stash, over, unplaced, frames) { Loot = loot };
+                lattices.Where(l => !taken.Contains(l)).ToList(), w, foot, pitch);
+        return new DeskLayoutFound(screen, slots, regions, stash, over, unplaced, frames) { Loot = loot, Notes = notes };
     }
 
-    // The frames moved onto their lines' middle, as the stash's grid is (a cell cut two pixels early reads worse).
-    private static List<SKRectI> Snapped(List<SKRectI> frames, StashGray gray, int pitch) =>
-        frames.Select(f =>
+    /// <summary>
+    /// The middle column's regions: its compartments, each under the lowest heading above it that starts left of it, a
+    /// container's own slot the first under BACKPACK, TACTICAL RIG and POUCH (its box under the heading where no frame shows
+    /// it: a frame across the slot and its grid, or the slot under a window). A lattice under one of the column's headings
+    /// is that region's grid, never a window; frames across it are dropped. A compartment whose heading a window may hide
+    /// (a window between it and the heading above) is placed under none (the test set's 13-gear-keys.png: a
+    /// cell of the POUCH's grid below the Keys window read as the BACKPACK's grid). A region whose grid the foot cuts
+    /// (a compartment framed down to it, or one ending at it) is read as far as it shows and said cut; one whose frames run
+    /// on past their corners is said cut with those frames left unread; the page keeps the rest (owner, 2026-10-25). In a
+    /// raid a cut region is left out, as before.
+    /// </summary>
+    private static List<DeskPlace> Column(StashLines lines, List<SKRectI> frames, HashSet<SKRectI> cutFound, List<SKRectI> lattices, HashSet<SKRectI> taken,
+        List<SKRectI> windowAreas, List<(DeskRegionKind Kind, DeskWord Word)> heads, Func<SKRectI, bool> inColumn,
+        Func<SKRectI, (DeskRegionKind Kind, DeskWord Word)?> headOf, int foot, bool raid, double k, int pitch, List<string> notes, ref int unplaced)
+    {
+        // The region grids the lattices are, in place of the frames across them or inside them.
+        var compartments = frames.Where(f => !taken.Contains(f) && inColumn(f) && !lattices.Any(l => l.IntersectsWith(f))).Concat(lattices).ToList();
+        var placed = new Dictionary<DeskRegionKind, (SKRectI? Slot, List<SKRectI> Parts, bool Cut)>();
+        foreach (var (kind, _) in heads)
+            placed.TryAdd(kind, (null, [], false));
+        foreach (var frame in compartments.OrderBy(f => f.Top).ThenBy(f => f.Left))
+        {
+            if (headOf(frame) is not { } found)
+            {
+                unplaced++;
+                notes.Add($"frame {Note(frame)} under no heading");
+                continue;
+            }
+            var (kind, hw) = found;
+            // A heading stands left of its compartments: a window from the heading's place to the frame's left, over the
+            // rows between them, may hide the frame's own heading; not where a compartment stands right above the frame (a
+            // few pixels apart: no heading between them).
+            var stacked = compartments.Any(o => o != frame && o.Bottom <= frame.Top + 2 && frame.Top - o.Bottom <= pitch / 4 && o.Left < frame.Right && o.Right > frame.Left);
+            if (!stacked && windowAreas.Any(a => a.Left < frame.Left + 0.4 * pitch && a.Right > hw.X && a.Top < frame.Top - pitch / 4 && a.Bottom > hw.Bottom))
+            {
+                unplaced++;
+                notes.Add($"frame {Note(frame)} under {kind} with a window between: its heading may be hidden");
+                continue;
+            }
+            var entry = placed[kind];
+            if (!cutFound.Contains(frame) && Continues(lines, frame, pitch))
+            {
+                notes.Add($"{kind}: frame {Note(frame)} cut (its lines run on)");
+                placed[kind] = entry with { Cut = true };
+                continue;
+            }
+            // At the foot, a compartment ending there may run on below it (the raid's glance keeps its rule of before:
+            // past it).
+            var atFoot = cutFound.Contains(frame) || frame.Bottom >= foot - (raid ? 0 : pitch / 4);
+            if (atFoot)
+            {
+                notes.Add($"{kind}: frame {Note(frame)} at the foot{(cutFound.Contains(frame) ? ", framed down to it" : "")}");
+                entry = entry with { Cut = true };
+                placed[kind] = entry;
+            }
+            var isSlot = Container(kind) && entry.Slot is null && !lattices.Contains(frame) &&
+                         Math.Abs(frame.Left - hw.X) < 0.4 * pitch && frame.Top - hw.Bottom < 0.6 * pitch && Math.Abs(frame.Width - 2 * pitch) < 0.3 * pitch;
+            if (isSlot)
+                placed[kind] = entry with { Slot = frame };
+            else
+                entry.Parts.Add(frame);
+        }
+        var regions = new List<DeskPlace>();
+        foreach (var (kind, (found, parts, cut)) in placed)
+        {
+            if (raid && cut)
+                continue;
+            var slot = found;
+            var derived = false;
+            // A container's slot no frame showed: its box under the heading, as the loadout's (5 px left of the word, 6
+            // under it at 1440p), where the column shows it.
+            if (slot is null && Container(kind) && heads.FirstOrDefault(x => x.Kind == kind).Word is { } word)
+            {
+                var box = SKRectI.Create(word.X - (int)Math.Round(5 * k), word.Bottom + (int)Math.Round(6 * k), 2 * pitch, 2 * pitch);
+                if (box.Bottom <= foot)
+                {
+                    slot = box;
+                    derived = true;
+                }
+            }
+            // A part that is the slot's own box is no grid (the test set's 13-gear-keys.png: the backpack read
+            // as a grid of one cell, its slot).
+            if (slot is { } own)
+                parts.RemoveAll(p => Overlapping(p, own));
+            regions.Add(new DeskPlace(kind, slot, parts) { Cut = cut, SlotDerived = derived });
+        }
+        return regions;
+    }
+
+    // The middle column's regions that are a container's: a slot, its grid inline.
+    private static bool Container(DeskRegionKind kind) => kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch;
+
+    private static string Note(SKRectI r) => $"({r.Left},{r.Top} {r.Width}x{r.Height})";
+
+    // The frames moved onto their lines' middle, as the stash's grid is (a cell cut two pixels early reads worse); the cut
+    // ones among them (DeskFrames.OpenAt) moved alike.
+    private static List<SKRectI> Snapped(List<SKRectI> frames, StashGray gray, int pitch, HashSet<SKRectI>? cut = null)
+    {
+        var snapped = new List<SKRectI>();
+        var cutSnapped = new HashSet<SKRectI>();
+        foreach (var f in frames)
         {
             var (x, y) = StashGrids.Snap(gray, f.Left, f.Top, Math.Max(1, (int)Math.Round(f.Width / (double)pitch)), Math.Max(1, (int)Math.Round(f.Height / (double)pitch)), pitch);
-            return SKRectI.Create(x, y, f.Width, f.Height);
-        }).ToList();
+            var moved = SKRectI.Create(x, y, f.Width, f.Height);
+            snapped.Add(moved);
+            if (cut?.Contains(f) == true)
+                cutSnapped.Add(moved);
+        }
+        if (cut is not null)
+        {
+            cut.Clear();
+            cut.UnionWith(cutSnapped);
+        }
+        return snapped;
+    }
 
     // Whether two rectangles are one compartment seen twice (a lattice and the frame found on its lines, a few pixels
     // apart): the same size give or take a cell, their corners within a quarter of a cell.
@@ -284,17 +425,28 @@ internal static class DeskLayout
     // magnifier before the title, or sort and close after it) right over a compartment (a cell's height at most above
     // it, the title starting near its left edge), and no word of it inside a frame (a cell's label). Its compartments
     // are that one and those touching it, as far as the close glyph. A window the stash's grid finding saw (its
-    // two-pixel lines) with no bar read is a window too, of no name: its search field open, or its title unread.
-    private static List<DeskPlace> Windows(IReadOnlyList<DeskWord> words, StashGray gray, List<SKRectI> frames, List<SKRectI> lattices, HashSet<DeskWord> headings,
-        int w, int h, int pitch)
+    // two-pixel lines) with no bar read is a window too, of no name: its search field open, or its title unread; never
+    // one of the middle column's region grids (columnLattices).
+    //
+    // Where the loadout and the middle column stand, a bare word in capitals is no title (owner, 2026-10-25; the owner's
+    // screenshots of 2026-10-19: FACE COVER read as "ACE COVER" and ARMBAND, half under the Keys window, as "ÄRMBANI" were
+    // no headings, and the slot box under each became a window): a word level with the loadout's headings, left of 0.4 of
+    // the width, is a title only after the magnifier; left of the stash pane, a title in capitals needs its bar's glyphs
+    // read, or a two-pixel lattice under it that is no region's grid. A title in small letters (a container's short name,
+    // "Zhuk": the game's headings are capitals) and, right of the pane's edge, any title still counts by its size alone
+    // (the owner's GEAR pictures of 2026-10-19, the third: the Zhuk window over the middle column, its glyphs unread).
+    // A compartment the column's foot cuts is never a window's: a window stands whole on the screen.
+    private static List<DeskPlace> Windows(IReadOnlyList<DeskWord> words, StashGray gray, List<SKRectI> frames, List<SKRectI> lattices, List<SKRectI> columnLattices,
+        HashSet<DeskWord> headings, IReadOnlyList<int> loadoutRows, int paneLeft, int w, int h, int pitch, List<string> notes, IReadOnlySet<SKRectI> cut)
     {
         var windows = new List<DeskPlace>();
         var used = new HashSet<SKRectI>();
         // A window the stash's grid finding saw stands on its lines' middle (moved onto its cells' lines, StashGrids.Aligned): its
         // lattice rather than the frame found on it, a few pixels off (the Keys window of 2026-10-19, 20:21: both, 6 px
         // apart, read as two compartments one cell apart, its keys once and a "?" across the other).
-        var groups = lattices.Concat(frames.Where(f => !lattices.Any(l => SameCompartment(f, l, pitch)))).ToList();
+        var groups = lattices.Concat(frames.Where(f => !cut.Contains(f) && !lattices.Any(l => SameCompartment(f, l, pitch)))).ToList();
         bool InFrame(DeskWord x) => groups.Any(g => g.Contains(x.MidX, x.MidY));
+        bool HeadingRow(DeskWord x) => x.X < w * 0.4 && loadoutRows.Any(y => Math.Abs(x.MidY - y) <= 0.25 * pitch);
         // The recognition reads the bar's glyphs and title as lines of their own: a row is the words level with the title.
         var candidates = words.Where(x => x.Y > h * 0.05 && x.Bottom < h * 0.92 && !headings.Contains(x) && !InFrame(x) &&
                                           x.Text.Count(char.IsLetterOrDigit) >= 2 && x.Text.Any(char.IsLetter)).OrderBy(x => x.Y).ThenBy(x => x.X).ToList();
@@ -311,12 +463,23 @@ internal static class DeskLayout
             // Without its glyphs read, the title's size tells it from a cell's label: 15 px at 1440p, a label 11 to 14.
             if (!magnifier && close is null && word.H < TitleHeight * pitch)
                 continue;
+            if (!magnifier && HeadingRow(word))
+            {
+                notes.Add($"\"{word.Text}\" at ({word.X},{word.Y}) where a loadout heading stands: no title");
+                continue;
+            }
             var first = groups.Where(f => !used.Contains(f) && f.Top - word.Bottom >= -2 && f.Top - word.Bottom <= pitch &&
                                           word.X - f.Left >= -0.8 * pitch && word.X - f.Left <= 0.75 * pitch &&
                                           (close is null || f.Left < close.X))
                 .OrderBy(f => f.Top - word.Bottom).ThenBy(f => Math.Abs(word.X - f.Left)).Select(f => (SKRectI?)f).FirstOrDefault();
             if (first is not { } start)
                 continue;
+            if (!magnifier && close is null && word.X < paneLeft && !word.Text.Any(char.IsLower) &&
+                !(lattices.Contains(start) && !columnLattices.Contains(start) && LineWidth(gray, start, pitch) >= 2))
+            {
+                notes.Add($"\"{word.Text}\" at ({word.X},{word.Y}) in capitals left of the stash pane without its bar's glyphs: no title");
+                continue;
+            }
             var title = new List<DeskWord>();
             foreach (var x in row.Skip(at))
             {
@@ -326,16 +489,22 @@ internal static class DeskLayout
             }
             titled.UnionWith(title);
             var text = string.Join(" ", title.Select(t => t.Text));
+            notes.Add($"window \"{text}\" at ({word.X},{word.Y}): magnifier {(magnifier ? "read" : "not read")}, close {(close is null ? "not read" : "read")}, {word.H} px high");
             windows.Add(Window(groups, used, start, NoTitle(text) ? null : text, word.Y, close?.Right, pitch));
         }
-        // A window's grid has two-pixel lines (the stash's and the GEAR tab's grids one): a grid the stash's finding saw
-        // that has them and no title read is a window of no name. Not one inside a larger compartment on its lattice: the
+        // A window's grid has two-pixel lines (the stash's and, mostly, the GEAR tab's grids one): a grid the stash's finding
+        // saw that has them and no title read is a window of no name. Not one inside a larger compartment on its lattice: the
         // game's highlight round items just looted thickens their lines (the raid screenshots of 2026-10-19: two columns of
-        // the backpack read as a window of no name, its items counted in neither total).
+        // the backpack read as a window of no name, its items counted in neither total). Not one of the middle column's
+        // region grids, whose lines may be two pixels wide too (the POUCH's on the owner's screenshots of 2026-10-19).
         foreach (var lattice in lattices)
         {
-            if (!used.Any(u => u.IntersectsWith(lattice)) && LineWidth(gray, lattice, pitch) >= 2 && !InsideCompartment(lattice, frames, pitch))
+            if (!used.Any(u => u.IntersectsWith(lattice)) && !columnLattices.Contains(lattice) && LineWidth(gray, lattice, pitch) >= 2 &&
+                !InsideCompartment(lattice, frames, pitch))
+            {
+                notes.Add($"window of no name at {Note(lattice)}");
                 windows.Add(Window(groups, used, lattice, null, lattice.Top - (int)(1.1 * pitch), null, pitch));
+            }
         }
         return windows;
     }

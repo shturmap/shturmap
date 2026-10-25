@@ -295,7 +295,8 @@ public sealed class DeskReaderTests : IDisposable
 
     // The GEAR tab at 2560×1440 as the game lays it out (the screenshots of 2026-10-19): the loadout's slots under their
     // headings at the left, POCKETS and BACKPACK in the middle column, the stash at the right under SEARCH and SORT TABLE.
-    private static StashReaderTests.Page Gear()
+    // Without the backpack's grid (scrolled out of view), and with its slot empty, for the region read in part.
+    private static StashReaderTests.Page Gear(bool backpackGrid = true, string? backpackItem = "Pindrake")
     {
         var page = new StashReaderTests.Page(2560, 1440).Start();
         var p = page.Pitch;
@@ -323,9 +324,20 @@ public sealed class DeskReaderTests : IDisposable
         page.Item(1262, 130, 1, 0, 0, 1, 1, "Survex");
         Text(page, "BACKPACK", 880, 336);
         page.Grid(876, 360, 2, 2, 1);
-        page.Item(876, 360, 1, 0, 0, 2, 2, "Pindrake");
-        page.Grid(1051, 360, 5, 4, 1);
-        page.Item(1051, 360, 1, 0, 0, 1, 2, "Tessaril");
+        if (backpackItem is not null)
+            page.Item(876, 360, 1, 0, 0, 2, 2, backpackItem);
+        else
+        {
+            // An empty slot: its frame, nothing in it.
+            using var canvas = new SKCanvas(page.Bitmap);
+            using var field = new SKPaint { Color = Field };
+            canvas.DrawRect(877, 361, 2 * p - 1, 2 * p - 1, field);
+        }
+        if (backpackGrid)
+        {
+            page.Grid(1051, 360, 5, 4, 1);
+            page.Item(1051, 360, 1, 0, 0, 1, 2, "Tessaril");
+        }
         // The stash.
         var (x, y) = page.StashOrigin;
         Text(page, "SEARCH", x + 35, y - 24, 15);
@@ -447,6 +459,177 @@ public sealed class DeskReaderTests : IDisposable
         Assert.Equal(DeskScreen.Stash, reading.Screen);
         Assert.Equal(["stash"], reading.Page!.Regions.Select(r => r.Key));
         Assert.Equal([Id(5)], reading.Page.Region("stash")!.Cells.Single().Ids);
+    }
+
+    // ---- the layout's faults on the owner's screenshots of 2026-10-19 (owner, 2026-10-25) ----
+    // The layout from words given as the recognition reads them (boxes at 1440p, 15 px a heading) over drawn frames: the
+    // rules held without the recognition's moods. Each test fails on the reading of before 2026-10-25.
+
+    private static DeskWord Word(string text, int x, int y, int line, int h = 15) => new(text, x, y, (int)Math.Round(0.75 * h * text.Length) + 4, h, line);
+
+    // The GEAR tab without its middle column: four loadout headings over their boxes, the stash at the right, QUICK USE at
+    // the foot.
+    private static (StashReaderTests.Page Page, List<DeskWord> Words) Tab()
+    {
+        var page = new StashReaderTests.Page(2560, 1440).Start();
+        page.Grid(87, 220, 2, 2, 1);
+        page.Grid(333, 220, 2, 2, 1);
+        page.Grid(578, 220, 2, 2, 1);
+        page.Grid(333, 441, 2, 2, 1);
+        var (x, y) = page.StashOrigin;
+        page.Grid(x, y, 10, 12, 1);
+        List<DeskWord> words =
+        [
+            Word("EARPIECE", 92, 201, 1), Word("HEADWEAR", 337, 201, 2), Word("ARMBAND", 91, 422, 4), Word("BODY", 338, 422, 5), Word("ARMOR", 390, 422, 5),
+            Word("QUICK", 760, 1254, 9), Word("USE", 820, 1254, 9),
+        ];
+        return (page, words);
+    }
+
+    private static DeskLayoutFound Layout(StashReaderTests.Page page, IReadOnlyList<DeskWord> words)
+    {
+        var gray = StashGray.Of(page.Bitmap);
+        return DeskLayout.Find(words, new StashLines(gray), gray, page.Width, page.Height, page.Pitch);
+    }
+
+    // A heading word one letter off still counts (owner, 2026-10-25), in capitals; ON BACK's "ON" must be read as it is, and
+    // the screen's own BACK button is no BACKPACK.
+    [Theory]
+    [InlineData("*ACE", "FACE", true)]
+    [InlineData("ÄRMBANI", "ARMBAND", true)]
+    [InlineData("HOLSTFR", "HOLSTER", true)]
+    [InlineData("POCKET", "POCKETS", true)]
+    [InlineData("BACKPACKS", "BACKPACK", true)]
+    [InlineData("Armband", "ARMBAND", false)]
+    [InlineData("BACK", "BACKPACK", false)]
+    [InlineData("POUCHES", "POUCH", false)]
+    [InlineData("OM", "ON", false)]
+    [InlineData("RG", "RIG", false)]
+    public void A_heading_word_one_letter_off_still_counts(string read, string heading, bool counts) =>
+        Assert.Equal(counts, DeskLayout.HeadingWord(read, Core.Screenshots.ExitList.Fold(heading)));
+
+    // The test set's 12-gear.png (2026-10-19): FACE COVER read as "*ACE COVER", no heading, and the slot box under it,
+    // the word as tall as a window's title, became the window "*ACE COVER".
+    [Fact]
+    public void A_heading_read_a_letter_off_is_the_heading_and_its_slot_box_no_window()
+    {
+        var (page, words) = Tab();
+        words.AddRange([Word("*ACE", 583, 201, 3), Word("COVER", 630, 201, 3)]);
+        var layout = Layout(page, words);
+        Assert.Equal(DeskScreen.Gear, layout.Screen);
+        Assert.DoesNotContain(layout.Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        Assert.InRange(Assert.Single(layout.Slots, s => s.Key == "facecover").Box.Left, 574, 582);
+    }
+
+    // Whatever a word reads where a loadout heading stands, it is no window's title; after the magnifier it is: the Keys
+    // window dragged over the loadout, its bar level with ARMBAND (the test set's 00-gear-armband.png).
+    [Fact]
+    public void A_word_where_a_loadout_heading_stands_is_a_title_only_after_the_magnifier()
+    {
+        var (page, words) = Tab();
+        words.AddRange([Word("Fxqe", 583, 201, 3), Word("Cqvfr", 630, 201, 3)]);
+        Assert.DoesNotContain(Layout(page, words).Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        page.Grid(181, 442, 4, 3, 2);
+        words.AddRange([Word("o", 195, 419, 6, 14), Word("Keys", 222, 417, 6, 18)]);
+        Assert.Equal("Keys", Assert.Single(Layout(page, words).Regions, r => r.Kind == DeskRegionKind.ContainerWindow).Title);
+    }
+
+    // In the middle column a bare word in capitals, its bar's glyphs unread, is no title (a misread heading over a frame); a
+    // container's name in small letters still is, by its size (the Zhuk window over the column on the owner's GEAR pictures
+    // of 2026-10-19).
+    [Fact]
+    public void In_the_middle_column_a_title_in_capitals_needs_its_bars_glyphs()
+    {
+        var (page, words) = Tab();
+        words.Add(Word("POCKETS", 880, 192, 7, 14));
+        page.Grid(875, 214, 1, 1, 1);
+        page.Grid(1100, 640, 4, 2, 1);
+        words.Add(Word("XKTRV", 1110, 615, 8));
+        var layout = Layout(page, words);
+        Assert.DoesNotContain(layout.Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        words[^1] = Word("Zorblat", 1110, 615, 8);
+        Assert.Equal("Zorblat", Assert.Single(Layout(page, words).Regions, r => r.Kind == DeskRegionKind.ContainerWindow).Title);
+    }
+
+    // The test set's 02-gear.png and 09-gear.png (2026-10-19): the POUCH's grid, its lines two pixels wide as a window's, was
+    // taken for a window of no name (5 cells attached to nothing), and the POUCH left out.
+    [Fact]
+    public void A_lattice_under_a_middle_heading_is_that_regions_grid_never_a_window()
+    {
+        var (page, words) = Tab();
+        words.Add(Word("POUCH", 880, 700, 7, 14));
+        page.Grid(875, 722, 2, 2, 1);
+        page.Grid(1051, 722, 3, 3, 2);
+        var layout = Layout(page, words);
+        Assert.DoesNotContain(layout.Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        var pouch = Assert.Single(layout.Regions, r => r.Kind == DeskRegionKind.Pouch);
+        Assert.InRange(pouch.SlotBox!.Value.Left, 872, 878);
+        var grid = Assert.Single(pouch.Parts);
+        Assert.Equal((1051, 3, 3), (grid.Left, (int)Math.Round(grid.Width / 84.0), (int)Math.Round(grid.Height / 84.0)));
+        Assert.False(pouch.Cut);
+    }
+
+    // The test set's 11-gear.png and 12-gear.png (2026-10-19): the backpack's grid ran past the column's foot; its frames,
+    // running on, left the region out, and the backpack came back as its slot alone. Read as far as it shows (the whole
+    // rows in view), it is said cut: the page keeps the rest (DeskLedger).
+    [Fact]
+    public void A_grid_the_columns_foot_cuts_is_read_as_far_as_it_shows_and_said_cut()
+    {
+        var (page, words) = Tab();
+        words.Add(Word("BACKPACK", 880, 842, 7));
+        page.Grid(875, 864, 2, 2, 1);
+        page.Grid(1051, 864, 5, 6, 1);
+        // The column's view ends a few pixels above the QUICK USE bar's top: nothing of it below.
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var ground = new SKPaint { Color = new SKColor(18, 20, 22) })
+            canvas.DrawRect(840, 1265, 800, 175, ground);
+        var backpack = Assert.Single(Layout(page, words).Regions, r => r.Kind == DeskRegionKind.Backpack);
+        Assert.True(backpack.Cut);
+        Assert.NotNull(backpack.SlotBox);
+        var grid = Assert.Single(backpack.Parts);
+        Assert.Equal((5, 4), ((int)Math.Round(grid.Width / 84.0), (int)Math.Round(grid.Height / 84.0)));
+    }
+
+    // The test set's 13-gear-keys.png (2026-10-19): BACKPACK's slot and grid and POUCH's heading under the Keys window, and a
+    // cell of the POUCH's grid below it, taken for the BACKPACK's grid of one cell. A frame whose heading a window may hide
+    // is placed under none; the container's slot box from its heading's place lies under the window (covered: the page
+    // keeps its grid).
+    [Fact]
+    public void A_frame_whose_heading_a_window_may_hide_is_placed_under_none()
+    {
+        var (page, words) = Tab();
+        words.Add(Word("BACKPACK", 880, 342, 7));
+        page.Grid(818, 439, 6, 4, 2);
+        words.AddRange([Word("o", 832, 414, 8, 14), Word("Keys", 859, 414, 8, 17), Word("x", 1300, 414, 8, 14)]);
+        page.Grid(1220, 900, 1, 1, 1);
+        var layout = Layout(page, words);
+        var window = Assert.Single(layout.Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        var backpack = Assert.Single(layout.Regions, r => r.Kind == DeskRegionKind.Backpack);
+        Assert.Empty(backpack.Parts);
+        Assert.True(backpack.SlotDerived);
+        Assert.True(window.Area!.Value.IntersectsWith(backpack.SlotBox!.Value));
+        Assert.Equal(1, layout.Unplaced);
+    }
+
+    // The test set's 11-gear.png (2026-10-19): the backpack's grid out of view, its slot alone in it. Read in part: the
+    // page keeps its grid (DeskLedger). An empty slot in view says the container is gone, and its grid with it.
+    [Fact]
+    public async Task A_containers_slot_without_its_grid_in_view_is_read_in_part_and_an_empty_slot_is_not()
+    {
+        var reader = Reader();
+        using (var picture = Gear(backpackGrid: false).Bitmap.Copy())
+        {
+            var page = (await reader.ReadAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct)).Page!;
+            Assert.True(page.Region("backpack")!.Partial);
+            Assert.Equal([Id(3)], In(page, "backpack", c => c.Slot == "backpack").Ids);
+            Assert.False(page.Region("pockets")!.Partial);
+        }
+        using (var picture = Gear(backpackGrid: false, backpackItem: null).Bitmap.Copy())
+        {
+            var page = (await reader.ReadAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct)).Page!;
+            Assert.False(page.Region("backpack")!.Partial);
+            Assert.Empty(page.Region("backpack")!.Cells);
+        }
     }
 
     // ---- the raid's inventory screen, drawn (the in-raid glance) ----

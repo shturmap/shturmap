@@ -176,19 +176,43 @@ public sealed class DeskLedgerTests : IDisposable
         Assert.True(File.Exists(path + ".unreadable"));
     }
 
+    // Owner, 2026-10-25: a pick stays "until its label changes": while the item picked is still among the cell's candidates
+    // in a newer reading (a grid's cell by its place, a slot by its key), whatever else the reading changed of it; until
+    // then a count read differently dropped it.
     [Fact]
-    public void A_pick_stays_with_its_cell_until_a_reading_changes_it()
+    public void A_pick_stays_with_its_cell_while_the_item_is_among_its_candidates()
     {
         var ledger = new DeskLedger();
         ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(0, 0, 1, 1, Zhuk, ZhukOther))));
         Assert.True(ledger.Pick(GameMode.Pve, "stash", null, 0, 0, ZhukOther));
         Assert.Equal(ZhukOther, ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single().ItemId);
         Assert.False(ledger.Pick(GameMode.Pve, "stash", null, 0, 0, Water));
-        // The same cell read again keeps its pick; a reading that changes it drops it.
-        ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(0, 0, 1, 1, Zhuk, ZhukOther))));
+        // Read again with another count and a third candidate: the pick stays.
+        ledger.Apply(GameMode.Pve, Page(1, Stash(Cell(0, 0, 1, 1, Zhuk, ZhukOther, Salewa) with { Count = 2 })));
         Assert.Equal(ZhukOther, ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single().ItemId);
-        ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(0, 0, 1, 1, Zhuk, ZhukOther) with { Count = 2 })));
-        Assert.Null(ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single().ItemId);
+        // Its label changed: the item picked is no candidate any more, and the pick goes.
+        ledger.Apply(GameMode.Pve, Page(2, Stash(Cell(0, 0, 1, 1, Water, Wallet))));
+        Assert.Null(ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single().Pick);
+        // Another place is another cell.
+        ledger.Apply(GameMode.Pve, Page(3, Stash(Cell(0, 0, 1, 1, Zhuk, ZhukOther))));
+        Assert.True(ledger.Pick(GameMode.Pve, "stash", null, 0, 0, Zhuk));
+        ledger.Apply(GameMode.Pve, Page(4, Stash(Cell(1, 0, 1, 1, Zhuk, ZhukOther))));
+        Assert.Null(ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single().Pick);
+    }
+
+    [Fact]
+    public void A_slots_pick_stays_while_its_item_is_among_the_slots_candidates()
+    {
+        var ledger = new DeskLedger();
+        DeskRegion Loadout(params string[] ids) => new("loadout", DeskRegionKind.Loadout, 0, 0, [new DeskCell(1, 0, 1, 1, ids) { Slot = "headwear" }]);
+        ledger.Apply(GameMode.Pve, Page(0, Loadout(Zhuk, ZhukOther)));
+        Assert.True(ledger.Pick(GameMode.Pve, "loadout", "headwear", 0, 0, ZhukOther));
+        // Its condition read anew, a third candidate among the slot's: the pick stays.
+        var read = Loadout(ZhukOther, Zhuk, Salewa);
+        ledger.Apply(GameMode.Pve, Page(1, read with { Cells = [read.Cells[0] with { Print = new DeskPrint(30, 50) }] }));
+        Assert.Equal(ZhukOther, ledger.Page(GameMode.Pve)!.Region("loadout")!.Cells.Single().ItemId);
+        ledger.Apply(GameMode.Pve, Page(2, Loadout(Water, Wallet)));
+        Assert.Null(ledger.Page(GameMode.Pve)!.Region("loadout")!.Cells.Single().Pick);
     }
 
     // The owner's test of 2026-10-19: the Keys window read whole (73 keys), then after the game's SORT as one "?" across six
@@ -256,6 +280,170 @@ public sealed class DeskLedgerTests : IDisposable
         ledger.Save(path);
         var cells = DeskLedger.Load(path).Page(GameMode.Pve)!.Region("window:junk")!.Cells;
         Assert.Equal([Water, Salewa], cells.Select(c => c.ItemId));
+    }
+
+    // ---- a region read in part (owner, 2026-10-25) ----
+
+    private static DeskCell Slot(string key, params string[] ids) => new(0, 0, 1, 1, ids) { Slot = key };
+
+    // The page's backpack: its slot and a grid of five by six with an item in its first and its last row.
+    private static DeskRegion FullBackpack() =>
+        new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 6, [Slot("backpack", Zhuk), Cell(0, 0, 1, 2, Water), Cell(2, 5, 1, 1, Salewa)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 6)],
+        };
+
+    // The test set's 11-gear.png to 13-gear-keys.png (2026-10-19): the backpack read as its slot alone (its grid out of
+    // view, then under the Keys window) took the place of the page's grid of five by six. A container whose grid wasn't
+    // in view keeps the page's grid, size and cells; the slot read takes the slot's place.
+    [Fact]
+    public void A_containers_slot_read_alone_keeps_the_pages_grid()
+    {
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, FullBackpack()));
+        var lone = new DeskRegion("backpack", DeskRegionKind.Backpack, 0, 0, [Slot("backpack", Zhuk, ZhukOther) with { Print = new DeskPrint(1, 2) }]) { Partial = true };
+        var change = ledger.Apply(GameMode.Pve, Page(1, lone));
+        Assert.Equal(["backpack"], change.Kept);
+        var backpack = change.Page.Region("backpack")!;
+        Assert.Equal((5, 6), (backpack.Cols, backpack.Rows));
+        Assert.Equal([new DeskRect(0, 0, 5, 6)], backpack.Parts);
+        Assert.Equal(new DeskPrint(1, 2), backpack.Cells.Single(c => c.IsSlot).Print);
+        Assert.Equal([Water, Salewa], backpack.Cells.Where(c => !c.IsSlot).Select(c => c.ItemId));
+        Assert.False(backpack.Partial);
+
+        // Its slot under a window too (none read): the page's slot stays with its grid.
+        change = ledger.Apply(GameMode.Pve, Page(2, new DeskRegion("backpack", DeskRegionKind.Backpack, 0, 0, []) { Partial = true, CoveredSlots = ["backpack"] }));
+        Assert.Equal(3, change.Page.Region("backpack")!.Cells.Count);
+        // A slot whose label wasn't read says nothing of the container: the page's named one stays.
+        change = ledger.Apply(GameMode.Pve, Page(3, new DeskRegion("backpack", DeskRegionKind.Backpack, 0, 0, [Slot("backpack")]) { Partial = true }));
+        Assert.Contains(Zhuk, change.Page.Region("backpack")!.Cells.Single(c => c.IsSlot).Ids);
+    }
+
+    // Another container in the slot: the page's grid was the other one's, and goes.
+    [Fact]
+    public void A_slot_read_as_another_container_takes_the_pages_grid_away()
+    {
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, FullBackpack()));
+        var change = ledger.Apply(GameMode.Pve, Page(1, new DeskRegion("backpack", DeskRegionKind.Backpack, 0, 0, [Slot("backpack", Wallet)]) { Partial = true }));
+        Assert.Empty(change.Kept);
+        Assert.Equal(Wallet, change.Page.Region("backpack")!.Cells.Single().ItemId);
+    }
+
+    // The test set's 11-gear.png and 12-gear.png (2026-10-19): the backpack's grid ran out of view at the column's foot, four
+    // rows of six in view, all of them empty. The rows in view are read as they show (the water taken out); the page keeps
+    // what lies below them, and the grid stands as tall as the page had it.
+    [Fact]
+    public void A_grid_cut_at_the_columns_foot_keeps_the_pages_rows_below_it()
+    {
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, FullBackpack()));
+        var cut = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 4, [Slot("backpack", Zhuk), Cell(1, 1, 2, 1, Wallet)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 4)],
+            Partial = true,
+        };
+        var change = ledger.Apply(GameMode.Pve, Page(1, cut));
+        Assert.Equal(["backpack"], change.Kept);
+        var backpack = change.Page.Region("backpack")!;
+        Assert.Equal((5, 6), (backpack.Cols, backpack.Rows));
+        Assert.Equal([new DeskRect(0, 0, 5, 6)], backpack.Parts);
+        Assert.Equal([Wallet, Salewa], backpack.Cells.Where(c => !c.IsSlot).Select(c => c.ItemId));
+        // A first reading of a region cut so is what it shows: nothing to keep.
+        var first = new DeskLedger().Apply(GameMode.Pve, Page(0, cut));
+        Assert.Empty(first.Kept);
+        Assert.Equal((5, 4), (first.Page.Region("backpack")!.Cols, first.Page.Region("backpack")!.Rows));
+    }
+
+    // ---- what leaves the page (owner, 2026-10-25) ----
+
+    // The owner's page of 2026-10-19 kept four windows made of misread headings and the POUCH's grid, which no reading
+    // would ever take away. A window attached to nothing that three readings in a row don't show leaves the page; one
+    // attached to its container stays however long it goes unseen.
+    [Fact]
+    public void A_window_attached_to_nothing_leaves_the_page_after_three_readings_that_dont_show_it()
+    {
+        var ledger = new DeskLedger();
+        var change = ledger.Apply(GameMode.Pve, Page(0,
+            Stash(Cell(4, 4, 2, 2, Wallet) with { Holds = DeskHolds.Contents }),
+            Window("Keys", [Wallet], Cell(0, 0, 1, 1, Water)),
+            Window("Ace cover", [], Cell(0, 0, 1, 1, Salewa))));
+        Assert.Null(change.Page.Region("window:acecover")!.AttachedTo);
+        for (var n = 1; n <= 2; n++)
+        {
+            change = ledger.Apply(GameMode.Pve, Page(n, Stash(Cell(4, 4, 2, 2, Wallet) with { Holds = DeskHolds.Contents })));
+            Assert.Equal(n, change.Page.Region("window:acecover")!.Missed);
+            Assert.Empty(change.Dropped);
+        }
+        change = ledger.Apply(GameMode.Pve, Page(3, Stash(Cell(4, 4, 2, 2, Wallet) with { Holds = DeskHolds.Contents })));
+        Assert.Equal(["window:acecover"], change.Dropped);
+        Assert.Null(change.Page.Region("window:acecover"));
+        Assert.Equal(3, change.Page.Region("window:keys")!.Missed);
+        Assert.NotNull(change.Page.Region("window:keys")!.AttachedTo);
+        // A reading that shows a window counts from naught again.
+        change = ledger.Apply(GameMode.Pve, Page(4, Window("Keys", [Wallet], Cell(0, 0, 1, 1, Water))));
+        Assert.Equal(0, change.Page.Region("window:keys")!.Missed);
+    }
+
+    // A window of no cell and no title is no reading of anything: never on the page, read or loaded.
+    [Fact]
+    public void A_window_with_no_cell_and_no_title_is_never_kept()
+    {
+        var ledger = new DeskLedger();
+        var nameless = new DeskRegion(DeskRegion.WindowKey(""), DeskRegionKind.ContainerWindow, 1, 2, []);
+        var change = ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(0, 0, 1, 1, Water)), nameless));
+        Assert.Null(change.Page.Region("window:"));
+        Assert.DoesNotContain("window:", change.Changed);
+
+        var path = Path.Combine(_root, "desk.json");
+        File.WriteAllText(path, """
+            { "version": 1, "modes": { "pve": { "readAt": "2026-01-01T15:40:00+01:00", "regions": [
+              { "key": "stash", "kind": "stash", "cols": 10, "rows": 12, "cells": [ { "i": 0, "j": 0, "w": 1, "h": 1, "ids": [ "000000000000000000000203" ] } ], "readAt": "2026-01-01T15:40:00+01:00" },
+              { "key": "window:", "kind": "window", "cols": 1, "rows": 2, "cells": [], "readAt": "2026-01-01T15:40:00+01:00" } ] } } }
+            """);
+        Assert.Null(DeskLedger.Load(path).Page(GameMode.Pve)!.Region("window:"));
+    }
+
+    // Each region keeps when the screenshot that last showed it was taken (for its head, "BACKPACK · 15:40") and how many
+    // readings have missed it since; a file written before 2026-10-25 has neither: its regions take the page's time, and
+    // its windows attached to nothing, unseen for how long it can't say, don't stay.
+    [Fact]
+    public void Each_region_keeps_its_reading_time_and_a_file_without_one_drops_its_windows_attached_to_nothing()
+    {
+        var path = Path.Combine(_root, "desk.json");
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, FullBackpack(), Stash(Cell(0, 0, 1, 1, Water))));
+        ledger.Apply(GameMode.Pve, Page(5, Stash(Cell(0, 0, 1, 1, Salewa))));
+        var page = ledger.Page(GameMode.Pve)!;
+        Assert.Equal(At, page.Region("backpack")!.ReadAt);
+        Assert.Equal(At.AddMinutes(5), page.Region("stash")!.ReadAt);
+        Assert.Equal(1, page.Region("backpack")!.Missed);
+        ledger.Save(path);
+        var text = File.ReadAllText(path);
+        Assert.Contains("\"readAt\": \"2026-01-01T15:40:00+01:00\"", text);
+        Assert.Contains("\"missed\": 1", text);
+        var loaded = DeskLedger.Load(path).Page(GameMode.Pve)!;
+        Assert.Equal((At, 1), (loaded.Region("backpack")!.ReadAt, loaded.Region("backpack")!.Missed));
+        Assert.Equal(At.AddMinutes(5), loaded.Region("stash")!.ReadAt);
+
+        // The owner's file of 2026-10-19, in short: the Keys window attached to its case in the stash, a Junk window
+        // attached to its box, "*ACE COVER" and a window of no name attached to nothing.
+        File.WriteAllText(path, """
+            { "version": 1, "modes": { "pve": { "readAt": "2026-01-01T15:40:00+01:00", "regions": [
+              { "key": "stash", "kind": "stash", "cols": 10, "rows": 12, "cells": [
+                { "i": 7, "j": 9, "w": 2, "h": 1, "ids": [ "000000000000000000000204" ], "holds": "contents" },
+                { "i": 4, "j": 3, "w": 2, "h": 2, "ids": [ "000000000000000000000201" ], "holds": "contents" } ] },
+              { "key": "window:keys", "kind": "window", "cols": 11, "rows": 7, "cells": [ { "i": 0, "j": 0, "w": 1, "h": 1, "ids": [ "000000000000000000000203" ] } ],
+                "title": "Keys", "titleIds": [ "000000000000000000000204" ], "attachedTo": { "region": "stash", "i": 7, "j": 9 } },
+              { "key": "window:junk", "kind": "window", "cols": 22, "rows": 14, "cells": [ { "i": 0, "j": 0, "w": 1, "h": 1, "ids": [ "000000000000000000000205" ] } ],
+                "title": "Junk", "titleIds": [ "000000000000000000000201" ], "attachedTo": { "region": "stash", "i": 4, "j": 3 } },
+              { "key": "window:acecover", "kind": "window", "cols": 2, "rows": 2, "cells": [ { "i": 0, "j": 0, "w": 1, "h": 1, "ids": [ "000000000000000000000205" ] } ],
+                "title": "*ACE COVER" },
+              { "key": "window:", "kind": "window", "cols": 3, "rows": 3, "cells": [ { "i": 0, "j": 0, "w": 1, "h": 1, "ids": [ "000000000000000000000203" ] } ] } ] } } }
+            """);
+        var old = DeskLedger.Load(path).Page(GameMode.Pve)!;
+        Assert.Equal(["stash", "window:junk", "window:keys"], old.Regions.Select(r => r.Key).Order());
+        Assert.All(old.Regions, r => Assert.Equal(At, r.ReadAt));
     }
 
     // A slot's "?" is picked by its key (the helmet in three colours).

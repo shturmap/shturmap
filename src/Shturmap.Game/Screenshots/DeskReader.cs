@@ -174,9 +174,17 @@ public sealed class DeskReader
             var region = new DeskRegion(key, place.Kind, cols, rows, cells) { Parts = parts, Covered = covered, CoveredSlots = coveredSlots, Unread = unread };
             if (place.Kind == DeskRegionKind.ContainerWindow)
                 region = region with { Title = place.Title, TitleIds = catalogue.Match.Titled(place.Title ?? "").Select(c => c.ItemId).ToList() };
-            // A container's slot whose grid wasn't found (under a window, out of view): its grid's cells stay as they were.
-            if (place.SlotBox is not null && place.Parts.Count == 0)
-                region = region with { Covered = [new DeskRect(0, 0, 100, 100)] };
+            // A middle region whose grid ran past what the screenshot shows (owner, 2026-10-25): cut by the column's foot, or
+            // not in view at all (under a window, scrolled out of view: the test set's 11-gear.png to
+            // 13-gear-keys.png, read the backpack as its slot alone and the page lost its grid). The page keeps its cells and
+            // compartments outside what was read (DeskLedger). Only a container's slot seen empty, a frame in view with no
+            // label, says the grid is gone with it.
+            else if (place.Kind != DeskRegionKind.Loadout)
+            {
+                var emptySlot = place.SlotBox is not null && !place.SlotDerived && coveredSlots.Count == 0 && !cells.Any(c => c.IsSlot);
+                if (place.Cut || (place.Parts.Count == 0 && !emptySlot))
+                    region = region with { Partial = true };
+            }
             regions.Add(region);
         }
 
@@ -352,16 +360,19 @@ public sealed class DeskReader
     // it, so the few pixels between compartments never add up to a cell.
     private static Dictionary<int, int> Units(IEnumerable<(int At, int Size)> spans, int pitch)
     {
+        // Edges within a quarter of a cell are one (until 2026-10-25 within 4 px: the test set's 01-gear.png
+        // had a pocket's frame found 5 px above the others', and the pockets came out three rows high instead of two).
         var edges = spans.Select(s => s.At).Distinct().Order().ToList();
         var units = new Dictionary<int, int>();
         var previous = int.MinValue;
         var unit = 0;
+        var same = pitch / 4;
         foreach (var edge in edges)
         {
             if (previous != int.MinValue)
-                unit += edge - previous <= 4 ? 0 : Math.Max(1, (int)Math.Round((edge - previous) / (double)pitch));
+                unit += edge - previous <= same ? 0 : Math.Max(1, (int)Math.Round((edge - previous) / (double)pitch));
             units[edge] = unit;
-            if (edge - previous > 4 || previous == int.MinValue)
+            if (edge - previous > same || previous == int.MinValue)
                 previous = edge;
         }
         return units;

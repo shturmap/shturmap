@@ -184,6 +184,20 @@ public sealed record DeskRegion(string Key, DeskRegionKind Kind, int Cols, int R
     /// tells a reading that failed from a region that emptied (<see cref="DeskLedger.Merge"/>).</summary>
     public int Unread { get; init; }
 
+    /// <summary>On a reading, a middle region whose grid ran past what the screenshot showed (owner, 2026-10-25): the
+    /// column's foot cut it, or none of it was in view (under a window, scrolled away). The page keeps its cells and
+    /// compartments outside the ones read, and its slot where none was read (<see cref="DeskLedger"/>). Never kept.</summary>
+    public bool Partial { get; init; }
+
+    /// <summary>When the screenshot that last showed the region was taken (the page in hand's regions each keep their
+    /// own; owner, 2026-10-25, for the head's "BACKPACK · 23:08"). <see cref="DateTimeOffset.MinValue"/> on a reading and
+    /// in a file written before it: the page's time.</summary>
+    public DateTimeOffset ReadAt { get; init; }
+
+    /// <summary>How many readings in a row since did not show the region (owner, 2026-10-25: a window attached to nothing
+    /// that three in a row didn't show leaves the page).</summary>
+    public int Missed { get; init; }
+
     /// <summary>The cells read as an item or "one of N" (not a cell with nothing said).</summary>
     public int ReadCells => Cells.Count(c => c.Ids.Count > 0);
 
