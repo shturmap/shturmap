@@ -333,7 +333,7 @@ internal static class DeskLayout
                 entry = entry with { Cut = true };
                 placed[kind] = entry;
             }
-            var isSlot = Container(kind) && entry.Slot is null && !lattices.Contains(frame) &&
+            var isSlot = DeskRegion.IsContainer(kind) && entry.Slot is null && !lattices.Contains(frame) &&
                          Math.Abs(frame.Left - hw.X) < 0.4 * pitch && frame.Top - hw.Bottom < 0.6 * pitch && Math.Abs(frame.Width - 2 * pitch) < 0.3 * pitch;
             if (isSlot)
                 placed[kind] = entry with { Slot = frame };
@@ -349,7 +349,7 @@ internal static class DeskLayout
             var derived = false;
             // A container's slot no frame showed: its box under the heading, as the loadout's (5 px left of the word, 6
             // under it at 1440p), where the column shows it.
-            if (slot is null && Container(kind) && heads.FirstOrDefault(x => x.Kind == kind).Word is { } word)
+            if (slot is null && DeskRegion.IsContainer(kind) && heads.FirstOrDefault(x => x.Kind == kind).Word is { } word)
             {
                 var box = SKRectI.Create(word.X - (int)Math.Round(5 * k), word.Bottom + (int)Math.Round(6 * k), 2 * pitch, 2 * pitch);
                 if (box.Bottom <= foot)
@@ -366,9 +366,6 @@ internal static class DeskLayout
         }
         return regions;
     }
-
-    // The middle column's regions that are a container's: a slot, its grid inline.
-    private static bool Container(DeskRegionKind kind) => kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch;
 
     private static string Note(SKRectI r) => $"({r.Left},{r.Top} {r.Width}x{r.Height})";
 

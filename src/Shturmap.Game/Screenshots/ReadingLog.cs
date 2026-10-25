@@ -450,6 +450,12 @@ public static class ReadingLog
         return text.ToString();
     }
 
+    /// <summary>Why a region read in part (<see cref="DeskRegion.Partial"/>) kept the page's grid, as the readings log, the
+    /// app log and the CLI's desk command say it: its grid cut at the column's foot, its slot under a window, or none of it in
+    /// view; "" for no region.</summary>
+    public static string KeptWhy(DeskRegion? region) =>
+        region is null ? "" : region.Parts.Count > 0 ? "cut at the column's foot" : region.CoveredSlots.Count > 0 ? "under a window" : "not in view";
+
     private static void PageLines(List<string> lines, ReadingLogEntry entry, DeskPage reading)
     {
         void Add(FormattableString line) => lines.Add(line.ToString(CultureInfo.InvariantCulture));
@@ -467,8 +473,7 @@ public static class ReadingLog
         foreach (var key in change.Kept.Order(StringComparer.Ordinal))
         {
             var read = reading.Region(key);
-            var why = read is null ? "" : read.Parts.Count > 0 ? "cut at the column's foot" : read.CoveredSlots.Count > 0 ? "under a window" : "not in view";
-            Add($"  kept the page's {key} grid outside the part read: {why}");
+            Add($"  kept the page's {key} grid outside the part read: {KeptWhy(read)}");
         }
         foreach (var key in change.Dropped.Order(StringComparer.Ordinal))
             Add($"  dropped {key}: a window attached to nothing, not shown by {DeskLedger.MissedToDrop} readings in a row");

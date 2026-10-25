@@ -341,6 +341,29 @@ public sealed class DeskLedgerTests : IDisposable
         Assert.Contains(Zhuk, change.Page.Region("backpack")!.Cells.Single(c => c.IsSlot).Ids);
     }
 
+    // A container's region a first reading made from its heading alone (code review, 2026-10-25): no frame and no slot
+    // read, its grid out of view; on the page it stood as its empty slot box, "empty" for "not read". A page without a
+    // version of it doesn't take it (nor POCKETS of the kind), and draws it as never read; one with a version keeps its own.
+    [Fact]
+    public void A_region_made_from_its_heading_alone_stays_off_a_page_without_it()
+    {
+        var ledger = new DeskLedger();
+        var alone = new DeskRegion("backpack", DeskRegionKind.Backpack, 0, 0, []) { Partial = true };
+        var change = ledger.Apply(GameMode.Pve, Page(0, alone, new DeskRegion("pockets", DeskRegionKind.Pockets, 0, 0, []) { Partial = true },
+            new DeskRegion("pouch", DeskRegionKind.Pouch, 0, 0, [Slot("pouch", Wallet)]) { Partial = true }));
+        Assert.Null(change.Page.Region("backpack"));
+        Assert.Null(change.Page.Region("pockets"));
+        Assert.Equal(Wallet, change.Page.Region("pouch")!.Cells.Single().ItemId);
+        // A slot seen empty (its frame in view, no label) is no reading in part: it stands, the grid gone with it.
+        change = ledger.Apply(GameMode.Pve, Page(1, new DeskRegion("backpack", DeskRegionKind.Backpack, 0, 0, [])));
+        Assert.NotNull(change.Page.Region("backpack"));
+
+        ledger.Apply(GameMode.Pve, Page(2, FullBackpack()));
+        change = ledger.Apply(GameMode.Pve, Page(3, alone));
+        Assert.Equal(3, change.Page.Region("backpack")!.Cells.Count);
+        Assert.Equal((5, 6), (change.Page.Region("backpack")!.Cols, change.Page.Region("backpack")!.Rows));
+    }
+
     // Another container in the slot: the page's grid was the other one's, and goes.
     [Fact]
     public void A_slot_read_as_another_container_takes_the_pages_grid_away()
