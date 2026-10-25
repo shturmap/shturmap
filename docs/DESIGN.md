@@ -2215,8 +2215,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       no heading, was drawn as a bare head over nothing, POCKETS and SPECIAL SLOTS a DIP wide. A container's region of no
       grid and no cell is its slot seen empty, the grid gone with it (*A region read in part keeps the page's rest*,
       below): its empty slot box with no grid, as the game shows it. One the layout made from its heading alone, with no
-      frame and no slot read, would be drawn so too: it is the reading's to keep off the page (a region made from its
-      heading alone is left off a page that has no version of it, the ledger's rule; open, 2026-10-25).
+      frame and no slot read, would be drawn so too, "empty" for "not read": a region a reading made from its heading
+      alone (read in part, no grid and no cell in it; `DeskLedger.HeadingAlone`) is left off a page that has no version of
+      it, which draws it as never read; a page that has one keeps its own (the ledger's rule; code review's cleanups,
+      2026-10-25).
     - **A region not in the last screenshot** (its reading older than the page in hand's; owner, 2026-10-25;
       `DeskRegion.ReadAt`, `DeskPageRules.Kept`): drawn whole but a step dimmer (its block at 70 %), its head dated,
       "BACKPACK · 23:08" for a screenshot of the day, "BACKPACK · 19 OCT 23:08" for another day (the language's day,

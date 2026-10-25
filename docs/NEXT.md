@@ -509,8 +509,9 @@ built*, *The page*); `tools\qa\desk.md` (`first`, `kept`).
   note.
 - Open: a container's region made from its heading alone, no frame and no slot read, drawn on a first reading as its
   empty slot box, so saying "empty" for "not read": the reading's to keep off the page (a region made from its heading
-  alone left off a page that has no version of it, the ledger's rule; DESIGN.md §4, *A region never read*); F2; the UI
-  QA pass of the two changes (the 0×0 placeholder has no picture: the made-up desk has no such region).
+  alone left off a page that has no version of it, the ledger's rule; DESIGN.md §4, *A region never read*; done with the
+  code review's cleanups, below); F2; the UI QA pass of the two changes (the 0×0 placeholder has no picture: the made-up
+  desk has no such region).
 
 **Code review of the day's merges (2026-10-25, 66fd15d..6f895a9, high).**
 
@@ -540,6 +541,27 @@ built*, *The page*); `tools\qa\desk.md` (`first`, `kept`).
 - Cleanups left for later: the two paths that keep a page's cells (`Filled` and the covered branch); the "why kept"
   words in three places; the container kinds spelled out in three assemblies; the count's vote replacing
   `MisreadCount`'s patterns; `Layout` arranging the smallest size twice.
+- The cleanups (2026-10-25, on 94591a5), each keeping what the code did but the fifth; the existing tests unchanged,
+  the full suite passing (2517, 39 skipped; the desk's real pictures of the layout round read too):
+  - The CLI's regions truth: a key listed twice counts once, by its first line, and the regions line says so ("the
+    truth lists … again"; `DeskCommand.ScoreRegions`), where it threw. The 0×0 region was 814982a's.
+  - The "why kept" words in one place, `ReadingLog.KeptWhy`: the readings log, the app log (`GameSession.Desk`) and the
+    desk command's `--why` say them from it.
+  - The container kinds in one list, `DeskRegion.IsContainer` (Core): the ledger's holders, `DeskPage.Unseen`, the
+    layout's slots (`DeskLayout`, its own `Container` gone) and the page's slot boxes (`DeskPageRules.HasBox`).
+  - `Layout` arranges the smallest size once: the loop's last arrangement is the scrolling page's.
+  - A container's region made from its heading alone (the re-check's open point): a region read in part with no grid
+    and no cell (`DeskLedger.HeadingAlone`) is left off a page that has no version of it, which draws it as never read;
+    a page that has one keeps its own, as before. POCKETS and SPECIAL SLOTS of the kind go with it (the placeholder, as
+    814982a drew them). `DeskLedgerTests`: one more. What the user sees changes: its UI QA pass is open (no picture: the
+    made-up desk has no such region).
+  - Not done: `Filled` and the covered branch. One path isn't the same rule: their slots differ (`Filled` keeps the
+    page's slot where none or an unread one was read, the covered branch only a covered one), and a `Filled` that adds
+    nothing falls through to the covered branch; and it sits a few lines over step 1c's change in `DeskLedger.MergeAll`.
+    After step 1c's merge, with a test of each case first.
+  - Not done: the count's vote replacing `MisreadCount`. Not a cleanup: the vote runs after the line's words are taken
+    (`TasksReader.VoteObjectiveCountsAsync`), and on a line it reads no count for, the misread word would stand in the
+    objective's text again; it wants the owner's tables measured.
 
 ## 2026-10-19: text size: Windows' own, honoured everywhere
 

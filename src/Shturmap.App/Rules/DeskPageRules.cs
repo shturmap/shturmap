@@ -96,7 +96,7 @@ public static class DeskPageRules
     public const double ShortGap = 4;
 
     /// <summary>Whether a region's own container's slot box stands beside its grid: TACTICAL RIG, BACKPACK, POUCH.</summary>
-    public static bool HasBox(DeskRegionKind kind) => kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch;
+    public static bool HasBox(DeskRegionKind kind) => DeskRegion.IsContainer(kind);
 
     /// <summary>The page's blocks in their places: the seven fixed regions in the game's order, each as the page in hand has
     /// it or a placeholder where no reading showed it (or one made from its heading alone, <see cref="HeadingAlone"/>), then
@@ -183,13 +183,15 @@ public static class DeskPageRules
     public static Arrangement Layout(IReadOnlyList<DeskRegion> regions, double deskWidth, double deskHeight = double.PositiveInfinity, double textScale = 1,
         Func<DeskRegion, string>? head = null)
     {
+        Arrangement? scrolling = null;
         foreach (var size in Sizes.Reverse())
         {
-            if (Arrange(regions, size, deskWidth, textScale, head: head) is var three && three.Fits(deskWidth, deskHeight))
-                return three;
+            scrolling = Arrange(regions, size, deskWidth, textScale, head: head);
+            if (scrolling.Fits(deskWidth, deskHeight))
+                return scrolling;
         }
-        var scrolling = Arrange(regions, Sizes[0], deskWidth, textScale, head: head);
-        return scrolling.Width + 2 * Margin <= deskWidth ? scrolling : Arrange(regions, Sizes[0], deskWidth, textScale, oneColumn: true, head: head);
+        // None fits: the last arranged, the smallest size's (Sizes[0]), scrolling.
+        return scrolling!.Width + 2 * Margin <= deskWidth ? scrolling : Arrange(regions, Sizes[0], deskWidth, textScale, oneColumn: true, head: head);
     }
 
     /// <summary>The cell's size for these regions on a desk this wide and high (<see cref="Layout"/>).</summary>

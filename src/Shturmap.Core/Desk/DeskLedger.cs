@@ -88,6 +88,12 @@ public sealed class DeskLedger
         region.Kind == DeskRegionKind.ContainerWindow && region.ReadCells == 0 &&
         (string.IsNullOrWhiteSpace(region.Title) || region.TitleIds.Count == 0);
 
+    /// <summary>A middle region a reading made from its heading alone (code review, 2026-10-25): read in part, no grid and
+    /// no cell in it, its frames out of view, under a window or under no heading. It says nothing of the region: a page
+    /// that has no version of it doesn't take it, and draws the region as never read (a container's stood as its empty
+    /// slot box, "empty" for "not read"; docs/DESIGN.md §4, *A region never read*); one that has keeps its own.</summary>
+    public static bool HeadingAlone(DeskRegion region) => region.Partial && region.Cells.Count == 0 && region.Parts.Count == 0;
+
     // A window attached to nothing (no container of its name on the page) that enough readings in a row didn't show.
     private static bool Gone(DeskRegion region) =>
         region.Kind == DeskRegionKind.ContainerWindow && region.AttachedTo is null && region.SameName == 0 && region.Missed >= MissedToDrop;
@@ -169,6 +175,8 @@ public sealed class DeskLedger
             if (Junk(region))
                 continue;
             var before = old?.Region(region.Key);
+            if (before is null && HeadingAlone(region))
+                continue;
             var merged = region;
             if (before is not null && region.Partial && Filled(before, region) is { } filled)
             {
@@ -245,7 +253,7 @@ public sealed class DeskLedger
                 continue;
             var holders = regions.Where(r => r.Key != window.Key)
                 .SelectMany(r => r.Cells.Where(c => c.Holds == DeskHolds.Contents && c.Ids.Any(window.TitleIds.Contains)
-                                                    && !(c.IsSlot && r.Kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch))
+                                                    && !(c.IsSlot && DeskRegion.IsContainer(r.Kind)))
                     .Select(c => (Region: r, Cell: c)))
                 .ToList();
             if (holders.Count == 1)

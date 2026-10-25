@@ -216,6 +216,10 @@ public sealed record DeskRegion(string Key, DeskRegionKind Kind, int Cols, int R
     public bool IsLoot => Kind is DeskRegionKind.LootSlots or DeskRegionKind.LootRig or DeskRegionKind.LootPockets or DeskRegionKind.LootBackpack
         or DeskRegionKind.Loot;
 
+    /// <summary>Whether a kind is a container's own middle region: TACTICAL RIG, BACKPACK, POUCH, the container's slot
+    /// beside its grid inline (not a window, not the LOOT pane's parts). The one list of them (code review, 2026-10-25).</summary>
+    public static bool IsContainer(DeskRegionKind kind) => kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch;
+
     /// <summary>Whether the region is on the player (ON YOU): the loadout and the middle column; the stash, the windows
     /// and the LOOT pane are not by themselves (a window counts where its container is, <see cref="DeskSheet"/>).</summary>
     public bool OnYou => Kind is not (DeskRegionKind.Stash or DeskRegionKind.ContainerWindow) && !IsLoot;
@@ -262,8 +266,8 @@ public sealed record DeskPage(DateTimeOffset ReadAt, IReadOnlyList<DeskRegion> R
     public bool Unseen(DeskRegion region, DeskCell cell) => cell.Holds switch
     {
         DeskHolds.Mods => true,
-        DeskHolds.Contents when cell.IsSlot && region.Kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch
-            or DeskRegionKind.LootRig or DeskRegionKind.LootBackpack => false,
+        DeskHolds.Contents when cell.IsSlot && (DeskRegion.IsContainer(region.Kind) || region.Kind is DeskRegionKind.LootRig or DeskRegionKind.LootBackpack)
+            => false,
         DeskHolds.Contents => WindowOf(region, cell) is null,
         _ => false,
     };

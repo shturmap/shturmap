@@ -329,9 +329,8 @@ internal static class DeskCommand
         }
     }
 
-    // Why a region read in part kept the page's grid, as the app log says it (GameSession.Desk).
-    private static string KeptWhy(DeskRegion? region) =>
-        region is null ? "" : region.Parts.Count > 0 ? "cut at the column's foot" : region.CoveredSlots.Count > 0 ? "under a window" : "not in view";
+    // Why a region read in part kept the page's grid, as the logs say it (ReadingLog.KeptWhy).
+    private static string KeptWhy(DeskRegion? region) => ReadingLog.KeptWhy(region);
 
     // A region's tally: its cells named, one of N, unread, and a LOOT part's search state.
     private static string RegionTally(DeskRegion r) =>
@@ -569,12 +568,18 @@ internal static class DeskCommand
 
     // The regions a picture should make (regions-<picture>.txt, 2026-10-25): its screen, then each region's key and the size
     // of its grid in view; a region made that the truth hasn't is made up (a window of a misread heading, a region's grid
-    // taken for a window).
+    // taken for a window). A key listed twice counts once, by its first line, and is said (code review, 2026-10-25: it threw).
     private static void ScoreRegions(DeskLook look, string path, Tally tally)
     {
         var lines = File.ReadAllLines(path).Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith('#')).ToList();
         var screen = lines.FirstOrDefault(l => l.StartsWith("screen ", StringComparison.Ordinal))?["screen ".Length..].Trim() ?? "None";
-        var truth = lines.Where(l => !l.StartsWith("screen ", StringComparison.Ordinal)).Select(l => l.Split(' ', 2)).ToDictionary(p => p[0], p => p.Length > 1 ? p[1].Trim() : "", StringComparer.Ordinal);
+        var truth = new Dictionary<string, string>(StringComparer.Ordinal);
+        var repeated = new List<string>();
+        foreach (var p in lines.Where(l => !l.StartsWith("screen ", StringComparison.Ordinal)).Select(l => l.Split(' ', 2)))
+        {
+            if (!truth.TryAdd(p[0], p.Length > 1 ? p[1].Trim() : ""))
+                repeated.Add(p[0]);
+        }
         var read = look.Page?.Regions ?? [];
         string Size(DeskRegion r) => r.Kind == DeskRegionKind.Loadout ? "" : $"{r.Cols}x{r.Rows}";
         var right = truth.Count(t => read.FirstOrDefault(r => r.Key == t.Key) is { } r && Size(r) == t.Value);
@@ -584,7 +589,8 @@ internal static class DeskCommand
         var screenRight = look.Layout.Screen.ToString() == screen;
         Console.WriteLine($"   regions: {right} of {truth.Count} right" + (screenRight ? "" : $"; SCREEN {look.Layout.Screen}, truth {screen}") +
                           (missing.Count > 0 ? $"; missing {string.Join(", ", missing)}" : "") + (wrongSize.Count > 0 ? $"; of another size {string.Join(", ", wrongSize)}" : "") +
-                          (extra.Count > 0 ? $"; MADE UP {string.Join(", ", extra)}" : ""));
+                          (extra.Count > 0 ? $"; MADE UP {string.Join(", ", extra)}" : "") +
+                          (repeated.Count > 0 ? $"; the truth lists {string.Join(", ", repeated)} again, its first line taken" : ""));
         tally.RegionPictures++;
         tally.Regions += truth.Count;
         tally.RegionsRight += right;

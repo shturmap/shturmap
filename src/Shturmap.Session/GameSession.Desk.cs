@@ -101,10 +101,7 @@ public sealed partial class GameSession
         // compartments outside what was read (owner, 2026-10-25; DeskLedger, DeskRegion.Partial).
         foreach (var key in change.Kept)
         {
-            var region = page.Region(key);
-            var why = region is null ? "" : region.Parts.Count > 0 ? "cut at the column's foot"
-                : region.CoveredSlots.Count > 0 ? "under a window" : "not in view";
-            AppLog.Info($"Desk reading kept the page's {key} grid: {why}");
+            AppLog.Info($"Desk reading kept the page's {key} grid: {ReadingLog.KeptWhy(page.Region(key))}");
         }
         // A window attached to nothing that three readings in a row didn't show (owner, 2026-10-25).
         foreach (var _ in change.Dropped)
