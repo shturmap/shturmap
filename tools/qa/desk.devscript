@@ -1,12 +1,14 @@
 # QA replay of the stash desk's view (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2, and the addendum: A(2) · B1 ·
-# C1a · Da; step B part 2, the view; step C, 2026-10-19: the card, pinning, the click's copy): the made-up desk
-# (Rules.DeskExample) as readings in the menus bring it. The desk takes the map's place by itself, its page comes in cell
-# by cell and its totals count up; a window's cell and head light each other; a cell's card stands in the rail, with the
-# rule a click copies by; a click copies (its flash, decode and notice; the script leaves the clipboard alone); a
-# right-click pins a card; each guard of the copy; a "?" cell's candidates and a pick; a reading that changed the
-# backpack folds the rest, a name opens its region, a reading that changed nothing changes nothing; PLAN and DESK switch;
-# a raid takes the window and gives it back to Plan, the desk keeping its page. A developer build plays it with
-# --dev-view --dev-script; how to run it, and what each still must show: desk.md beside this file. Times are in seconds.
+# C1a · Da; step B part 2, the view; step C, 2026-10-19: the card, pinning, the click's copy; owner, 2026-10-25, the
+# layout round's decision 1: the GEAR tab mirrored and fixed): the made-up desk (Rules.DeskExample) as readings in the
+# menus bring it. The desk takes the map's place by itself in the game's GEAR tab's shape, the POUCH no reading shows a
+# dashed frame; its page comes in cell by cell and its totals count up; a window's cell and head light each other; a
+# cell's card stands in the rail, with the rule a click copies by; a click copies (its flash, decode and notice; the
+# script leaves the clipboard alone); a right-click pins a card; each guard of the copy; a "?" cell's candidates and a
+# pick; a reading that showed and changed the backpack alone keeps the rest where it stands, dimmed and dated, and a
+# reading that changed nothing changes nothing; PLAN and DESK switch; a raid takes the window and gives it back to Plan,
+# the desk keeping its page. A developer build plays it with --dev-view --dev-script; how to run it, and what each still
+# must show: desk.md beside this file. Times are in seconds.
 
 # A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
 # once the data was there. It ends first, and its notice ("The tour stays in help", 6 s) is waited out, so the entry
@@ -81,15 +83,12 @@ desk pick stash 4 1 2
 wait 1
 snapshot %TEMP%\shturmap-qa\desk\picked
 
-# A reading that changed the backpack (a LEDX more): the backpack opens and comes in, the rest folds.
+# A reading that showed and changed the backpack alone (a LEDX more): the backpack comes in where it stands, the rest is
+# kept in its place, a step dimmer, each head dated; nothing moves.
 desk 2
 wait 3
-snapshot %TEMP%\shturmap-qa\desk\fold
-# STASH's name in its fold line clicked: the stash opens, until the next reading.
-desk open stash
-wait 1
-snapshot %TEMP%\shturmap-qa\desk\unfold
-# The same page again: a reading that changed nothing changes nothing.
+snapshot %TEMP%\shturmap-qa\desk\kept
+# The same screenshot again: a reading that changed nothing changes nothing, and dims nothing anew.
 desk 3
 wait 1
 snapshot %TEMP%\shturmap-qa\desk\same
@@ -115,5 +114,5 @@ wait 7
 snapshot %TEMP%\shturmap-qa\desk\after
 desk show
 wait 1
-snapshot %TEMP%\shturmap-qa\desk\kept
+snapshot %TEMP%\shturmap-qa\desk\back
 exit

@@ -7,12 +7,13 @@ namespace Shturmap.App.Rules;
 /// A made-up desk for developer runs and snapshots ("--desk [&lt;n&gt;]", the developer script's "desk [&lt;n&gt;]",
 /// tools\fake-raid.ps1 -Desk; docs/DESIGN.md §8, "Developer aids"), built through the model as a reading's page is
 /// (<see cref="DeskSheet.Of"/>): real items of the catalogue, so their art and cards are there, with made-up prices,
-/// counts, conditions and needs. It shows every mark the view draws: a LOADOUT strip with "?" slots, a scaled condition
-/// and weapons with their mods unseen; TACTICAL RIG with a long condition that takes the arrow's room; POCKETS with a
-/// wallet whose contents are unseen; a BACKPACK whose "?" Zhuk has its window attached ("ZHUK · IN THE BACKPACK"); the
-/// POUCH's secure container, which has no price; a STASH page with "?" cells, keep notches of each weight, arrows, a
-/// case with its contents unseen and a cell with no price; and a wallets' window attached to none, split between ON YOU
-/// and the stash. For the card and the click (step C, 2026-10-19), a cell of each of the copy's states: the stash's LEDX
+/// counts, conditions and needs. It shows every mark the view draws: LOADOUT's boxes with "?" slots, a scaled condition,
+/// weapons with their mods unseen and empty slots; TACTICAL RIG with a long condition that takes the arrow's room; POCKETS
+/// with a wallet whose contents are unseen; a BACKPACK whose "?" Zhuk has its window attached ("ZHUK · IN THE BACKPACK");
+/// no POUCH, which no reading shows, so its place is the dashed frame of a region never read (owner, 2026-10-25); a STASH
+/// page with "?" cells, keep notches of each weight, arrows, a case with its contents unseen and a cell with no price; and
+/// a wallets' window attached to none, split between ON YOU and the stash. Reading 2 shows the backpack alone, so the
+/// rest is kept from reading 1, a step dimmer and dated. For the card and the click (step C, 2026-10-19), a cell of each of the copy's states: the stash's LEDX
 /// copies, the pumping station's back door key copies over the best net, the pockets' blue keycard is one Therapist pays
 /// more for, the 5.45 BS ammo can't be listed, the backpack's Grizzly at 1469/1800 copies a scaled price, and the stash's
 /// keycards' "?" waits for a pick; and every item a made-up price history (<see cref="History"/>), so the card's band
@@ -20,9 +21,19 @@ namespace Shturmap.App.Rules;
 /// </summary>
 public static class DeskExample
 {
-    /// <summary>The readings there are: 1, the mode's first (every region opens); 2, one that changed the backpack (a
-    /// LEDX more: the rest folds); 3, the same page again (a reading that changed nothing changes nothing).</summary>
+    /// <summary>The readings there are: 1, the mode's first (every region read but the POUCH, which none shows); 2, seven
+    /// minutes later, one that showed the backpack alone and changed it (a LEDX more: the rest is kept from reading 1,
+    /// dimmed and dated); 3, two minutes after, the same screenshot again (a reading that changed nothing changes nothing:
+    /// the backpack read anew, the rest as dimmed as before).</summary>
     public const int Readings = 3;
+
+    // When each reading's screenshot was taken (the repository's example day, 2026-01-01).
+    private static DateTimeOffset Taken(int reading) => new DateTimeOffset(2026, 1, 1, 14, 2, 0, TimeSpan.Zero).AddMinutes(reading switch
+    {
+        1 => 0,
+        2 => 7,
+        _ => 9,
+    });
 
     private const string Therapist = "54cb57776803fa99248b456e";
     private const string Prapor = "54cb50c76803fa8b248b4571";
@@ -146,10 +157,13 @@ public static class DeskExample
         return new DeskCell(i, j, facts.W, facts.H, ids) { Holds = HoldsOf(facts) };
     }
 
-    /// <summary>The page of reading <paramref name="reading"/> (1 to <see cref="Readings"/>).</summary>
+    /// <summary>The page in hand after reading <paramref name="reading"/> (1 to <see cref="Readings"/>), each region with
+    /// when the screenshot that last showed it was taken: from reading 2 on the backpack the reading's, the rest reading
+    /// 1's (the view draws those a step dimmer, their heads dated).</summary>
     public static DeskPage Page(int reading)
     {
-        var at = new DateTimeOffset(2026, 1, 1, 14, 2, 0, TimeSpan.Zero);
+        reading = Math.Clamp(reading, 1, Readings);
+        var at = Taken(reading);
         var loadout = new DeskRegion("loadout", DeskRegionKind.Loadout, 0, 0,
         [
             Slot("headwear", BastionBlack, BastionGreen, BastionMulticam),
@@ -205,8 +219,6 @@ public static class DeskExample
             AttachedTo = new DeskAnchor("backpack", 0, 0),
             Parts = [.. Enumerable.Range(0, 10).Select(k => new DeskRect(k % 5, k / 5 * 2, 1, 2))],
         };
-        var pouch = new DeskRegion("pouch", DeskRegionKind.Pouch, 3, 3,
-            [Slot("pouch", Gamma) with { Holds = DeskHolds.Contents }, At(0, 0, LabsRed), At(1, 0, Bitcoin), At(0, 1, Salewa, print: new DeskPrint(220, 400))]);
         var stash = new DeskRegion("stash", DeskRegionKind.Stash, 10, 11,
         [
             At(0, 0, ItemCase),
@@ -240,8 +252,16 @@ public static class DeskExample
             SameName = 2,
             SameNameIn = ["pockets", "stash"],
         };
-        return new DeskPage(at, [stash, loadout, rig, pockets, special, backpack, zhuk, pouch, wallets]);
+        // The backpack as this reading showed it; the rest as reading 1 did.
+        DeskRegion Read(DeskRegion region) => region with { ReadAt = region.Key == "backpack" ? at : Taken(1) };
+        return new DeskPage(at, [.. new[] { stash, loadout, rig, pockets, special, backpack, zhuk, wallets }.Select(Read)]);
     }
+
+    /// <summary>The POUCH the made-up desk never shows (its place on the desk the dashed frame of a region never read), for
+    /// the in-raid glance's made-up readings, which carry the player's own regions (<see cref="GlanceExample"/>): the
+    /// secure container, which has no price, a red keycard, a bitcoin and a Salewa at 220/400.</summary>
+    internal static DeskRegion Pouch() => new("pouch", DeskRegionKind.Pouch, 3, 3,
+        [Slot("pouch", Gamma) with { Holds = DeskHolds.Contents }, At(0, 0, LabsRed), At(1, 0, Bitcoin), At(0, 1, Salewa, print: new DeskPrint(220, 400))]);
 
     /// <summary>The made-up desk of reading <paramref name="reading"/> (1 to <see cref="Readings"/>), as the session
     /// would publish it, with the window's reading counter.</summary>

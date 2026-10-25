@@ -31,7 +31,7 @@ public static class GlanceExample
     public static DeskPage Page(int reading)
     {
         var at = new DateTimeOffset(2026, 1, 1, 14, 20, 0, TimeSpan.Zero);
-        var own = DeskExample.Page(1).Regions.Where(r => r.OnYou).ToList();
+        var own = DeskExample.Page(1).Regions.Where(r => r.OnYou).Append(DeskExample.Pouch()).ToList();
         IReadOnlyList<DeskRegion> loot = Math.Clamp(reading, 1, Readings) == 1 ? Drawer() : Body();
         return new DeskPage(at, [.. own, .. loot]);
     }

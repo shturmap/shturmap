@@ -452,12 +452,6 @@ public sealed partial class MainWindow
             .FirstOrDefault(k => k == step.Region || k == Core.Desk.DeskRegion.WindowKey(step.Region));
         if (key is null)
             return "desk: no region " + step.Region;
-        if (step.Act == DevScript.DeskAct.Open)
-        {
-            _deskOpen = DeskFold.Unfold(_deskOpen ?? new HashSet<string>(), key);
-            ShowDeskPage(motion: false);
-            return "desk: opened " + key;
-        }
         var cell = step.Slot is { } named ? StashDesk.CellOf(new DeskCellKey(key, named, 0, 0))
             : step.I < 0 ? StashDesk.FirstCellOf(key) : StashDesk.CellAt(key, step.I, step.J);
         if (cell is null)

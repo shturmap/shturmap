@@ -21,9 +21,9 @@ public class DeskStemTests
 
     // Nothing in the way: as before. Out of the cell's lower corner on the window's side, straight along that row line to
     // the grid's edge (1×1 items beside it passed along their edges); a cell at that edge from the middle of its side,
-    // however tall. The made-up desk's Zhuk (four by three at the backpack's top left): at 1600×900, its window in the
-    // gear's next column, out of its lower right corner along the Grizzly's bottom edge (tools/qa/desk.md, *first*); at
-    // 2560×1440, its window under the backpack, out of its left edge's middle.
+    // however tall. The made-up desk's Zhuk (four by three at the backpack's top left): at 1600×900 and 2560×1440, its
+    // window under the stash or right of it, out of its lower right corner along the Grizzly's bottom edge
+    // (tools/qa/desk.md, *first*); at 900×560, in one column, out of its left edge's middle.
     [Fact]
     public void With_nothing_in_the_way_the_stem_leaves_the_lower_corner_as_before()
     {

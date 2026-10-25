@@ -20,7 +20,6 @@ public sealed partial class MainWindow
 {
     private bool _deskChosen;
     private int _deskReadingSeen;
-    private IReadOnlySet<string>? _deskOpen;
     private DeskView? _deskShown;
     private DeskView? _deskExample;
     private bool _deskBoardDue = true;
@@ -64,19 +63,11 @@ public sealed partial class MainWindow
         StashDesk.CellPointed += OnDeskCellPointed;
         StashDesk.CellClicked += cell => CopyDeskCell(cell, "click");
         StashDesk.CellPinToggled += cell => ToggleDeskPin(cell.Key, "right-click");
-        StashDesk.Unfolded += key =>
-        {
-            if (_deskOpen is null)
-                return;
-            Study.Ui("desk.unfold", ("region", key));
-            _deskOpen = DeskFold.Unfold(_deskOpen, key);
-            ShowDeskPage(motion: false);
-        };
         _deskRule = DeskCopyRule.Of(_session.GetSetting(DeskCopyRule.Setting));
         ShowCopyRuleSetting();
     }
 
-    // Each snapshot: a new reading in the menus opens the desk, a raid takes the window, the fold follows the reading.
+    // Each snapshot: a new reading in the menus opens the desk, a raid takes the window, what a reading changed comes in.
     private void UpdateDesk(SessionSnapshot s)
     {
         var view = DeskNow(s);
@@ -84,11 +75,10 @@ public sealed partial class MainWindow
         if (view is not null)
             _deskReadingSeen = Math.Max(_deskReadingSeen, view.Reading);
         var chosen = DeskSwitch.ChosenAfter(_deskChosen, ViewModel.InRaid, fresh, TourOpen);
-        if (view is not null && (fresh || _deskOpen is null || !ReferenceEquals(view, _deskShown)))
+        if (view is not null && (fresh || !ReferenceEquals(view, _deskShown)))
         {
             var keys = view.Sheet.Regions.Select(r => r.Region.Key).ToList();
-            _deskOpen = DeskFold.Open(_deskOpen, keys, view.Changed, view.First, fresh);
-            _deskEntering = DeskFold.Entering(_deskOpen, view.Changed, view.First, fresh);
+            _deskEntering = DeskPageRules.Entering(keys, view.Changed, view.First, fresh);
             if (view.Mode != _deskHistoriesMode)
             {
                 _deskHistories.Clear();
@@ -102,9 +92,8 @@ public sealed partial class MainWindow
         }
         else if (view is null && _deskShown is not null)
         {
-            // The mode changed to one without a page: the desk says so, and the next page opens whole.
+            // The mode changed to one without a page: the desk says so.
             _deskShown = null;
-            _deskOpen = null;
             _deskPins = [];
             _deskPointed = null;
             _deskBoardDue = true;
@@ -143,7 +132,7 @@ public sealed partial class MainWindow
 
     /// <summary>
     /// Shturmap's texts changed language (OnUiLanguageChanged): the page's words and figures (the head line, the regions'
-    /// heads, the fold and "Not attached" lines, "5.45 M", "−3%"), the cards and settings' row of the copy's rule are made
+    /// heads and the slots' names, the "Not attached" lines, "5.45 M", "−3%"), the cards and settings' row of the copy's rule are made
     /// as they are built, so each is built again in the new language at once: the page on screen standing (nothing comes
     /// in, the totals don't count up), a page out of sight when it next shows (release QA pass of 2026-10-19, F1: the page
     /// kept the old language beside a rail in the new one).
@@ -161,13 +150,13 @@ public sealed partial class MainWindow
         RenderDeskRail();
     }
 
-    // The page as it is: the desk's view and fold; the cells of a new reading's opened regions come in, once.
+    // The page as it is; the cells of the regions a new reading changed come in, once.
     private void ShowDeskPage(bool motion)
     {
         _deskBoardDue = false;
         var entering = _deskEntering;
         _deskEntering = new HashSet<string>();
-        StashDesk.Show(_deskShown, _deskOpen ?? new HashSet<string>(), entering, motion);
+        StashDesk.Show(_deskShown, entering, motion);
         StashDesk.ShowPinned(_deskPins.Select(p => p.Key).ToHashSet());
     }
 
@@ -507,7 +496,7 @@ public sealed partial class MainWindow
         UpdateDesk(s);
     }
 
-    // The same reading again with the picks made since: not a new reading, so the page keeps its fold and nothing comes in.
+    // The same reading again with the picks made since: not a new reading, so nothing comes in.
     private void RemakeDeskExample(SessionSnapshot s)
     {
         if (_deskExample is not { } shown)

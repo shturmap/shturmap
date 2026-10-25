@@ -22,12 +22,13 @@ param(
   [int] $Operational,
   # With -Operational: one more task that runs out at once, for the "1 ended at …" line.
   [switch] $OperationalEnded,
-  # The made-up stash desk (docs/DESIGN.md §4, *The stash desk*), up as a reading in the menus brings it: a LOADOUT strip
-  # with "?" slots, TACTICAL RIG, POCKETS, a BACKPACK with its Zhuk's window attached, the POUCH and a STASH page, every
-  # mark of a cell (src\Shturmap.App\Rules\DeskExample.cs). Use with -PlanOnly: a raid takes the window back.
+  # The made-up stash desk (docs/DESIGN.md §4, *The stash desk*), up as a reading in the menus brings it: LOADOUT's boxes
+  # with "?" slots, TACTICAL RIG, POCKETS, a BACKPACK with its Zhuk's window attached, the POUCH never read (its dashed
+  # frame) and a STASH page, every mark of a cell (src\Shturmap.App\Rules\DeskExample.cs). Use with -PlanOnly: a raid
+  # takes the window back.
   [switch] $Desk,
-  # With -Desk: the made-up desk's reading (1 the first, every region open; 2 one that changed the backpack, the rest
-  # folded; 3 one that changed nothing).
+  # With -Desk: the made-up desk's reading (1 the first; 2 one that showed and changed the backpack alone, the rest kept,
+  # dimmed and dated; 3 the same again, which changed nothing).
   [ValidateRange(1, 3)] [int] $DeskReading = 1,
   # The made-up in-raid glance (docs/DESIGN.md §4, *The in-raid glance*), up as a raid screenshot of an inventory screen
   # brings it once the raid is on: 1, a drawer with three items; 2, a body with its slots, an UNSEARCHED rig, pockets being

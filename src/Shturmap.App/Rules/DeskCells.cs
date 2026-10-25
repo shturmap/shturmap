@@ -111,14 +111,15 @@ public static class DeskCells
         _ => DeskNotch.None,
     };
 
-    /// <summary>A cell's width on the desk: a grid cell its footprint, a slot two cells (80×40), a weapon's slot four
-    /// and a gap (164×40; *What it mirrors*, LOADOUT).</summary>
+    /// <summary>A cell's width in a grid or a strip of slots (the in-raid glance's LOOT pane; the desk's LOADOUT until
+    /// 2026-10-25, whose slots now stand in boxes, <see cref="DeskPageRules.LoadoutBoxes"/>): a grid cell its footprint, a
+    /// slot two cells (80×40), a weapon's slot four and a gap (164×40).</summary>
     public static double Width(DeskCell cell, double size) =>
         !cell.IsSlot ? Math.Max(1, cell.W) * size
         : DeskSlots.IsWeapon(cell.Slot) ? 4 * size + size / 10
         : 2 * size;
 
-    /// <summary>A cell's height on the desk: a grid cell its footprint, a slot one cell.</summary>
+    /// <summary>A cell's height in a grid or a strip of slots: a grid cell its footprint, a slot one cell.</summary>
     public static double Height(DeskCell cell, double size) => cell.IsSlot ? size : Math.Max(1, cell.H) * size;
 
     /// <summary>The bottom right as the game prints it: the "current/max" (a condition, or a magazine's rounds), else the
@@ -137,12 +138,14 @@ public static class DeskCells
     /// drawn under 8 px; and a count or a figure that doesn't fit even so moves to the card.
     /// </summary>
     /// <param name="trim">DIP the cell gives up of its width to its compartment's gaps (<see cref="DeskPageRules.Inset"/>).</param>
-    public static DeskCellMarks Of(DeskCellSheet sheet, double size, Func<double, double>? drawn = null, double trim = 0)
+    /// <param name="box">The cell's width where it stands in a box of its own (a loadout slot's, a container's; owner,
+    /// 2026-10-25), else its width in a grid or a strip (<see cref="Width"/>).</param>
+    public static DeskCellMarks Of(DeskCellSheet sheet, double size, Func<double, double>? drawn = null, double trim = 0, double? box = null)
     {
         drawn ??= s => s;
         var cell = sheet.Cell;
         var figure = sheet.Figure;
-        var width = Width(cell, size) - trim;
+        var width = (box ?? Width(cell, size)) - trim;
         var large = size >= Large;
         var plate = cell.ItemId is null && cell.Ids.Count > 1;
         var notch = NotchOf(sheet.Keep);

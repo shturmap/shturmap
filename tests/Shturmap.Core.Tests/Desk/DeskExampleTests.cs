@@ -12,17 +12,27 @@ public class DeskExampleTests
 
     private static IEnumerable<DeskCellSheet> Cells(DeskView view) => view.Sheet.Regions.SelectMany(r => r.Cells);
 
+    // Reading 1 the mode's first; reading 2, seven minutes later, showed the backpack alone and changed it (a LEDX more), so
+    // the rest is kept from reading 1, older than the page (the view dims and dates it); reading 3, the same screenshot
+    // again, changed nothing and dims nothing anew. No reading shows the POUCH: its place is the dashed frame of a region
+    // never read (owner, 2026-10-25).
     [Fact]
     public void Its_three_readings_are_a_first_a_change_and_none()
     {
         var first = Reading(1);
         Assert.True(first.First);
         Assert.Equal(first.Sheet.Regions.Select(r => r.Region.Key).ToHashSet(), first.Changed);
+        Assert.All(first.Sheet.Page.Regions, r => Assert.Equal(first.Sheet.Page.ReadAt, r.ReadAt));
         var second = Reading(2);
         Assert.False(second.First);
         Assert.Equal(["backpack"], second.Changed.ToList());
         Assert.Equal(Cells(first).Count() + 1, Cells(second).Count());
-        Assert.Empty(Reading(3).Changed);
+        Assert.Equal(TimeSpan.FromMinutes(7), second.Sheet.Page.ReadAt - first.Sheet.Page.ReadAt);
+        Assert.Equal(["backpack"], second.Sheet.Page.Regions.Where(r => !DeskPageRules.Kept(r, second.Sheet.Page)).Select(r => r.Key));
+        var third = Reading(3);
+        Assert.Empty(third.Changed);
+        Assert.Equal(["backpack"], third.Sheet.Page.Regions.Where(r => !DeskPageRules.Kept(r, third.Sheet.Page)).Select(r => r.Key));
+        Assert.All(new[] { first, second, third }, view => Assert.DoesNotContain(view.Sheet.Regions, r => r.Region.Kind == DeskRegionKind.Pouch));
         // Out of range: the nearest.
         Assert.True(DeskExample.View(0, GameMode.Pve, 1, null, DateTimeOffset.UnixEpoch).First);
     }
@@ -45,8 +55,13 @@ public class DeskExampleTests
         var zhuk = view.Sheet.Regions.Single(r => r.Region.Key == "backpack").Cells.Single(c => c.Cell.Ids.Count == 2);
         Assert.False(zhuk.Unseen);
         Assert.NotNull(view.Sheet.Page.WindowOf(view.Sheet.Page.Region("backpack")!, zhuk.Cell));
-        // No price: the secure container, the roubles.
-        Assert.Contains(cells, c => c.Cell.Slot == "pouch" && c.Figure is null);
+        // No price: the streamer case, the roubles (the secure container, with the POUCH, the glance's alone since 2026-10-25).
+        Assert.Contains(cells, c => c.Cell.ItemId == DeskExample.StreamerCase && c.Figure is null);
+        Assert.Contains(cells, c => c.Cell.ItemId == DeskExample.Roubles && c.Figure is null);
+        Assert.Contains(DeskExample.Pouch().Cells, c => c.Slot == "pouch");
+        // Empty slots in LOADOUT, drawn as empty boxes: the earpiece, the face cover, the eyewear, on back, the sheath.
+        Assert.Equal(["earpiece", "eyewear", "facecover", "onback", "sheath"],
+            DeskSlots.Loadout.Select(s => s.Key).Except(view.Sheet.Regions.Single(r => r.Region.Key == "loadout").Cells.Select(c => c.Cell.Slot!)).Order());
         // Every notch, both arrows, every tint, both sources.
         Assert.Equal(
             [DeskKeepLevel.None, DeskKeepLevel.Later, DeskKeepLevel.Hideout, DeskKeepLevel.Next, DeskKeepLevel.Now],

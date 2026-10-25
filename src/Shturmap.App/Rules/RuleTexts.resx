@@ -360,53 +360,57 @@
     <value>ON YOU {onYou} · STASH {stash} · KEEP {now} · {next} · {later}</value>
     <comment>The stash desk's head line, in muted capitals over the page: what the items on the player are worth, what the stash's are worth ("1.01 M ₽", "6.84 M+ ₽"), then how many cells are kept for an active quest (now), a quest the active ones unlock (next) and one further down (later), as the cells' notches say. Capitals.</comment>
   </data>
-  <data name="DeskUnchanged" xml:space="preserve">
-    <value>UNCHANGED</value>
-    <comment>The stash desk: the words before the names of the regions a screenshot didn't change, folded into one line ("UNCHANGED · POUCH ▸ · STASH ▸"); a click on a name opens its region. Capitals.</comment>
+  <data name="DeskNotRead" xml:space="preserve">
+    <value>NOT IN A SCREENSHOT YET</value>
+    <comment>The stash desk: muted, inside the dashed frame that stands in the place of a part of the GEAR tab (TACTICAL RIG, POCKETS, BACKPACK, STASH…) no screenshot has shown yet, so the desk keeps the game's layout; under LOADOUT's head when its slots weren't seen. Capitals; the frame is five cells wide (200 DIP at the smallest), SPECIAL SLOTS' three (120 DIP), where the words wrap.</comment>
+  </data>
+  <data name="DeskHeadSince" xml:space="preserve">
+    <value>{head} · {time}</value>
+    <comment>The stash desk: the head of a part the last screenshot didn't show, drawn a step dimmer: its head and when the screenshot that last showed it was taken ("BACKPACK · 23:08", "KEYS · IN THE STASH · 19 OCT 23:08"). {head}: the part's head (DeskBackpack, DeskWindowInStash…); {time}: "23:08", or on an earlier day the date and time as the language writes them ("19 OCT 23:08"), its spaces no-break. A no-break space after the "·", so a head that wraps (SPECIAL SLOTS, three cells wide) takes the "·" with the time to its next line. Capitals.</comment>
   </data>
   <data name="DeskSlotEarpiece" xml:space="preserve">
     <value>EARPIECE</value>
-    <comment>The stash desk's card: the loadout slot an item is in, as the GEAR tab heads it, in muted capitals over the item's name ("HEADWEAR" over "BAC Bastion"). The game's own word where the game has one.</comment>
+    <comment>The stash desk: a loadout slot as the GEAR tab heads it, the small muted eyebrow over its box on the desk's LOADOUT (a box two cells wide: about 80 DIP at the smallest; a longer name is set smaller, never under 8 px), and on the card over the item's name ("HEADWEAR" over "BAC Bastion"). The game's own word where the game has one. Capitals.</comment>
   </data>
   <data name="DeskSlotHeadwear" xml:space="preserve">
     <value>HEADWEAR</value>
-    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+    <comment>The stash desk: a loadout slot, over its box and on the card (DeskSlotEarpiece).</comment>
   </data>
   <data name="DeskSlotFaceCover" xml:space="preserve">
     <value>FACE COVER</value>
-    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+    <comment>The stash desk: a loadout slot, over its box and on the card (DeskSlotEarpiece).</comment>
   </data>
   <data name="DeskSlotArmband" xml:space="preserve">
     <value>ARMBAND</value>
-    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+    <comment>The stash desk: a loadout slot, over its box and on the card (DeskSlotEarpiece).</comment>
   </data>
   <data name="DeskSlotBodyArmor" xml:space="preserve">
     <value>BODY ARMOR</value>
-    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+    <comment>The stash desk: a loadout slot, over its box and on the card (DeskSlotEarpiece).</comment>
   </data>
   <data name="DeskSlotEyewear" xml:space="preserve">
     <value>EYEWEAR</value>
-    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+    <comment>The stash desk: a loadout slot, over its box and on the card (DeskSlotEarpiece).</comment>
   </data>
   <data name="DeskSlotDogtag" xml:space="preserve">
     <value>DOGTAG</value>
-    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+    <comment>The stash desk: a loadout slot, over its box and on the card (DeskSlotEarpiece).</comment>
   </data>
   <data name="DeskSlotOnSling" xml:space="preserve">
     <value>ON SLING</value>
-    <comment>The stash desk's card: a loadout slot, the primary weapon's (DeskSlotEarpiece).</comment>
+    <comment>The stash desk: a loadout slot, the primary weapon's, over its box five cells wide and on the card (DeskSlotEarpiece).</comment>
   </data>
   <data name="DeskSlotHolster" xml:space="preserve">
     <value>HOLSTER</value>
-    <comment>The stash desk's card: a loadout slot, the pistol's (DeskSlotEarpiece).</comment>
+    <comment>The stash desk: a loadout slot, the pistol's, over its box and on the card (DeskSlotEarpiece).</comment>
   </data>
   <data name="DeskSlotOnBack" xml:space="preserve">
     <value>ON BACK</value>
-    <comment>The stash desk's card: a loadout slot, the second long weapon's (DeskSlotEarpiece).</comment>
+    <comment>The stash desk: a loadout slot, the second long weapon's, over its box five cells wide and on the card (DeskSlotEarpiece).</comment>
   </data>
   <data name="DeskSlotSheath" xml:space="preserve">
     <value>SHEATH</value>
-    <comment>The stash desk's card: a loadout slot, the knife's (DeskSlotEarpiece).</comment>
+    <comment>The stash desk: a loadout slot, the knife's, over its box and on the card (DeskSlotEarpiece).</comment>
   </data>
   <data name="DeskCardOffers" xml:space="preserve">
     <value>{count, plural, one {# OFFER} other {# OFFERS}}</value>

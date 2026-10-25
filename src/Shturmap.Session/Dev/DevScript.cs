@@ -66,9 +66,10 @@ public static class DevScript
             + "leave, the pointer off the line it is on, as leaving the card does",
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
         ["stash"] = "the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it",
-        ["desk"] = "[<n>] | open <region> | point|pin|copy <region> [<i> <j> | <slot>] | unpin [<region> <i> <j> | all] | pick <region> <i> <j> | <slot> <n> "
+        ["desk"] = "[<n>] | point|pin|copy <region> [<i> <j> | <slot>] | unpin [<region> <i> <j> | all] | pick <region> <i> <j> | <slot> <n> "
             + "| rule match|under:<n>|over:<n> | plan | show [<n>]: the made-up stash desk's n-th reading as a reading in the menus brings it "
-            + "(1, the first, every region open; 2, one that changed the backpack, the rest folded; 3, one that changed nothing); open, a folded region's name clicked; "
+            + "(1, the first, every region read but the POUCH, which no reading shows; 2, one that showed and changed the backpack alone, the rest kept, "
+            + "dimmed and dated; 3, the same again, which changed nothing); "
             + "point, the pointer on a region's cell at that grid place or slot (alone, its first cell: a slot, else its top left item), as the pointer's events do; "
             + "pin, the cell right-clicked (its card pinned in the rail, or unpinned); unpin, a pinned card's pin clicked, all of them with all or nothing; "
             + "copy, the cell clicked (its flash, decode and notice; the clipboard left alone in a script); pick, the n-th candidate (from 1) clicked on a \"?\" cell's card; "
@@ -129,13 +130,12 @@ public static class DevScript
         return (count, ended);
     }
 
-    /// <summary>What a "desk" step does: shows a made-up reading, opens a folded region, points at a cell, pins, unpins,
-    /// clicks (copies) or picks one, sets the copy's rule, goes back to Plan or to the desk, or clicks a pinned line in the
-    /// rail's foot.</summary>
+    /// <summary>What a "desk" step does: shows a made-up reading, points at a cell, pins, unpins, clicks (copies) or picks
+    /// one, sets the copy's rule, goes back to Plan or to the desk, or clicks a pinned line in the rail's foot. (Until
+    /// 2026-10-25 "open" clicked a folded region's name; the fold is gone.)</summary>
     public enum DeskAct
     {
         Reading,
-        Open,
         Point,
         Plan,
         Show,
@@ -161,7 +161,7 @@ public static class DevScript
 
     /// <summary>
     /// A "desk" step (step B of the stash desk, 2026-10-19; step C, 2026-10-19): "desk [&lt;n&gt;]" the made-up desk's
-    /// reading n (1 without a number, at most 3), "desk open &lt;region&gt;" a folded region's name clicked, "desk point
+    /// reading n (1 without a number, at most 3), "desk point
     /// &lt;region&gt; [&lt;i&gt; &lt;j&gt; | &lt;slot&gt;]" the pointer on its cell at that grid place or slot (alone, its first
     /// cell), "desk pin …" the cell right-clicked, "desk copy …" the cell clicked, "desk unpin [&lt;region&gt; &lt;i&gt; &lt;j&gt; |
     /// all]" a pin clicked (all, or nothing named: every pin), "desk pick &lt;region&gt; &lt;i&gt; &lt;j&gt; | &lt;slot&gt; &lt;n&gt;" a
@@ -186,7 +186,6 @@ public static class DevScript
             [var show, var n] when Is(show, "show") && Number(n, out var line) && line >= 1 => new DeskStep(DeskAct.ShowPin) { N = line },
             [var unpin] when Is(unpin, "unpin") => new DeskStep(DeskAct.UnpinAll),
             [var unpin, var all] when Is(unpin, "unpin") && Is(all, "all") => new DeskStep(DeskAct.UnpinAll),
-            [var open, var region] when Is(open, "open") => new DeskStep(DeskAct.Open, 0, region.ToLowerInvariant()),
             [var rule, var said] when Is(rule, "rule") && Core.Desk.DeskCopyRule.Parse(said) is { } parsed => new DeskStep(DeskAct.Rule) { Rule = parsed.Format() },
             [var verb, var region] when CellAct(verb) is { } act && act != DeskAct.Unpin => new DeskStep(act, 0, region.ToLowerInvariant(), -1, -1),
             [var verb, var region, var slot] when CellAct(verb) is { } act && !Number(slot, out _) => new DeskStep(act, 0, region.ToLowerInvariant()) { Slot = slot.ToLowerInvariant() },
@@ -341,7 +340,7 @@ public static class DevScript
             }
             if (verb == "desk" && DeskOf(step) is null)
             {
-                errors.Add($"line {i + 1}: 'desk' takes a reading (1 to 3), 'open <region>', 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
+                errors.Add($"line {i + 1}: 'desk' takes a reading (1 to 3), 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
                     + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan' or 'show [<n>]'");
                 continue;
             }
