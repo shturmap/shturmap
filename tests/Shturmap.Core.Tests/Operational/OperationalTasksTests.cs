@@ -284,10 +284,32 @@ public class OperationalTasksTests
         // A refresh is a countdown, not a reading of the task: its time stays.
         Assert.Equal(Day, tasks[0].ReadAt);
 
-        // A story quest's tab (no task): its list still refreshes, and a refresh that disagrees leaves none.
+        // A story quest's tab (no task): its list still refreshes, and an entry that disagrees leaves the expiry as it was
+        // (code review, 2026-10-25: it may be another task of the name).
         var refreshed = ledger.ApplyTrader(GameMode.Pve, at.AddMinutes(1), null, [Entry("Elimination", new TimeSpan(7, 30, 0))]);
         Assert.Equal(new OperationalTraderApplied(Added: false, Updated: false, Refreshed: 0, Dropped: 1), refreshed);
-        Assert.Null(ledger.Tasks(GameMode.Pve)[0].ExpiresAt);
+        Assert.Equal(at + new TimeSpan(8, 0, 0), ledger.Tasks(GameMode.Pve)[0].ExpiresAt);
+    }
+
+    [Fact]
+    public void A_list_entry_never_takes_an_expiry_away_but_refreshes_one_that_agrees_and_gives_one_where_none_is()
+    {
+        // Code review, 2026-10-25: the list says no map, so its "Exit the location" may be another trader's task of the name.
+        var ledger = new OperationalLedger();
+        ledger.ApplyTable(GameMode.Pve, Day,
+            [Row("Exit the location", Customs, new TimeSpan(10, 0, 0)), Row("Elimination", Woods, null), Row("Find and transfer", null, new TimeSpan(20, 0, 0))]);
+        var at = Day.AddMinutes(10);
+        var applied = ledger.ApplyTrader(GameMode.Pve, at, null,
+            [Entry("Exit the location", new TimeSpan(6, 0, 0)), Entry("Elimination", new TimeSpan(8, 0, 0)), Entry("Find and transfer", new TimeSpan(19, 50, 3))]);
+        Assert.Equal(new OperationalTraderApplied(Added: false, Updated: false, Refreshed: 2, Dropped: 1), applied);
+        var tasks = ledger.Tasks(GameMode.Pve);
+        // Four hours off the kept expiry: left, the table's expiry stands.
+        Assert.Equal(Day + new TimeSpan(10, 0, 0), tasks[0].ExpiresAt);
+        // A task without an expiry takes the entry's.
+        Assert.Equal(at + new TimeSpan(8, 0, 0), tasks[1].ExpiresAt);
+        // Three seconds off: it agrees, and refreshes the expiry.
+        Assert.Equal(at + new TimeSpan(19, 50, 3), tasks[2].ExpiresAt);
+        Assert.NotEqual(Day + new TimeSpan(20, 0, 0), tasks[2].ExpiresAt);
     }
 
     [Fact]
