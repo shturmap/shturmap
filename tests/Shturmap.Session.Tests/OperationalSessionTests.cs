@@ -8,8 +8,9 @@ namespace Shturmap.Session.Tests;
 
 // The daily and weekly operational tasks from a menu screenshot of the Tasks screen (owner, 2026-10-19: from a panel of
 // four, B): in the stash's path (one tick, the menus only), a picture of the table goes to the tasks' reading alone,
-// its rows land on their maps and in operational.json, the notice says how many, a trader's tasks go to neither
-// reading. The readers are the test's own: they say what a picture "shows", so no picture is needed.
+// its rows land on their maps and in operational.json, the notice says how many; a trader's TASKS tab (owner,
+// 2026-10-25) goes to the tasks' reading alone too, its one task onto its map, its list's countdowns onto the tasks kept.
+// The readers are the test's own: they say what a picture "shows", so no picture is needed.
 public class OperationalSessionTests
 {
     private static TaskRow Row(string name, string location, TimeSpan? left, params TaskObjective[] objectives)
@@ -134,6 +135,94 @@ public class OperationalSessionTests
         await Task.Delay(800, TestContext.Current.CancellationToken);
         Assert.Empty(rig.Session.Snapshot.Operational);
         Assert.Empty(stashAsked);
+    }
+
+    // A trader's TASKS tab (owner, 2026-10-25): the list's entries, each a name and a countdown, and the header's task when
+    // it is one of them (the same row, with the header's location and status).
+    private static TaskPage TraderTab(string? selected, string? location, params (string Name, TimeSpan? Left)[] entries)
+    {
+        var rows = entries.Select(e => new TaskRow { Name = e.Name, TimeLeft = e.Left, TimeVotes = e.Left is null ? 0 : 4 }).ToList();
+        var task = rows.FirstOrDefault(r => r.Name == selected);
+        if (task is not null)
+            (task.Location, task.Status) = (location, "active");
+        return new TaskPage(TaskScreen.TraderScreen, rows, 17.5) { Selected = task };
+    }
+
+    [Fact]
+    public async Task A_traders_task_view_puts_its_task_on_its_map_with_the_cue_and_in_the_file()
+    {
+        var stashAsked = new List<string>();
+        await using var rig = Rig(() => TraderTab("Exit the location", "Customs", ("Quenvik", new TimeSpan(8, 0, 0)), ("Exit the location", new TimeSpan(23, 54, 15))),
+            stashAsked);
+        rig.Log("Session mode: Pve");
+        await rig.StartAsync();
+        await rig.Until(s => s.Data is not null, "the data");
+
+        MenuScreenshot(rig);
+        var s = await rig.Until(s => s.Operational.Count > 0, "the trader's task");
+        var shown = Assert.Single(s.Operational);
+        Assert.Equal(("Exit the location", "map-customs", "customs"), (shown.Task.Name, shown.Task.MapId, shown.MapKey));
+        Assert.Equal(OperationalKind.Survive, shown.Task.Kind);
+        Assert.NotNull(shown.Task.ExpiresAt);
+        // No table was read: no "As of".
+        Assert.Null(s.OperationalReadAt);
+        Assert.Empty(stashAsked);
+        var cue = Assert.Single(rig.Cues, c => c.Kind == CueKind.TasksRead);
+        Assert.Equal(["Exit the location"], cue.Tasks!.Select(t => t.Task.Name));
+        Assert.Contains("Exit the location", File.ReadAllText(Path.Combine(rig.AppFolder, OperationalLedger.FileName)), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_traders_tab_that_only_refreshes_countdowns_calls_no_cue_and_a_story_quests_adds_nothing()
+    {
+        var page = Table(Row("Elimination", "Customs", null));
+        await using var rig = Rig(() => page);
+        rig.Log("Session mode: Pve");
+        await rig.StartAsync();
+        await rig.Until(s => s.Data is not null, "the data");
+        MenuScreenshot(rig);
+        await rig.Until(s => s.Operational.Count == 1, "the table");
+        Assert.Single(rig.Cues, c => c.Kind == CueKind.TasksRead);
+
+        // A story quest's tab: the list's entry refreshes the kept task's countdown; the other entry adds nothing.
+        page = TraderTab("Zorbs on Parade", "Customs", ("Elimination", new TimeSpan(8, 0, 0)), ("Quenvik", new TimeSpan(5, 0, 0)));
+        MenuScreenshot(rig);
+        var s = await rig.Until(s => s.Operational.Single().Task.ExpiresAt is not null, "the refreshed countdown");
+        Assert.Equal(["Elimination"], s.Operational.Select(t => t.Task.Name));
+        Assert.Single(rig.Cues, c => c.Kind == CueKind.TasksRead);
+        Assert.DoesNotContain(rig.Notices, n => n.StartsWith("Operational task", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_traders_task_on_no_known_map_is_left_out()
+    {
+        await using var rig = Rig(() => TraderTab("Exit the location", "Zorbland", ("Exit the location", new TimeSpan(23, 54, 15))));
+        rig.Log("Session mode: Pve");
+        await rig.StartAsync();
+        await rig.Until(s => s.Data is not null, "the data");
+        MenuScreenshot(rig);
+        await Task.Delay(800, TestContext.Current.CancellationToken);
+        Assert.Empty(rig.Session.Snapshot.Operational);
+        Assert.DoesNotContain(rig.Cues, c => c.Kind == CueKind.TasksRead);
+    }
+
+    [Fact]
+    public async Task Unticked_no_trader_screenshot_is_opened_either()
+    {
+        var asked = 0;
+        await using var rig = Rig(() =>
+        {
+            Interlocked.Increment(ref asked);
+            return TraderTab("Exit the location", "Customs", ("Exit the location", new TimeSpan(23, 54, 15)));
+        });
+        rig.Log("Session mode: Pve");
+        await rig.StartAsync();
+        await rig.Until(s => s.Data is not null, "the data");
+        await rig.Session.SetReadStashAsync(false);
+        MenuScreenshot(rig);
+        await Task.Delay(800, TestContext.Current.CancellationToken);
+        Assert.Equal(0, asked);
+        Assert.Empty(rig.Session.Snapshot.Operational);
     }
 
     [Fact]

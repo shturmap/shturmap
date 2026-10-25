@@ -37,7 +37,10 @@ public enum TaskScreen
     /// <summary>A Tasks table without a countdown in any row (STORY or SIDE, presumably): not read.</summary>
     OtherTable,
 
-    /// <summary>A trader's TASKS tab (the list at the left, REPLACE, one task at the right): told, not read.</summary>
+    /// <summary>A trader's TASKS tab (the list at the left, REPLACE, one task at the right): the task its header names
+    /// when that task stands in the list's OPERATIONAL TASKS (<see cref="TaskPage.Selected"/>), and the countdowns of the
+    /// list's entries (<see cref="TaskPage.Rows"/>; owner, 2026-10-25). Never read by the stash's reading: its grids are
+    /// the task's rewards.</summary>
     TraderScreen,
 }
 
@@ -72,7 +75,24 @@ public sealed class TaskRow
     public TaskBand ProgressBand { get; init; }
 }
 
-public sealed record TaskPage(TaskScreen Screen, IReadOnlyList<TaskRow> Rows, double Unit);
+/// <summary>
+/// What a Tasks screen showed: the screen, the table's rows (on a trader's screen, the entries of its list's OPERATIONAL
+/// TASKS: a name and the countdown beside it, nothing else), and the text unit.
+/// </summary>
+public sealed record TaskPage(TaskScreen Screen, IReadOnlyList<TaskRow> Rows, double Unit)
+{
+    /// <summary>On a trader's screen: the task its header names when that name stands in the list's OPERATIONAL TASKS, an
+    /// operational task (owner, 2026-10-25), with the header's location and status (<see cref="TaskTable.TakeHeader"/>):
+    /// the list's entry of that name, which carries the countdown; a row of its own without a countdown when two entries
+    /// have the name (which of them is selected can't be told). Null for a story or side quest, whose name isn't in the
+    /// list.</summary>
+    public TaskRow? Selected { get; init; }
+
+    /// <summary>On a trader's screen with a <see cref="Selected"/> task: the header line from the picture's left part to
+    /// its right edge, where the task's location and status stand; the one band of the picture's right third that is
+    /// read.</summary>
+    public TaskBand HeaderBand { get; init; }
+}
 
 /// <summary>
 /// The operational tasks' table read from the words of a menu screenshot (owner, 2026-10-19: from a panel of four, B;
@@ -90,6 +110,13 @@ public sealed record TaskPage(TaskScreen Screen, IReadOnlyList<TaskRow> Rows, do
 /// across the columns, so they make no row.</item>
 /// <item>An expanded row: the lines between "Objective(s)" and "Rewards" (or the next row) are its objectives, each
 /// with a count n/m at its end where the game shows one; they go to the row above them.</item>
+/// <item>A trader's TASKS tab (owner, 2026-10-25: "when a daily or weekly is screenshotted from the traders quest accept
+/// view, it is not added"): the entries under the list's OPERATIONAL TASKS heading, each a name and a countdown band at
+/// the list's right edge; the header's task (right of its glyph, on the line of COMPLETE | REPLACE) is an operational
+/// task when an entry has its name. Its location and status stand at the header's right end, in the picture's right
+/// third: that one band is read by the caller and handed to <see cref="TakeHeader"/>. Its objectives are not read: they
+/// stand centred across the screen's width, their counts in the right third (measured at 1440p, 2026-10-25), so the
+/// left part holds them cut.</item>
 /// </list>
 /// </summary>
 public static class TaskTable
@@ -112,10 +139,7 @@ public static class TaskTable
     {
         var header = FindHeader(words);
         if (header.Count < 5)
-        {
-            var screen = IsTraderScreen(words) ? TaskScreen.TraderScreen : TaskScreen.None;
-            return new TaskPage(screen, [], height * UnitAt);
-        }
+            return IsTraderScreen(words) ? Trader(words, width, height) : new TaskPage(TaskScreen.None, [], height * UnitAt);
         var u = Median(header.Select(w => w.H));
         double At(string name, Func<TaskWord, double> where, double fraction) =>
             header.FirstOrDefault(w => Fold(w.Text) == name) is { } w ? where(w) : fraction * width;
@@ -194,7 +218,8 @@ public static class TaskTable
     public static TaskScreen Settle(TaskPage page) =>
         page.Screen == TaskScreen.Table && page.Rows.Count > 0 && page.Rows.All(r => r.TimeLeft is null) ? TaskScreen.OtherTable : page.Screen;
 
-    /// <summary>The countdown's band as read: taken when it reads as hh:mm:ss.</summary>
+    /// <summary>The countdown's band as read: taken when it reads as hh:mm:ss, or days and hh:mm:ss ("6 day(s)
+    /// 23:07:57").</summary>
     public static bool TakeTime(TaskRow row, string text)
     {
         if (TimeLeft(text) is not { } left)
@@ -232,6 +257,129 @@ public static class TaskTable
         // Two words each: a stash page with a lone "replace" on it is no trader's screen.
         return (folded.Contains("replace") && folded.Contains("tasks")) || (folded.Contains("trading") && folded.Contains("services"));
     }
+
+    // ---- a trader's TASKS tab ----
+
+    // Where the list's right edge stands at 1440p (the panel under COMPLETE | REPLACE), for when those words weren't read.
+    private const double ListRightAt = 749 / 2560.0;
+
+    // How far left of the list's right edge a countdown may start, in units: "6 day(s) 23:07:57" is 10.6 wide,
+    // right-aligned before the selected entry's chevron (measured at 1440p, 2026-10-25). The band starts no further left,
+    // so the game's version line under the list's last entry stays out of it.
+    private const double CountdownWidth = 14;
+
+    /// <summary>
+    /// A trader's TASKS tab: the entries of the list's OPERATIONAL TASKS (the names under that heading at its left edge,
+    /// their glyph aside, down to the next section's heading in capitals), each with its countdown band at the list's
+    /// right end (on the name's line, or a little under it where a hand-over's icon stands over it); and the header's task
+    /// when an entry has its name. Nothing else of the page makes a row: the traders' row, the quest's text, its
+    /// objectives and rewards, the other sections' quests.
+    /// </summary>
+    private static TaskPage Trader(IReadOnlyList<TaskWord> words, int width, int height)
+    {
+        var u = height * UnitAt;
+        var told = new TaskPage(TaskScreen.TraderScreen, [], u);
+        var replace = words.Where(w => Fold(w.Text) == "replace").OrderBy(w => w.Y).FirstOrDefault();
+        if (replace is null)
+            return told;
+        // The list under COMPLETE | REPLACE, each word over its half: the list's right edge stands as far right of
+        // REPLACE's middle as half the distance between the two middles.
+        var complete = words.FirstOrDefault(w => Fold(w.Text) == "complete" && w.Right < replace.X && OnLine(w, replace));
+        var listRight = complete is not null ? replace.Cx + (replace.Cx - complete.Cx) / 2 : ListRightAt * width;
+        var heading = words
+            .Where(w => Fold(w.Text) == "operational" && w.Y > replace.Bottom && w.Right < listRight &&
+                        words.Any(t => Fold(t.Text) == "tasks" && OnLine(t, w) && t.X > w.Right && t.X - w.Right <= 1.5 * u))
+            .OrderBy(w => w.Y).FirstOrDefault();
+        if (heading is null)
+            return told;
+
+        var below = Chains(words.Where(w => w.Y > heading.Bottom && w.Right <= listRight + u).ToList(), u);
+        var entries = new List<TaskRow>();
+        foreach (var chain in below.Select(c => Glyphless(c, u)).OfType<TaskChain>().OrderBy(c => c.Cy))
+        {
+            if (chain.X < heading.X - u || chain.X > heading.X + 3 * u || !chain.Text.Any(char.IsLetter))
+                continue;
+            var letters = chain.Text.Where(char.IsLetter).ToList();
+            if (letters.Count >= 4 && letters.All(char.IsUpper))
+                break;
+            if (entries.Count > 0 && Math.Abs(entries[^1].Cy - chain.Cy) < 2 * u)
+                continue;
+            var left = Math.Max(chain.Right + u, listRight - CountdownWidth * u);
+            var top = chain.Y - 0.2 * u;
+            var entry = new TaskRow
+            {
+                Name = Clean(chain.Text),
+                Cy = chain.Cy,
+                TimeBand = new TaskBand((int)Math.Round(left), (int)Math.Round(top), (int)Math.Round(listRight - left),
+                    (int)Math.Round(chain.Bottom + 1.4 * u - top)),
+            };
+            // The countdown where the page's words carry it (the selected entry's, white; the others' orange digits the
+            // page mostly drops, and their band is read by vote).
+            var beside = below.Where(c => c.X >= chain.Right + u && c.Cy >= top && c.Cy <= chain.Bottom + 1.4 * u).OrderBy(c => c.X).ToList();
+            if (beside.Count > 0)
+                TakeTime(entry, string.Join(" ", beside.Select(c => c.Text)));
+            entries.Add(entry);
+        }
+        var page = told with { Rows = entries };
+
+        // The header's task: the run right of its glyph on REPLACE's line, right of the list.
+        var header = Chains(words.Where(w => w.X >= listRight && OnLine(w, replace)).ToList(), u)
+            .OrderBy(c => c.X).Select(c => Glyphless(c, u)).OfType<TaskChain>().FirstOrDefault();
+        if (header is null)
+            return page;
+        var named = entries.Where(e => SameName(e.Name, header.Text)).ToList();
+        if (named.Count == 0)
+            return page;
+        var bandLeft = (int)Math.Round(width * LeftPart);
+        return page with
+        {
+            Selected = named.Count == 1 ? named[0] : new TaskRow { Name = Clean(header.Text), Cy = header.Cy },
+            HeaderBand = new TaskBand(bandLeft, (int)Math.Round(header.Y - 0.5 * u), width - bandLeft, (int)Math.Round(header.Bottom - header.Y + u)),
+        };
+    }
+
+    /// <summary>
+    /// The header line's band as read (its words, in the picture's pixels), for a trader's <see cref="TaskPage.Selected"/>
+    /// task: the task's location, then its status word apart from it at the line's end ("Shoreline", "active!"). A lone
+    /// run is the location, unless it reads as "active" (a task before ACCEPT shows another word there, or none; owner,
+    /// 2026-10-25: it counts all the same). The status is one word: the menu's glyph at the line's end, read as a mark or a
+    /// letter a little after it, is none of it.
+    /// </summary>
+    public static void TakeHeader(TaskRow row, IReadOnlyList<TaskWord> words, double u)
+    {
+        var parts = Chains(words, u).Where(c => c.Text.Count(char.IsLetter) >= 2).OrderBy(c => c.X).ToList();
+        if (parts.Count == 0)
+            return;
+        var status = Status(parts[^1].Words[0].Text);
+        if (parts.Count == 1 && status != "active")
+        {
+            row.Location = Clean(parts[0].Text);
+            return;
+        }
+        if (parts.Count > 1)
+            row.Location = Clean(string.Join(" ", parts.SkipLast(1).Select(c => c.Text)));
+        row.Status = status;
+    }
+
+    /// <summary>Whether two names are one task's as read: their letters and digits, case aside ("Exit the location";
+    /// "Part 2" isn't "Part 3").</summary>
+    internal static bool SameName(string a, string b) => Letters(a) == Letters(b);
+
+    private static string Letters(string text) => new(Clean(text).ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
+
+    // A run without the glyph the game sets before a name (a clock, a hand, the list's mark; read as "O", "a", "@", "=",
+    // "&"): a first word of one or two characters, as wide as a capital and a half, and as tall unless it's no letter.
+    // Null when nothing else is left.
+    private static TaskChain? Glyphless(TaskChain chain, double u)
+    {
+        var first = chain.Words[0];
+        var glyph = first.Text.Length <= 2 && first.W >= 1.3 * u && (first.H >= 1.4 * u || !first.Text.All(char.IsLetter));
+        if (!glyph)
+            return chain;
+        return chain.Words.Count > 1 ? new TaskChain(chain.Words.Skip(1).ToList()) : null;
+    }
+
+    private static bool OnLine(TaskWord w, TaskWord on) => Overlap(w.Y, w.Bottom, on.Y, on.Bottom) > 0.5;
 
     // ---- words into runs and lines ----
 
@@ -298,9 +446,39 @@ public static class TaskTable
     private static readonly Regex TimePattern = new(@"^(\d{1,3})[:.,;](\d{2})[:.,;](\d{2})$", RegexOptions.CultureInvariant);
     private static readonly Regex TimeDigits = new(@"^(\d{1,3})(\d{2})(\d{2})$", RegexOptions.CultureInvariant);
 
-    /// <summary>A countdown "hh:mm:ss" as read: the game's slashed zero and lookalike letters taken as digits, a
-    /// colon read as a dot or lost between the digits.</summary>
+    // A weekly's countdown past a day as the game writes it, in the table and in a trader's list alike (measured
+    // 2026-10-25): the days, "day(s)" (or what the recognition made of it), then the time of day, "6 day(s) 23:07:57".
+    private static readonly Regex DaysPattern = new(@"^(?<days>\S{1,2}?)\s*d\s*a\s*[yv]\s*(?:\(\s*[s5]?\s*\)?|[s5])?\s*(?<time>\S.*)$",
+        RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    /// <summary>A countdown "hh:mm:ss", or days and a time of day ("6 day(s) 23:07:57"), as read: the game's slashed
+    /// zero and lookalike letters taken as digits, a colon read as a dot or lost between the digits, the selected list
+    /// entry's chevron after it left aside.</summary>
     internal static TimeSpan? TimeLeft(string text)
+    {
+        var trimmed = text.Trim().TrimEnd('>', '›', '»', ' ');
+        if (DaysPattern.Match(trimmed) is not { Success: true } d)
+            return Clock(trimmed);
+        // The days one digit (a week at most), the time under a day: a ")" read as a 1 makes no 123 hours.
+        var days = Digits(d.Groups["days"].Value);
+        if (days.Length != 1 || !char.IsAsciiDigit(days[0]) || Clock(d.Groups["time"].Value) is not { TotalHours: < 24 } time)
+            return null;
+        return TimeSpan.FromDays(days[0] - '0') + time;
+    }
+
+    private static readonly Regex DaysStart = new(@"^(?<days>\S{1,2}?)\s*d\s*a\s*[yv]", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    /// <summary>The days of a countdown read as "6 day(s)", with or without the time after them; null for another
+    /// text.</summary>
+    internal static int? DaysOf(string text)
+    {
+        if (DaysStart.Match(text.Trim()) is not { Success: true } d)
+            return null;
+        var days = Digits(d.Groups["days"].Value);
+        return days.Length == 1 && char.IsAsciiDigit(days[0]) ? days[0] - '0' : null;
+    }
+
+    private static TimeSpan? Clock(string text)
     {
         var s = Digits(text.Replace(" ", "", StringComparison.Ordinal));
         if (s.Any(char.IsLetter))
@@ -361,7 +539,8 @@ public static class TaskTable
         return sb.ToString();
     }
 
-    /// <summary>A time left as the game writes it: "08:33:19", the hours past a day as they are ("31:05:00").</summary>
+    /// <summary>A time left for comparing votes and truths: "08:33:19", the hours past a day as hours ("167:07:57" for
+    /// the game's "6 day(s) 23:07:57").</summary>
     internal static string Hms(TimeSpan t) => $"{(int)t.TotalHours:00}:{t.Minutes:00}:{t.Seconds:00}";
 
     /// <summary>A name or objective as written: the slashed zero as 0, curly quotes straight.</summary>

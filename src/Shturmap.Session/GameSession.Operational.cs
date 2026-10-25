@@ -59,11 +59,17 @@ public sealed partial class GameSession
         }
     }
 
-    // Under the gate: what the Tasks screen showed. A trader's tasks and the other Tasks tables are told and left; the
-    // operational table's rows replace the mode's set, each on the map its location names ("Any location": every map).
-    // A location that names no map of the data is left out: shown on no map rather than on the wrong one.
+    // Under the gate: what the Tasks screen showed. The other Tasks tables are told and left; the operational table's rows
+    // replace the mode's set, each on the map its location names ("Any location": every map); a trader's tab brings its
+    // one task and refreshes countdowns (TakeTrader). A location that names no map of the data is left out: shown on no
+    // map rather than on the wrong one.
     private void TakeTasks(TaskPage page, DateTime at, double ms)
     {
+        if (page.Screen == TaskScreen.TraderScreen && (page.Selected is not null || page.Rows.Count > 0))
+        {
+            TakeTrader(page, new DateTimeOffset(at), ms);
+            return;
+        }
         if (page.Screen != TaskScreen.Table)
         {
             Study.Game("operational.screen", ("screen", page.Screen), ("ms", ms));
@@ -107,6 +113,57 @@ public sealed partial class GameSession
         // Feedback (owner, 2026-10-19, after trying the dev build: "the same animation as the other quests"; docs/DESIGN.md
         // §4, principle 11): the cue lists every task a run of screenshots read, one animation for all of them, and the
         // rows that arrived glow in on the rail; a reading that brings no new task calls none (OperationalReadings).
+        if (call is not null && _data is { } data)
+            Announce(new ViewCue(CueKind.TasksRead, "", Tasks: call.Tasks.Select(t => ShownOf(data, t)).ToList(), Joins: call.Joins));
+        Publish();
+    }
+
+    // Under the gate: a trader's TASKS tab (owner, 2026-10-25: "when a daily or weekly is screenshotted from the traders
+    // quest accept view, it is not added to shturmap"; docs/DESIGN.md §2). The task its header names, when it stands in
+    // the list's OPERATIONAL TASKS, goes on the map its location names, as a table's row does (no location read, or one of
+    // no known map: left out and counted), added to the mode's set or updating the kept task of its name and map; the
+    // list's other entries refresh the countdowns of tasks kept by their names, and never add one. A task the set didn't
+    // have calls the same cue as a table's, one for a run of screenshots; a reading that only refreshed countdowns, or
+    // updated a kept task, calls none. The study log counts, never names.
+    private void TakeTrader(TaskPage page, DateTimeOffset at, double ms)
+    {
+        OperationalRead? task = null;
+        var unplaced = 0;
+        if (page.Selected is { } selected)
+        {
+            if (OperationalMap(selected.Location) is { Known: true } place)
+            {
+                task = new OperationalRead(selected.Name, place.MapId, selected.TimeLeft, selected.TimeVotes, selected.Progress,
+                    selected.Objectives.Select(o => new OperationalObjective(o.Text, o.Done, o.Of)).ToList());
+            }
+            else
+            {
+                unplaced = 1;
+            }
+        }
+        // The task's own entry carries its countdown; the others refresh.
+        var others = page.Rows.Where(r => task is null || !ReferenceEquals(r, page.Selected))
+            .Select(r => new OperationalEntry(r.Name, r.TimeLeft, r.TimeVotes)).ToList();
+        var now = DateTimeOffset.Now;
+        var before = _operational.Tasks(_mode).Where(t => t.ExpiresAt is not { } end || end > now).ToList();
+        if (_operational.ApplyTrader(_mode, at, task, others) is not { } applied)
+        {
+            Study.Game("operational.trader", ("older", true), ("ms", ms));
+            AppLog.Info("Operational tasks: a trader's screenshot older than the last Tasks table, left");
+            return;
+        }
+        _operational.Expire(now);
+        var taken = task is null || !(applied.Added || applied.Updated) ? null
+            : _operational.Tasks(_mode).LastOrDefault(t => t.ReadAt == at && t.MapId == task.MapId && string.Equals(t.Name, task.Name, StringComparison.OrdinalIgnoreCase));
+        var call = taken is null ? null : _operationalReadings.Read(at, before, [taken]);
+        Study.Game("operational.trader", ("task", task is not null), ("unplaced", unplaced), ("added", applied.Added), ("entries", page.Rows.Count),
+            ("refreshed", applied.Refreshed), ("dropped", applied.Dropped), ("cue", call is null ? "none" : call.Joins ? "join" : "new"), ("ms", ms));
+        var read = applied.Added ? "1 new" : applied.Updated ? "1 kept updated" : "none";
+        AppLog.Info($"Operational task read from a trader's screen: {read}, {applied.Refreshed} countdowns refreshed, {unplaced} on no known map, " +
+                    $"{applied.Dropped} countdowns not taken ({ms:0} ms)");
+        SaveOperationalIfDirty();
+        if (_operationalWake.CurrentCount == 0)
+            _operationalWake.Release();
         if (call is not null && _data is { } data)
             Announce(new ViewCue(CueKind.TasksRead, "", Tasks: call.Tasks.Select(t => ShownOf(data, t)).ToList(), Joins: call.Joins));
         Publish();

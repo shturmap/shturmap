@@ -15,9 +15,12 @@ namespace Shturmap.Game.Screenshots;
 /// digits whatever is done to them (the spike of 2026-10-19: enlarged, stretched, cut to black and white, stacked with
 /// the page's other bands, a word set before them, the glyphs set apart), and drops each band in a different way; so
 /// every band is read in all the <see cref="Ways"/> and the value most of them read is taken, with how many did
-/// (<see cref="TaskRow.TimeVotes"/>), for the checks that follow (Shturmap.Core.Operational.OperationalChecks). The
-/// file is opened for reading only, shared with the game that may still be writing it, and nothing of the picture is
-/// kept or written anywhere.
+/// (<see cref="TaskRow.TimeVotes"/>), for the checks that follow (Shturmap.Core.Operational.OperationalChecks). On a
+/// trader's TASKS tab (owner, 2026-10-25) the same: the page's words, then each entry of the list's OPERATIONAL TASKS
+/// its countdown band by vote, and, when the header names one of them, the header line's band in the picture's right
+/// third for the task's location and status, the one band there that is ever read (the traders' row with the player's
+/// name and money stands above it, the task's text, objectives and rewards below it). The file is opened for reading
+/// only, shared with the game that may still be writing it, and nothing of the picture is kept or written anywhere.
 /// </summary>
 public sealed class TasksReader
 {
@@ -63,6 +66,9 @@ public sealed class TasksReader
     /// (--dump).</summary>
     internal static string? Dump { get; set; }
 
+    /// <summary>Each way's text as the recognition gave it, said with the band's votes (--raw).</summary>
+    internal static bool Raw { get; set; }
+
     /// <summary>
     /// What a screenshot shows: null when the file isn't a whole picture after the tries, or is gone; else the page,
     /// whose <see cref="TaskPage.Screen"/> says whether it is the operational table (its rows read), a trader's tasks
@@ -81,26 +87,83 @@ public sealed class TasksReader
     {
         var words = await ReadWordsAsync(picture, zoom, ct);
         var page = TaskTable.Read(words, picture.Width, picture.Height);
+        if (page.Screen == TaskScreen.TraderScreen)
+            return await ReadTraderAsync(picture, page, note, ct);
         if (page.Screen != TaskScreen.Table)
             return page;
         foreach (var row in page.Rows)
         {
             if (row.TimeLeft is null)
-            {
-                var (text, votes) = await VoteAsync(picture, row.TimeBand, t => TaskTable.TimeLeft(t) is { } v ? TaskTable.Hms(v) : null, "time", note, ct);
-                if (text is not null)
-                    TaskTable.TakeTime(row, text);
-                row.TimeVotes = votes;
-            }
+                await VoteCountdownAsync(picture, row, note, ct);
             if (row.Progress is null)
             {
-                var (text, votes) = await VoteAsync(picture, row.ProgressBand, t => TaskTable.Percent(t)?.ToString(CultureInfo.InvariantCulture), "progress", note, ct);
+                var (text, votes, _) = await VoteAsync(picture, row.ProgressBand, t => TaskTable.Percent(t)?.ToString(CultureInfo.InvariantCulture), "progress", note, ct);
                 if (text is not null)
                     TaskTable.TakeProgress(row, text);
                 row.ProgressVotes = votes;
             }
         }
         return page with { Screen = TaskTable.Settle(page) };
+    }
+
+    // A trader's TASKS tab: the header's location and status from the header line's band when the header names an
+    // operational task (a story quest's tab reads no band of the right third), and each list entry's countdown by vote.
+    private async Task<TaskPage> ReadTraderAsync(SKBitmap picture, TaskPage page, Action<string>? note, CancellationToken ct)
+    {
+        if (page.Selected is { } selected)
+        {
+            TaskTable.TakeHeader(selected, await ReadBandWordsAsync(picture, page.HeaderBand, ct), page.Unit);
+            note?.Invoke($"header band {page.HeaderBand.X},{page.HeaderBand.Y}: location {selected.Location ?? "unread"}, status {selected.Status ?? "unread"}");
+        }
+        foreach (var entry in page.Rows.Where(r => r.TimeLeft is null))
+            await VoteCountdownAsync(picture, entry, note, ct);
+        return page;
+    }
+
+    /// <summary>
+    /// A row's countdown from its band, by vote. A weekly's "6 day(s) 23:07:57" reads poorly whole: in a trader's list
+    /// (measured 2026-10-25) 13 of the 14 ways read "6 day(s)" and dropped the digits after it, one read "S day(s)
+    /// 2307:57" (five days), while the time alone, in a band of its own, read in 12 of 14. So when most ways read days
+    /// and no value with those days won, the time of day is voted on in its own band, right of "day(s)" (where a plain
+    /// look at the band finds it), and the days most ways read go before it; a value whose days most ways contradict is
+    /// not taken.
+    /// </summary>
+    private async Task VoteCountdownAsync(SKBitmap picture, TaskRow row, Action<string>? note, CancellationToken ct)
+    {
+        var (text, votes, texts) = await VoteAsync(picture, row.TimeBand, t => TaskTable.TimeLeft(t) is { } v ? TaskTable.Hms(v) : null, "time", note, ct);
+        var days = texts.Select(TaskTable.DaysOf).OfType<int>().GroupBy(d => d).OrderByDescending(g => g.Count()).FirstOrDefault();
+        if (days is not null && days.Count() * 2 >= Ways.Count && (text is null || TaskTable.DaysOf(text) != days.Key))
+        {
+            (text, votes) = (null, 0);
+            var band = row.TimeBand;
+            if ((await ReadBandWordsAsync(picture, band, ct)).LastOrDefault(w => TaskTable.Fold(w.Text).StartsWith("day", StringComparison.Ordinal)) is { } day)
+            {
+                var left = (int)Math.Ceiling(day.Right) + 2;
+                var clock = new TaskBand(left, band.Y, band.X + band.W - left, band.H);
+                var (time, timeVotes, _) = await VoteAsync(picture, clock, t => TaskTable.TimeLeft(t) is { TotalHours: < 24 } v ? TaskTable.Hms(v) : null,
+                    $"time of day after {days.Key} day(s)", note, ct);
+                if (time is not null)
+                    (text, votes) = ($"{days.Key} day(s) {time}", timeVotes);
+            }
+        }
+        if (text is not null)
+            TaskTable.TakeTime(row, text);
+        row.TimeVotes = votes;
+    }
+
+    /// <summary>The words of one band, read as it is at its own size (the header's location and status, white and
+    /// orange on the header's bar, in the picture's pixels).</summary>
+    internal async Task<List<TaskWord>> ReadBandWordsAsync(SKBitmap picture, TaskBand band, CancellationToken ct)
+    {
+        var rect = SKRectI.Intersect(SKRectI.Create(band.X, band.Y, band.W, band.H), SKRectI.Create(0, 0, picture.Width, picture.Height));
+        if (rect.Width < 4 || rect.Height < 4)
+            return [];
+        using var part = StashPicture.Block(picture, rect, rect.Width, rect.Height);
+        using var framed = StashPicture.Framed(part, Margin, part.GetPixel(1, 1));
+        using var soft = StashPicture.ToSoftwareBitmap(framed);
+        var result = await _engine.RecognizeAsync(soft).AsTask(ct);
+        return result.Lines.SelectMany(l => l.Words).Select(w => new TaskWord(w.Text, w.BoundingRect.X - Margin + rect.Left,
+            w.BoundingRect.Y - Margin + rect.Top, w.BoundingRect.Width, w.BoundingRect.Height)).ToList();
     }
 
     /// <summary>The words in the picture's left part, read with the part enlarged by <paramref name="zoom"/>, in the
@@ -125,21 +188,26 @@ public sealed class TasksReader
         return words;
     }
 
-    // A band read every way; the value most ways read wins (a tie: the earlier way's), with how many read it. A text
-    // that doesn't parse is no vote.
-    private async Task<(string? Text, int Votes)> VoteAsync(SKBitmap picture, TaskBand band, Func<string, string?> parse, string what, Action<string>? note, CancellationToken ct)
+    // A band read every way; the value most ways read wins (a tie: the earlier way's), with how many read it, and every
+    // way's text. A text that doesn't parse is no vote.
+    private async Task<(string? Text, int Votes, List<string> Texts)> VoteAsync(SKBitmap picture, TaskBand band, Func<string, string?> parse, string what,
+        Action<string>? note, CancellationToken ct)
     {
         var votes = new List<(string Value, string Text)>();
+        var texts = new List<string>(Ways.Count);
         foreach (var way in Ways)
         {
             var text = await ReadBandAsync(picture, band, way, ct);
+            texts.Add(text);
             if (parse(text) is { } value)
                 votes.Add((value, text));
+            if (Raw)
+                note?.Invoke($"  {way.Mode}@{way.Zoom.ToString(CultureInfo.InvariantCulture)}: \"{text}\"");
         }
         var tally = votes.GroupBy(v => v.Value).OrderByDescending(g => g.Count()).ThenBy(g => votes.FindIndex(v => v.Value == g.Key)).ToList();
         note?.Invoke($"{what} band {band.X},{band.Y}: " + (tally.Count == 0 ? "nothing read" : string.Join(", ", tally.Select(g => $"{g.Key} ×{g.Count()}"))) +
                      $" of {Ways.Count} ways");
-        return tally.Count == 0 ? (null, 0) : (tally[0].First().Text, tally[0].Count());
+        return tally.Count == 0 ? (null, 0, texts) : (tally[0].First().Text, tally[0].Count(), texts);
     }
 
     // The band is set in a margin before reading: the recognition reads letters at an edge badly (StashReader does
