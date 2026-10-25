@@ -265,7 +265,8 @@ language" (*The stash desk's marks*, a region's place), *Text size*, §8 (`-Desk
   2560 monitor's desk (four columns, unscrolled; 72 on a desk of 2544 × 1401), at 40 at 1600×900 in three columns (its
   two windows under the stash take that column past the desk, so the page scrolls; LOADOUT, 426 DIP, and the middle
   column, 552, fit the 760), at 40 in one column at 900×560 (LOADOUT fills the first screen). Its three readings take one
-  shape at every desk; a page of its cells taken out too.
+  shape at every desk; a page of its cells taken out too (one size and one set of columns, not one place for every row:
+  a head its date made wrap moved what was under it, until the UI QA pass, F1, below).
 - The fold is gone: `Rules.DeskFold` and its tests, the board's `Unfolded`, the fold line and its text `DeskUnchanged`,
   the developer script's `desk open <region>` (now a script error). The replay's `fold` and `unfold` stills became
   `kept`; its `kept` after the raid is `back`. The stems: a window two or more columns right of its cell (the backpack's
@@ -287,14 +288,83 @@ language" (*The stash desk's marks*, a region's place), *Text size*, §8 (`-Desk
 - Checked: the snapshots of the three readings at 900×560, 1600×900 and 2560×1400 (English; German at 1600×900); the
   replay (`tools\qa\desk.devscript`, its stills `kept` and `same` for the fold's, `back` for the old `kept`) at the
   work area's size, 1600×900, 900×560 and in German; the layout check of the desk view in en-US, de-DE and qps-ploc at
-  900×560 and 1600×900: no problem found. Tests: `DeskPageRulesTests` rewritten (the size and the columns at the four
-  desks, one shape over the three readings, every region in its place, a placeholder and a kept region counted, the
-  windows' column, the slot grid, a slot's name fitted, the dated heads, what comes in), `DeskExampleTests`,
-  `DeskSwitchTests`, `DevToolsTests`; `DeskFoldTests` gone.
+  900×560 and 1600×900: no problem found (its first screen only: F4, below). Tests: `DeskPageRulesTests` rewritten
+  (the size and the columns at the four desks, one shape over the three readings, every region in its place, a
+  placeholder and a kept region counted, the windows' column, the slot grid, a slot's name fitted, the dated heads,
+  what comes in), `DeskExampleTests`, `DeskSwitchTests`, `DevToolsTests`; `DeskFoldTests` gone.
 - Open: at 1600×900 the made-up desk scrolls by its windows under the stash (the decision's rule; a real page without
   windows fits); at 900×560 LOADOUT takes the first screen and the stash is two screens down; a weapon's grid image
   leaves the lower half of its box empty; the replay's `entry` still shows every cell already in while the totals
   count up (not compared with the build before); the UI QA pass and the senior translator's review.
+
+**UI QA pass of step 2 (2026-10-25, on 121e0f2) and its fixes.** The pass (its pictures outside the repository): FAIL, 0
+blocks, 5 should, 1 nit. Binding: DESIGN.md §4, *The stash desk* (*Its place*: the scroll mark; *What it mirrors*:
+LOADOUT's names, *A region not in the last screenshot*: the heads' room; *As built*, *The page*), *Text size*, "Design
+system" (*Motion*), §8 (`-Desk`: the layout check's screens); docs/QA.md; `tools\qa\desk.md`.
+
+- F1 (should), a dated head that wraps moved the rows under it: after reading 2 at 40 DIP SPECIAL SLOTS' head, "SPECIAL
+  SLOTS · 1 JAN 14:02" in UTC, wrapped to a second line and everything under the POCKETS and SPECIAL SLOTS row stood
+  13 px lower (POCKETS' grid at 227, then 240; BACKPACK's head 293, then 306; POUCH 534, then 547); at 125 % the
+  German TASCHEN's too. Fixed: every head takes the lines of its name with the longest date the language writes ("28 SEP
+  23:58", „28. SEPT., 23:58“) from the first reading, whether it is dated or not (`DeskPageRules.HeadRoomLines`,
+  `Reserved`, `WidestSince`); the layout counts them and no longer reads the dates, so a date can't change the shape
+  either; the page holds them with an unseen copy of that dated head under each head (`DeskBoard.HeadCell`: transparent,
+  no pointer, nothing for a screen reader, passed over by the layout check). On the first reading POCKETS and SPECIAL
+  SLOTS stand over a line left empty for their date: the rows under them where 121e0f2's reading 2 had them. Measured
+  on the snapshots by the rows where the brightness steps (the dimming leaves them in place): readings 1 and 2 in
+  English and German at 900×560 (each of its five screens) and 1600×900, in German at 1600×900 at 125 %, and the
+  replay's `first` and `kept` at 1600×900 and the work area's size: no row moved; 121e0f2's middle column 13 px.
+  `DeskPageRulesTests`: SPECIAL SLOTS' room two lines at 40 where its name takes one, every fixed region's room holding
+  every month's date at a day of one and of two figures at every cell size and at 100, 125 and 150 % in English and
+  German, the columns as tall at reading 2 as at reading 1 at the four desks and three text sizes.
+- F3 (should), nothing said the page scrolls (at 900×560 the first screen LOADOUT alone, its last boxes flush with the
+  window's foot; at 1600×900 the windows past it). Fixed by the coordinator's rule, the owner's to overrule: where the
+  page runs past the desk's foot, "MORE BELOW ▾" at the foot, over the page, muted in the eyebrows' style at the page's
+  left margin, on the desk's ground with a 16 DIP fade of the page under it, gone once the page is scrolled to its end
+  (`DeskPageRules.MoreBelow`, `DeskBoard.MoreBelowMark`); no pointer, no motion; PgUp and PgDn as before. In the replay
+  at 900×560 and 1600×900 it stands in `first` and is gone in the new still `end` (the WZ window's cell, the page's
+  last, pointed at); at 2560×1440 the page fits and it doesn't stand. `DeskPageRulesTests`: the mark's rule, and the
+  made-up desk's page at the three desks.
+- F4 (should), the layout check didn't look below the first screen (at 900×560 PASSED with 95 texts not in view, 68 in
+  qps-ploc). Fixed: in a developer build's `--snapshot` with the desk up, where the page runs past the desk, the page is
+  scrolled down by the desk's room less the scroll mark's band at a time (`DeskPageRules.ScreenOffsets`), so what the
+  mark covers at one screen's foot stands in the next, and the window pictured and checked at each,
+  `screen-2\window.png` and on, until the page's end shows (`MainWindow.LayoutCheck.DeskScreensAsync`);
+  `tools\layout-check.ps1` takes each as a view of its own, `desk-2`, `desk-3` …, and its summary says "desk in 5
+  screens"; the scroll mark is a layer to the check (`LayoutCheck.Layers`). Run for the desk in en-US, de-DE and
+  qps-ploc at 900×560 (five screens) and 1600×900 (two): passed, no problem in any screen; every text below the first
+  screen is in view in some screen (by its words; the figures that stand several times by the screens' steps). The
+  rail, help and settings, whose lists scroll too, are not taken in screens (docs/QA.md says so): their texts below
+  the fold are checked for overflow and translation, not for text over text, and are in no picture. Open.
+- F5 (nit), the smaller slot name's baseline: "GESICHTSBEDECKUNG" a pixel lower than its row at 100 %, two higher at
+  125 %. Fixed: a row's names stand on one baseline, each name's top moved by its baseline as drawn
+  (`DeskBoard.OnOneBaseline`); the pixel at 100 % was WinUI's: a text of no letter spacing is laid out with its baseline
+  a pixel lower (its `BaselineOffset` saying 0.2 DIP higher), so a name without its spacing keeps a thousandth of an
+  em. The fit is now measured as drawn and in 64ths of a pixel as written (`DeskPageRules.SlotHead`'s `wide`,
+  `DeskBoard.NameWidth`), so the name stands at its row's 9 px without the spacing at 100 % (8.5 before) and 9.4 px
+  at 125 % (8.8; its row 12). Measured by the ink: at 100 % and 125 % the row's names end on one pixel row (121e0f2: one
+  lower; three higher). At 150 % WinUI's curve draws nothing written at 4 px or more under 11 px, so the name stands
+  about 14 DIP past its box, on the row's baseline, short of TACTICAL RIG (DESIGN.md *Text size*; open, the owner's
+  call).
+- F2 (should, not this change's): the replay's `entry` shows every cell whole 0.4–1.1 s after `desk 1` while the totals
+  count up. Unchanged, and found why: a still (`RenderTargetBitmap`, `--snapshot` and the developer script's
+  `snapshot`) draws a storyboard's opacity whole, the compositor running it where that render doesn't look. Measured with
+  a probe build (not committed): the window's thread read the 26th of 52 cells at 0 until 1.4 s and the 52nd until
+  2.4 s, each then easing to 1, while the still taken in the first second showed both whole, the head line mid-count. So
+  the cells' entry is unchecked headless and awaits the owner's eye on the dev build (DESIGN.md *Motion*, docs/QA.md,
+  `desk.md`'s `entry` say so). A headless check would need the entry driven from the window's thread in developer runs
+  (a timer setting each cell's opacity) or a capture of Shturmap's own window: the owner's call. Open.
+- F6 (not run): the replay run on the Debug build of this branch at the work area's size (2544×1401 inside), 1600×900,
+  2560×1440 and 900×560, English: 21 stills each, no WARN or ERROR; `entry`, `first`, `end`, `window`, `kept` and the
+  rail's stills looked at, as `desk.md` says (the stems, the linked head's light as wide as its words, the dated heads,
+  the scroll mark). Nothing new found.
+- Texts (English and German, for the senior translator): RuleTexts `DeskMoreBelow` (new: "MORE BELOW ▾", „MEHR
+  DARUNTER ▾“, the glance's `GlanceMoreBelow` words with an arrow).
+- Noticed, not this pass's: at 150 % text in German at 1600×900 the layout check finds a cell's figure over its count in
+  three 1×1 cells at 40 DIP ("27k" over "60", "5k" over "4/4", "54k" over "120"; *Text size*'s open point on a cell's
+  price at 150 %); docs/LANGUAGES.md's "Layout check" lists no `desk` view and no screens.
+- Open: F2 (the owner's eye on the entry); F4's other scrolling views; F5 at 150 %; the review of `DeskMoreBelow`; the
+  owner's say on the scroll mark (the coordinator's rule).
 
 ## 2026-10-19: text size: Windows' own, honoured everywhere
 
