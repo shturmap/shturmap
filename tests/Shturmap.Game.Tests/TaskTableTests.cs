@@ -109,6 +109,62 @@ public sealed class TaskTableTests
         Assert.Empty(page.Rows[1].Objectives);
     }
 
+    // The page's words drop an objective's count or misread it (2026-10-25: the weekly's slashed "Ø/7" read as "øn",
+    // which stood in the objective as "0n"; a "Ø/3" not read at all): the misread count is no word of the objective, and
+    // each objective line gets a band for its count by vote, from its first word (its icon left out) to the read part's
+    // edge, the line's height with half a unit above and below.
+    [Fact]
+    public void An_expanded_rows_misread_count_is_no_word_of_it_and_each_line_gets_a_band()
+    {
+        List<TaskWord> words =
+        [
+            .. Header(),
+            .. Row(254, ["Zorblat"], "Lighthouse"),
+            W("Objective(s)", 101, 598, 126, 22),
+            // No icon read on the page; the count after the progress bar's gap, as the page reads "Ø/7".
+            .. Sentence(607, 651, "Outlast the Zorbs"), W("øn", 1162, 650, 41, 19),
+            // The icon read as "@"; the count dropped.
+            W("@", 287, 719, 30, 30), .. Sentence(335, 725, "Eliminate Zorbs from more than 5øm"),
+            W("Rewards", 101, 790, 95, 18),
+            .. Row(1100, ["Quenvik"], "Shoreline"),
+        ];
+        var page = TaskTable.Read(words, Width, Height);
+        var row = page.Rows[0];
+        Assert.Equal(["Outlast the Zorbs", "Eliminate Zorbs from more than 50m"], row.Objectives.Select(o => o.Text));
+        Assert.All(row.Objectives, o => Assert.Null(o.Of));
+        Assert.Equal(2, row.ObjectiveBands.Count);
+        var (first, second) = (row.ObjectiveBands[0], row.ObjectiveBands[1]);
+        // Half a unit (the header's 17 px) before the first word, to the read part's edge, where the count stands.
+        Assert.InRange(first.X, 597, 600);
+        Assert.InRange(first.X + first.W, (int)(Width * TaskTable.LeftPart) - 1, (int)(Width * TaskTable.LeftPart) + 1);
+        Assert.InRange(first.Y, 640, 645);
+        Assert.InRange(first.Y + first.H, 675, 680);
+        // The icon (287..317, from 719) in neither the band's left nor its height.
+        Assert.InRange(second.X, 325, 328);
+        Assert.InRange(second.Y, 715, 718);
+        Assert.InRange(second.Y + second.H, 750, 754);
+        Assert.Empty(page.Rows[1].ObjectiveBands);
+    }
+
+    // What the recognition made of a count (measured 2026-10-25): "øn" for the slashed "Ø/7", after the progress bar's
+    // gap or, at another zoom, close to the words; a count that reads is taken as ever.
+    [Fact]
+    public void A_count_misread_into_no_count_is_no_word_of_the_objective()
+    {
+        // "Outlast the Zorbs" ends at 790: close is a word's gap after it, the bar's gap 16 units.
+        TaskObjective? Line(string last, double x) => TaskTable.Objective([.. Sentence(607, 651, "Outlast the Zorbs"), W(last, x, 651)], 17);
+        var none = new TaskObjective("Outlast the Zorbs", null, null);
+        Assert.Equal(none, Line("øn", 1070));
+        Assert.Equal(none, Line("øn", 799));
+        Assert.Equal(none, Line("0n", 799));
+        Assert.Equal(none, Line("Ø/T", 1070));
+        Assert.Equal(none, Line("4n", 1070));
+        Assert.Equal(new TaskObjective("Outlast the Zorbs", 0, 7), Line("ø/7", 1070));
+        Assert.Equal(new TaskObjective("Outlast the Zorbs", 4, 7), Line("4/7", 799));
+        // A distance at the words' end stays: it stands a word's gap after the word before it, and starts with no zero.
+        Assert.Equal(new TaskObjective("Outlast the Zorbs 50m", null, null), Line("5øm", 799));
+    }
+
     [Fact]
     public void The_bands_lie_below_the_status_and_over_the_progress_cell()
     {
@@ -405,18 +461,37 @@ public sealed class TaskTableTests
     [InlineData("Lighthouse 10:14:11")]
     public void Not_a_countdown(string text) => Assert.Null(TaskTable.TimeLeft(text));
 
+    // The percent sign reads as "0/0" (its two rings and the bar). Measured 2026-10-25 on the owner's tables, the 23
+    // bands of a lone "0%": "00/0" 40 times, "0%" 5, "ØO/O" 4, in binary and inverted at 0.75x, stretched and inverted at
+    // 1x and inverted at 1.5x, nothing else; a "57%" mostly "570/0". Before, only the five "0%" counted and every other
+    // 0 % went unread.
     [Theory]
     [InlineData("57%", 57)]
     [InlineData("57 %", 57)]
     [InlineData("ø%", 0)]
+    [InlineData("0%", 0)]
+    [InlineData("00/0", 0)]
+    [InlineData("ØO/O", 0)]
+    [InlineData("570/0", 57)]
     [InlineData("100%", 100)]
+    [InlineData("1000/0", 100)]
     [InlineData("57", 57)]
+    [InlineData("0", 0)]
     public void A_progress_reads(string text, int percent) => Assert.Equal(percent, TaskTable.Percent(text));
+
+    // A "50%" read with its sign is 50, never the 0 before the sign: the number takes all the digits it can.
+    [Theory]
+    [InlineData("500/0", 50)]
+    [InlineData("50%", 50)]
+    [InlineData("50", 50)]
+    public void A_progress_keeps_its_digits_before_the_sign(string text, int percent) => Assert.Equal(percent, TaskTable.Percent(text));
 
     [Theory]
     [InlineData("")]
     [InlineData("101%")]
-    [InlineData("570/0")]
+    [InlineData("0/0")]
+    [InlineData("570/6")]
+    [InlineData("<50/0")]
     [InlineData("active")]
     public void Not_a_progress(string text) => Assert.Null(TaskTable.Percent(text));
 
@@ -492,8 +567,9 @@ public sealed class TaskTableTests
 
     // Every truth's picture is read: the screen told right; on a table, every row's name, location and status, and an
     // expanded row's objectives and counts, exactly; the countdowns and progresses by vote, none wrong, nine in ten
-    // of the countdowns read (2026-10-19: twelve of twelve) and half the progresses (seven of twelve: a lone slashed
-    // "0%" is what the recognition drops). A trader's tab as CheckTrader has it (2026-10-25: the two here, read whole).
+    // of the countdowns read (2026-10-19: twelve of twelve) and of the progresses (2026-10-25: 21 of 21, a lone "0%"
+    // read through its sign's "0/0"; until then 7 of 21, every 0 % but the odd "0%" unread). A trader's tab as
+    // CheckTrader has it (2026-10-25: the two here, read whole).
     [Fact]
     public async Task Real_screenshots_are_read_against_their_truths()
     {
@@ -539,15 +615,17 @@ public sealed class TaskTableTests
             }
         }
         Assert.True(timesRead >= 0.9 * times, $"{timesRead} of {times} countdowns read");
-        Assert.True(progressesRead >= 0.5 * progresses, $"{progressesRead} of {progresses} progresses read");
+        Assert.True(progressesRead >= 0.9 * progresses, $"{progressesRead} of {progresses} progresses read");
     }
 
     // A trader's task view (owner, 2026-10-25) and the tables taken with it, in tests\fixtures\ocr\operational\trader (the
     // owner's screenshots of 2026-10-19, renamed): on a trader's tab, CheckTrader, the list's countdowns two in three read
     // (2026-10-25: two of three; a daily's orange "00:48:48" is what every way drops); on a table, every row's name,
-    // location and status exactly and its countdown, days and all ("6 day(s) 23:07:39"), read and right. A table's
-    // objectives and progresses are the other test's: these tables' "Ø/7" reads as "øn" and their lone "0%" not at all
-    // (open, 2026-10-25).
+    // location and status exactly and its countdown, days and all ("6 day(s) 23:07:39"), read and right; its expanded
+    // row's objectives and counts exactly, and its progresses read and right. These tables showed the two faults fixed
+    // on 2026-10-25: a "Ø/7" the page reads as "øn" (it stood in the objective as "0n", without its count; now from the
+    // line's band, by 2 of the 14 ways, six reading "øn") and a "Ø/3" it drops (now by 8 of 14), and every lone "0%"
+    // unread (now 9 of 9, by 1 to 3 ways each).
     [Fact]
     public async Task Real_trader_screenshots_are_read_against_their_truths()
     {
@@ -572,10 +650,14 @@ public sealed class TaskTableTests
                 .SequenceEqual(page.Rows.Select(r => (TaskTable.Fold(r.Name), r.Location, r.Status))), $"{file}: the rows");
             for (var i = 0; i < truth.Rows.Count; i++)
             {
-                if (page.Rows[i].TimeLeft is { } left)
-                    Assert.True(TaskTruth.SameTime(left, truth.Rows[i].Time), $"{file}, row {i + 1}: its countdown misread");
+                var (row, t) = (page.Rows[i], truth.Rows[i]);
+                if (row.TimeLeft is { } left)
+                    Assert.True(TaskTruth.SameTime(left, t.Time), $"{file}, row {i + 1}: its countdown misread");
                 else
-                    Assert.True(TaskTable.DaysOf(truth.Rows[i].Time) is null, $"{file}, row {i + 1}: a countdown with days unread");
+                    Assert.True(TaskTable.DaysOf(t.Time) is null, $"{file}, row {i + 1}: a countdown with days unread");
+                Assert.True(row.Progress is { } progress && $"{progress}" == t.Progress, $"{file}, row {i + 1}: its progress unread or misread");
+                var objectives = truth.Objectives.Where(o => TaskTruth.Same(o.Row, t.Name)).Select(o => (o.Text, o.Count));
+                Assert.True(objectives.SequenceEqual(row.Objectives.Select(o => (o.Text, TaskTruth.Count(o)))), $"{file}, row {i + 1}: its objectives");
             }
         }
         Assert.True(3 * read >= 2 * countdowns, $"{read} of {countdowns} of the lists' countdowns read");

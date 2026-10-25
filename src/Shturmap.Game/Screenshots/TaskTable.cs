@@ -63,6 +63,12 @@ public sealed class TaskRow
     public int? Progress { get; set; }
     public List<TaskObjective> Objectives { get; } = [];
 
+    /// <summary>On the table: one band per objective of an expanded row, in the order of <see cref="Objectives"/>: its
+    /// line from its first word (the icon left out) to the read part's edge, where the count stands at the line's end
+    /// after the progress bar (2026-10-25). The caller reads the count there by vote when the page's words gave
+    /// none.</summary>
+    public List<TaskBand> ObjectiveBands { get; } = [];
+
     /// <summary>How many of the ways a band was read in gave the value taken (0 when the page's words carried
     /// it).</summary>
     public int TimeVotes { get; set; }
@@ -114,7 +120,9 @@ public sealed record TaskPage(TaskScreen Screen, IReadOnlyList<TaskRow> Rows, do
 /// location or a status beside it. The expanded row's text, its objectives and its rewards start elsewhere or run
 /// across the columns, so they make no row.</item>
 /// <item>An expanded row: the lines between "Objective(s)" and "Rewards" (or the next row) are its objectives, each
-/// with a count n/m at its end where the game shows one; they go to the row above them.</item>
+/// with a count n/m at its end where the game shows one; they go to the row above them. Where the page's words drop a
+/// count or misread it ("øn" for the weekly's "Ø/7"), the caller reads it from the line's band by vote (2026-10-25);
+/// a misread count is never a word of the objective.</item>
 /// <item>A trader's TASKS tab (owner, 2026-10-25: "when a daily or weekly is screenshotted from the traders quest accept
 /// view, it is not added"): the entries under the list's OPERATIONAL TASKS heading, each a name and a countdown band at
 /// the list's right edge; the header's task (right of its glyph, on the line of COMPLETE | REPLACE) is an operational
@@ -208,8 +216,18 @@ public static class TaskTable
             var inside = chains.Where(c => c.Y > label.Bottom - 0.2 * u && c.Bottom < end && c != label).ToList();
             foreach (var line in Lines(inside))
             {
-                if (Objective(line) is { } objective)
-                    owner.Objectives.Add(objective);
+                if (Objective(line, u) is not { } objective)
+                    continue;
+                owner.Objectives.Add(objective);
+                // The line's band, for its count by vote where the page's words dropped it or read a lookalike (the
+                // weekly's "Ø/7" as "øn", a "Ø/3" not at all; 2026-10-25): from half a unit before its first word, the
+                // line's icon left out, to the read part's edge, the line's height with half a unit above and below,
+                // between the label and the rewards. Measured on the owner's tables: from the label's left edge the
+                // "Ø/7" read in no way and the "Ø/3" in 6, with the icon in the band in at most one and 5; so, 2 and 8.
+                var text = Glyphless(new TaskChain(line), u) ?? new TaskChain(line);
+                var top = Math.Max(text.Y - 0.5 * u, label.Bottom);
+                var bottom = Math.Min(text.Bottom + 0.5 * u, end);
+                owner.ObjectiveBands.Add(Band(text.X - 0.5 * u, top, width * LeftPart, bottom));
             }
         }
 
@@ -404,16 +422,16 @@ public static class TaskTable
             line = line[..gap];
         while (line.Count > 1 && line[^1].Text is "IN" && line[^2].Text is "TURN")
             line.RemoveRange(line.Count - 2, 2);
-        if (Objective(line) is not { } read)
+        if (Objective(line, u) is not { } read)
             return null;
-        if (count is null || CountPattern.Match(count) is not { Success: true } m)
-            return read with { Done = null, Of = null };
-        return read with
-        {
-            Done = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture),
-            Of = int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture),
-        };
+        return CountValue(count) is { } value ? read with { Done = value.Done, Of = value.Of } : read with { Done = null, Of = null };
     }
+
+    /// <summary>A count as <see cref="CountOf"/> writes it ("0/7") as its two numbers; null for none.</summary>
+    internal static (int Done, int Of)? CountValue(string? count) =>
+        count is not null && CountPattern.Match(count) is { Success: true } m
+            ? (int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture))
+            : null;
 
     /// <summary>
     /// The header line's band as read (its words, in the picture's pixels), for a trader's <see cref="TaskPage.Selected"/>
@@ -504,21 +522,32 @@ public static class TaskTable
 
     private static readonly Regex CountPattern = new(@"^(\d{1,4})/(\d{1,4})$", RegexOptions.CultureInvariant);
 
-    /// <summary>One objective line: its words without the icons' marks, and a count n/m at its end.</summary>
-    internal static TaskObjective? Objective(IReadOnlyList<TaskWord> line)
+    /// <summary>One objective line: its words without the icons' marks, and a count n/m at its end. A count misread
+    /// into no count is no word of it (2026-10-25: the table's "Ø/7" read as "øn" stood in the objective as "0n"): the
+    /// line's last word, five characters at most, when it starts with the game's slashed zero (or a 0), which no word
+    /// and no number of an objective does, or with another digit after the progress bar's gap of more than four units
+    /// (a distance's "5øm" stands a word's gap after "than", and stays). Its count is then the band's vote's.</summary>
+    internal static TaskObjective? Objective(IReadOnlyList<TaskWord> line, double u)
     {
-        var tokens = line.Select(w => w.Text).Where(t => t.Any(char.IsLetterOrDigit)).ToList();
+        var words = line.Where(w => w.Text.Any(char.IsLetterOrDigit)).ToList();
         int? done = null, of = null;
-        if (tokens.Count > 0 && CountPattern.Match(Digits(tokens[^1])) is { Success: true } m)
+        if (words.Count > 0 && CountPattern.Match(Digits(words[^1].Text)) is { Success: true } m)
         {
             done = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
             of = int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
-            tokens.RemoveAt(tokens.Count - 1);
+            words.RemoveAt(words.Count - 1);
         }
-        if (tokens.Count == 0)
+        else if (words.Count > 1 && MisreadCount(words[^1], words[^2], u))
+        {
+            words.RemoveAt(words.Count - 1);
+        }
+        if (words.Count == 0)
             return null;
-        return new TaskObjective(Clean(string.Join(" ", tokens)), done, of);
+        return new TaskObjective(Clean(string.Join(" ", words.Select(w => w.Text))), done, of);
     }
+
+    private static bool MisreadCount(TaskWord last, TaskWord before, double u) =>
+        last.Text.Length <= 5 && (last.Text[0] is 'ø' or 'Ø' or '0' || (char.IsAsciiDigit(last.Text[0]) && last.X - before.Right > 4 * u));
 
     private static readonly Regex TimePattern = new(@"^(\d{1,3})[:.,;](\d{2})[:.,;](\d{2})$", RegexOptions.CultureInvariant);
     private static readonly Regex TimeDigits = new(@"^(\d{1,3})(\d{2})(\d{2})$", RegexOptions.CultureInvariant);
@@ -573,9 +602,13 @@ public static class TaskTable
         return new TimeSpan(h, min, sec);
     }
 
-    private static readonly Regex PercentPattern = new(@"^(\d{1,3})%?$", RegexOptions.CultureInvariant);
+    // The number, then the percent sign as the recognition reads it: "%", or "0/0" (its two rings and the bar; the
+    // game's "0%" reads "00/0" or "ØO/O", its "57%" "570/0"; measured 2026-10-25). Greedy and anchored, so a "500/0" is
+    // 50, never 0.
+    private static readonly Regex PercentPattern = new(@"^(\d{1,3})(?:%|0/0)?$", RegexOptions.CultureInvariant);
 
-    /// <summary>A progress "57%" as read, with the slashed zero; 0 to 100.</summary>
+    /// <summary>A progress "57%" as read, with the slashed zero and the percent sign read as "0/0"; 0 to
+    /// 100.</summary>
     internal static int? Percent(string text)
     {
         var s = Digits(text.Replace(" ", "", StringComparison.Ordinal));
