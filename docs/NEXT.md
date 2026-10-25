@@ -70,7 +70,51 @@ in worktrees of their own (separate files), step 2 (the layout, A) after step 1 
 model); each merged into main and into the dev build before the next; the senior translator for the texts of steps 2 and
 3; the UI QA pass after step 2 and for step 3's settings note; DESIGN.md updated in each step.
 
-**Built (step 1).** _pending_
+**Built (step 1).** (2026-10-25; binding: DESIGN.md §2, "For the stash desk", *The layout round*; §4, *What it
+mirrors* ("A region read in part keeps the page's rest", "What leaves the page"), *The cell*, *The click*; §8, "Menu
+screenshots", "The desk file".)
+
+- The reading (`DeskLayout`, `DeskFrames`, `DeskReader`): a heading one letter off counts (`DeskLayout.HeadingWord`:
+  "*ACE COVER", "ÄRMBANI"); a word level with the loadout's headings is a title only after the magnifier, and left of the
+  stash pane a title in capitals needs its bar's glyphs, or a two-pixel lattice that is no region's grid; a lattice under
+  a middle heading is that region's grid; a compartment framed down to the column's foot is read as its rows in view
+  (`DeskFrames.OpenAt`) and the region said read in part (`DeskRegion.Partial`); a frame whose heading a window may hide
+  is placed under none; a container's slot is boxed from its heading where no frame shows it; compartments within a
+  quarter of a cell stand on one row; the QUICK USE bar's word is found at last (it folds to "0u1ck"). In a raid the glance
+  reads as before: the 22 raid screenshots read the same regions and cells.
+- The page (`DeskLedger`): a region read in part keeps the page's cells and compartments outside those read, its size
+  and its slot, unless the slot reads another container; a window attached to nothing leaves after three readings that
+  didn't show it (`missed` in desk.json), one with no cell and no title is never kept; each region keeps its `readAt` (for
+  step 2's "BACKPACK · 23:08"); a "?" cell's pick stays while the item is among its candidates. The app log says what was
+  kept and why ("cut at the column's foot", "under a window", "not in view") and what left (`GameSession.Desk`). The
+  owner's desk.json of 2026-10-19, loaded, loses "*ACE COVER", "ÄRMBANI" and the two windows of no name and keeps the Keys
+  and Junk windows.
+- The test set: the 13 screenshots, and the ARMBAND case of 20:25 found among the evening's others, as
+  `00-gear-armband.png` … `13-gear-keys.png` in the git-ignored `tests\fixtures\ocr\desk\session` (the main checkout's
+  too), with `regions-<picture>.txt` for each and `truth-<picture>.txt`, by the page's regions, for 23:08, 23:14 and 23:15
+  (158 items); `DeskRealPictureTests` holds the reading to them, `shturmap-cli desk` scores both (and prints the layout as
+  found with `--why`). Drawn tests for each fault, each failing on the reading of before.
+- Measured (`shturmap-cli desk`, before → after): regions of their size 50 → 64 of 66, missing 7 → 0, invented 5 → 0, of
+  another size 9 → 2; the three truths' items 123 → 127 right, 17 → 18 one of N, 8 → 10 unread, no cell read 10 → 3, 0
+  wrong. Cells named / one of N / unread per picture: 20:46 (0) 41/9/7 → 44/9/9 (the backpack's rows in view now read),
+  20:46 (1) 39/8/9 → 39/9/9 (the POUCH, no window), 21:28 11/6/4 → 15/6/5, 22:25 17/4/6 → 20/4/6, 22:27 14/4/6 →
+  17/4/6, 23:08 23/4/5 → 23/5/5, 23:09 29/5/6 → 29/6/6; 22:24, 23:10, 23:14 and 23:15 unchanged (67/20/1, 22/10/5,
+  13/5/7, 91/8/4), 22:22 and 23:07 none; 20:25 86/6/7 → 85/6/7 (a pocket under the Keys window no longer the rig's). The
+  page in hand after 23:07 to 23:15: loadout, rig 5×4, pockets 4×2, special 3×2, backpack 5×6 (emptied after the raid:
+  rows 0 to 3 read empty at 23:10 and 23:14, rows 4 and 5 as at 23:09), pouch 3×3, stash 10×13 and the Keys window 11×7,
+  no other (before: a backpack of no cell, no pouch, "*ACE COVER" and a window of no name). The GEAR truth and the Keys
+  page's truth unchanged (30 and 61 right, 0 wrong); about 1.3 s a picture, as before.
+- Not as the decision wrote it: a title in small letters still counts by its size left of the stash pane (the decision
+  asked for the glyphs there), else the Zhuk window over the middle column at 13:49 is lost; a region cut at the foot
+  takes its rows in view and keeps only the page's rows below them (the decision said "keeps the page's version"), else
+  the pouch and the backpack, whole or emptied at the foot after a raid, would never be read anew. The owner's to
+  overrule.
+- Open: the stash's rows under a page of large boxes (20:46 (1): 10 of 13 found) and a highlighted pocket's frame (21:28),
+  the two regions of another size; the 23:14 stash read too blank, the page's kept (its pistol split in two, and its label
+  a preset's name, "USP .45 Expert", which the catalogue leaves out); the face cover's label read "Mome)" at 23:14; an
+  item whose corner lies under a window isn't read (two Junk boxes, the backpack's slot with its label showing, 23:15); in
+  a raid the player's regions the foot cuts are still left out (they could be read in part with a "+", as the LOOT
+  pane's are: the glance's to decide).
 
 **Built (step 3, 2026-10-25: the trader's task view).** Binding: DESIGN.md §2 (the OPERATIONAL paragraph: which
 pictures, how much, what is kept, the player's say), §1, §3 (the fixtures), §4 (principle 7, principle 11's DAILIES AND

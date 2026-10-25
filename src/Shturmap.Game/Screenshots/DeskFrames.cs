@@ -27,7 +27,12 @@ internal static class DeskFrames
     /// <param name="under">Only the frames a window lies over, their top left corner outside it (the second look, once the
     /// windows are known: their own frames are whole, and found by the first).</param>
     /// <param name="skip">Corners not to look from (the stash's own lattice: the stash is found as the stash).</param>
-    public static List<SKRectI> Find(StashLines lines, int pitch, SKRectI area, IReadOnlyList<SKRectI> over, bool under = false, Func<int, int, bool>? skip = null)
+    /// <param name="open">Where a compartment may run past the area's foot (the GEAR tab's middle column, which scrolls): a
+    /// rectangle framed on its top and both its sides down to the foot is a compartment the foot cuts, as its rows in view
+    /// (<see cref="OpenAt"/>).</param>
+    /// <param name="cutFound">Gets the compartments found so, cut by the foot.</param>
+    public static List<SKRectI> Find(StashLines lines, int pitch, SKRectI area, IReadOnlyList<SKRectI> over, bool under = false, Func<int, int, bool>? skip = null,
+        SKRectI? open = null, ISet<SKRectI>? cutFound = null)
     {
         // Corners: a line going right and one going down from it, for a cell's side at least.
         var corners = new List<(int X, int Y, double Score)>();
@@ -77,8 +82,28 @@ internal static class DeskFrames
                         framed.Add(rect);
                 }
             }
+            // A compartment the foot cuts (the middle column scrolled; the test set's 11-gear.png and 12-gear.png:
+            // the backpack's grid, empty, ran out of view at the foot, its lines between the empty cells too faint to frame
+            // a rectangle, and the backpack read as its slot alone): framed on its top and both sides down to the foot.
+            var cut = new HashSet<SKRectI>();
+            if (open is { } band && band.Contains(x, y) && OpenEnd(lines, x, y, pitch, over, area) is { } end)
+            {
+                for (var cols = MostCols; cols >= 1; cols--)
+                {
+                    if (under && !over.Any(o => x < o.Right && x + cols * pitch > o.Left && y < o.Bottom && end > o.Top))
+                        continue;
+                    if (OpenAt(lines, x, y, cols, end, pitch, over, area) is { } rect && rect.Right <= band.Right + Slack)
+                    {
+                        framed.Add(rect);
+                        cut.Add(rect);
+                    }
+                }
+            }
+            // A cut compartment's bottom is a line between its rows, or none: two compartments side by side break its top line
+            // alone.
             SKRectI? best = framed.OrderByDescending(Area).Cast<SKRectI?>()
-                .FirstOrDefault(r => !Split(lines, true, r!.Value.Top, r.Value.Bottom, r.Value.Left, r.Value.Right, over) &&
+                .FirstOrDefault(r => (cut.Contains(r!.Value) ? !Gap(lines, r.Value.Top, r.Value.Left, r.Value.Right, over)
+                                         : !Split(lines, true, r.Value.Top, r.Value.Bottom, r.Value.Left, r.Value.Right, over)) &&
                                      !Split(lines, false, r.Value.Left, r.Value.Right, r.Value.Top, r.Value.Bottom, over));
             if (under && best is { } seen && !over.Any(o => o.IntersectsWith(seen)))
                 continue;
@@ -86,6 +111,8 @@ internal static class DeskFrames
             {
                 found.RemoveAll(f => Inside(f, b));
                 found.Add(b);
+                if (cut.Contains(b))
+                    cutFound?.Add(b);
             }
         }
         return Largest(found);
@@ -134,16 +161,74 @@ internal static class DeskFrames
         return new SKRectI(x, y, right, bottom);
     }
 
+    // Where a compartment's left side, from a corner, runs on to the area's foot without a break (a compartment the foot cuts:
+    // the middle column's view ends there, about a quarter of a cell above the QUICK USE bar's top): the row its line ends
+    // at; null when it breaks off above the foot (a compartment closed above it, or the gap to the next).
+    private static int? OpenEnd(StashLines lines, int x, int y, int pitch, IReadOnlyList<SKRectI> over, SKRectI area)
+    {
+        if (area.Bottom - y < pitch)
+            return null;
+        var end = y;
+        var missing = 0;
+        for (var yy = y + 2; yy + 4 <= area.Bottom; yy += 4)
+        {
+            if (Share(lines, false, x, yy, yy + 4, over) >= 0.5)
+            {
+                end = yy + 4;
+                missing = 0;
+            }
+            else if ((missing += 4) > 2 * GapWidth)
+                break;
+        }
+        return end >= area.Bottom - pitch / 2 && end - y >= pitch ? end : null;
+    }
+
+    // A compartment the foot cuts, from its corner: the top line and the right side framed down to where the left side ends
+    // (the foot), as the whole rows in view.
+    private static SKRectI? OpenAt(StashLines lines, int x, int y, int cols, int end, int pitch, IReadOnlyList<SKRectI> over, SKRectI area)
+    {
+        var right0 = x + cols * pitch;
+        if (right0 > area.Right + Slack)
+            return null;
+        int right = -1;
+        double rightShare = 0;
+        for (var d = -Slack; d <= Slack; d++)
+        {
+            var s = Share(lines, false, right0 + d, y + 2, end - 2, over);
+            if (s > rightShare)
+            {
+                rightShare = s;
+                right = right0 + d;
+            }
+        }
+        if (rightShare < Framed || Share(lines, true, y, x + 2, right - 2, over) < Framed)
+            return null;
+        var rows = (end - y + Slack) / pitch;
+        return rows < 1 || rows > MostRows ? null : new SKRectI(x, y, right, y + rows * pitch);
+    }
+
+    // Whether a line (the row `at` from `from` to `to`) shows nothing over a few pixels, away from its ends: the gap between
+    // two compartments side by side.
+    private static bool Gap(StashLines lines, int at, int from, int to, IReadOnlyList<SKRectI> over)
+    {
+        for (var p = from + 8; p + GapWidth < to - 8; p++)
+        {
+            if (Share(lines, true, at, p, p + GapWidth, over) == 0)
+                return true;
+        }
+        return false;
+    }
+
     // The width of the gap between two compartments that is looked for, in pixels: about 8 at 1440p.
-    private const int Gap = 5;
+    private const int GapWidth = 5;
 
     // Whether both sides (the top and bottom rows a and b from `from` to `to`, or the left and right columns) show no line
     // over the same few pixels, away from the corners.
     private static bool Split(StashLines lines, bool horizontal, int a, int b, int from, int to, IReadOnlyList<SKRectI> over)
     {
-        for (var p = from + 8; p + Gap < to - 8; p++)
+        for (var p = from + 8; p + GapWidth < to - 8; p++)
         {
-            if (Share(lines, horizontal, a, p, p + Gap, over) == 0 && Share(lines, horizontal, b, p, p + Gap, over) == 0)
+            if (Share(lines, horizontal, a, p, p + GapWidth, over) == 0 && Share(lines, horizontal, b, p, p + GapWidth, over) == 0)
                 return true;
         }
         return false;

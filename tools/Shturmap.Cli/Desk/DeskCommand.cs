@@ -16,13 +16,15 @@ namespace Shturmap.Cli.Desk;
 /// <c>shturmap-cli desk &lt;png|folder&gt;</c>: the stash desk's reading of menu screenshots, headless (docs/DESIGN.md §2,
 /// "For the stash desk"): each picture's page as text (its regions in reading order, each cell's item or "one of N", count,
 /// printed condition, figure with its source and marks, keep notch), the head line, and with a folder the tally against
-/// the hand-written truths beside the pictures (<c>truth-&lt;picture&gt;.txt</c>, the stash spike's format: "A 3,0 Marl
-/// 214", the grid's letter biggest first). The pictures are the owner's own, in the git-ignored tests\fixtures\ocr; it
-/// prints item names and counts, never a path's folder. The data comes from the cache: no request unless --online.
+/// the hand-written truths beside the pictures (<c>truth-&lt;picture&gt;.txt</c>: the stash spike's format, "A 3,0 Marl
+/// 214", the grid's letter biggest first, or by the page's regions, "backpack 1,0 Triton" and "loadout [earpiece] ComTac
+/// II", 2026-10-25) and the regions each should make (<c>regions-&lt;picture&gt;.txt</c>: "screen Gear", "loadout",
+/// "backpack 5x6"). The pictures are the owner's own, in the git-ignored tests\fixtures\ocr; it prints item names and
+/// counts, never a path's folder. The data comes from the cache: no request unless --online.
 /// </summary>
 internal static class DeskCommand
 {
-    // "--why": each cell's label as read, its fit, and a footprint's contradiction.
+    // "--why": each cell's label as read, its fit, and a footprint's contradiction; the layout as found.
     private static bool Why;
 
     // "--lattice": the stash grid's lines between its cells as the item finder sees them (a measuring aid).
@@ -31,6 +33,7 @@ internal static class DeskCommand
     private sealed class Tally
     {
         public int Truths, Right, Wrong, OneOf, OneOfOther, Silent, Missing, Pictures;
+        public int RegionPictures, Regions, RegionsRight, RegionsMissing, RegionsWrongSize, RegionsExtra, ScreensWrong;
     }
 
     public static async Task RunAsync(IReadOnlyList<string> args)
@@ -67,6 +70,11 @@ internal static class DeskCommand
             Console.WriteLine("Use: shturmap-cli desk <png or folder>... [--quiet] [--online] [--mode pve|pvp] [--raid | --menus] [--plate <w>x<h>] [--why] [--lattice]");
             Console.WriteLine("  each picture's page: regions, cells (name or \"one of N\", count, condition, figure and source, marks), the head line;");
             Console.WriteLine("  with truth-<picture>.txt beside a picture, the tally against it (and footprints-<picture>.txt, the items' footprints).");
+            Console.WriteLine("  A truth's line: \"A 3,0 <short name>\" (grid A, the biggest the stash's lines give, its cell), or by the page's");
+            Console.WriteLine("  regions \"<region> <i>,<j> <short name>\" (its grid's top left cell, compartments side by side as the page has");
+            Console.WriteLine("  them) and \"<region> [<slot>] <short name>\" (a slot: loadout [earpiece], backpack [backpack]); \"#\" a comment.");
+            Console.WriteLine("  With regions-<picture>.txt beside it, the regions the reading should make: \"screen Gear\" (None, Gear, Stash),");
+            Console.WriteLine("  then a line a region, \"loadout\" or \"<region> <cols>x<rows>\" (the whole rows in view; 0x0, none of its grid).");
             Console.WriteLine("  --quiet: the tallies only. A raid's inventory screen (by recognition, or --raid: as the in-raid glance reads it,");
             Console.WriteLine("  the world's pictures said none) prints its LOOT regions and is never taken into the page in hand.");
             Console.WriteLine("  --plate <w>x<h>: a raid's LOOT regions laid out as the in-raid glance's plate lays them out in a room that wide and");
@@ -118,6 +126,8 @@ internal static class DeskCommand
             totalMs += look.TotalMs;
             if (Lattice && look.Layout.Stash is { } latticeGrid)
                 PrintLattice(picture, latticeGrid, look.Pitch);
+            if (Why && look.Layout.Screen is not (DeskScreen.None or DeskScreen.Trading))
+                PrintLayout(picture, look);
             var named = look.Cells.Count(c => c.Cell.Ids.Count == 1);
             var unsure = look.Cells.Count(c => c.Cell.Ids.Count > 1);
             var silent = look.Cells.Count(c => c.Cell.Ids.Count == 0);
@@ -130,7 +140,15 @@ internal static class DeskCommand
             {
                 var change = ledger.Apply(mode, read);
                 Console.WriteLine($"   page in hand: {(change.First ? "first reading" : $"changed {(change.Changed.Count == 0 ? "nothing" : string.Join(", ", change.Changed.Order(StringComparer.Ordinal)))}")}" +
-                                  (change.Refused.Count > 0 ? $"; kept the page's {string.Join(", ", change.Refused.Order(StringComparer.Ordinal))} (read too blank)" : ""));
+                                  (change.Refused.Count > 0 ? $"; kept the page's {string.Join(", ", change.Refused.Order(StringComparer.Ordinal))} (read too blank)" : "") +
+                                  (change.Kept.Count > 0 ? $"; kept the page's {string.Join(", ", change.Kept.Order(StringComparer.Ordinal).Select(k => $"{k} grid ({KeptWhy(read.Region(k))})"))}" : "") +
+                                  (change.Dropped.Count > 0 ? $"; dropped {string.Join(", ", change.Dropped.Order(StringComparer.Ordinal))} (attached to nothing, not shown by {DeskLedger.MissedToDrop} readings)" : ""));
+                if (Why)
+                {
+                    Console.WriteLine("   page: " + string.Join("; ", change.Page.InReadingOrder().Select(r =>
+                        $"{r.Key} {r.Cols}x{r.Rows} {r.Parts.Count} parts {r.Cells.Count} cells{(r.Missed > 0 ? $" missed {r.Missed}" : "")}" +
+                        (read.Region(r.Key) is { Partial: true } p ? $" (read in part: {string.Join(" ", p.Parts.Select(x => $"{x.I},{x.J} {x.W}x{x.H}"))})" : ""))));
+                }
             }
             if (look.Page is { } page)
             {
@@ -163,13 +181,17 @@ internal static class DeskCommand
             var truthPath = Path.Combine(Path.GetDirectoryName(file)!, "truth-" + Path.GetFileNameWithoutExtension(file) + ".txt");
             if (File.Exists(truthPath))
                 Score(look, picture, truthPath, data, tally);
+            var regionsPath = Path.Combine(Path.GetDirectoryName(file)!, "regions-" + Path.GetFileNameWithoutExtension(file) + ".txt");
+            if (File.Exists(regionsPath))
+                ScoreRegions(look, regionsPath, tally);
         }
         if (files.Count > 1 && ledger.Page(mode) is { } merged)
         {
             var sheet = DeskSheet.Of(merged, id => DeskData.Facts(sources, id), flea, keep);
             var t = sheet.Totals;
             Console.WriteLine();
-            Console.WriteLine($"The page in hand after {files.Count} pictures: " + string.Join(", ", sheet.Regions.Select(r => $"{r.Region.Key} {r.Cells.Count}")) +
+            Console.WriteLine($"The page in hand after {files.Count} pictures: " +
+                              string.Join(", ", sheet.Regions.Select(r => $"{r.Region.Key}{(r.Region.Cols > 0 ? $" {r.Region.Cols}×{r.Region.Rows}" : "")} {r.Cells.Count}")) +
                               $"; ON YOU {Money(t.OnYou)}{(t.OnYouPlus ? "+" : "")} ₽ · STASH {Money(t.Stash)}{(t.StashPlus ? "+" : "")} ₽ · KEEP {t.KeepNow} · {t.KeepNext} · {t.KeepLater}");
             foreach (var w in merged.Regions.Where(r => r.Kind == DeskRegionKind.ContainerWindow))
                 Console.WriteLine($"   window \"{w.Title}\": " + (w.AttachedTo is { } a ? $"attached to {a.Region} {a.Slot ?? $"{a.I},{a.J}"}" : $"attached to none ({w.SameName} of its name on the page)"));
@@ -180,7 +202,39 @@ internal static class DeskCommand
             Console.WriteLine($"Against {tally.Pictures} truths ({tally.Truths} items): right {tally.Right}, wrong {tally.Wrong}, one of N {tally.OneOf} (the truth among them) + " +
                               $"{tally.OneOfOther} (not among them), nothing said {tally.Silent}, no cell read there {tally.Missing}");
         }
+        if (tally.RegionPictures > 0)
+        {
+            Console.WriteLine($"Regions against {tally.RegionPictures} truths ({tally.Regions} regions): right {tally.RegionsRight}, missing {tally.RegionsMissing}, " +
+                              $"of another size {tally.RegionsWrongSize}, made up {tally.RegionsExtra}; screens told wrong {tally.ScreensWrong}");
+        }
         Console.WriteLine($"{files.Count} pictures, {(files.Count > 0 ? totalMs / files.Count : 0)} ms a picture" + (online ? "" : $"; requests refused: {refused}"));
+    }
+
+    // "--why": the layout as found, in pixels: the stash, the loadout's slot boxes, the grids the lines give (a window's has
+    // two-pixel lines), the framed compartments, and each region's place (its slot box, compartments, a window's title and
+    // area), with what the middle column left out.
+    private static void PrintLayout(SKBitmap picture, DeskLook look)
+    {
+        static string Box(SKRectI r) => $"({r.Left},{r.Top} {r.Width}x{r.Height})";
+        var layout = look.Layout;
+        var gray = StashGray.Of(picture);
+        var lines = new StashLines(gray);
+        var grids = StashGrids.Find(lines, gray, picture.Width, picture.Height, look.Pitch);
+        Console.WriteLine($"   layout at pitch {look.Pitch}: stash {(layout.Stash is { } s ? $"({s.X0},{s.Y0}) {s.Cols}x{s.Rows}" : "none")}; " +
+                          $"slots {string.Join(", ", layout.Slots.Select(x => $"{x.Key} {Box(x.Box)}"))}");
+        Console.WriteLine("   grids: " + string.Join(", ", grids.Select(g =>
+        {
+            var r = SKRectI.Create(g.X0, g.Y0, g.Cols * look.Pitch, g.Rows * look.Pitch);
+            return $"{g.Place} {Box(r)} {g.Cols}x{g.Rows} line {DeskLayout.LineWidth(gray, r, look.Pitch)}";
+        })));
+        Console.WriteLine("   frames: " + string.Join(", ", layout.Frames.Select(Box)));
+        foreach (var place in layout.Regions)
+        {
+            Console.WriteLine($"   place {place.Kind}{(place.Title is { } t ? $" \"{t}\"" : "")}: slot {(place.SlotBox is { } b ? Box(b) : "none")}, " +
+                              $"parts {string.Join(" ", place.Parts.Select(Box))}{(place.Area is { } a ? $", area {Box(a)}" : "")}{(place.Cut ? ", cut" : "")}");
+        }
+        foreach (var note in layout.Notes)
+            Console.WriteLine($"   note: {note}");
     }
 
     // Per row: each cell's spread once the gradient is out (E: read as empty), and for the line at its right and below: the
@@ -275,11 +329,15 @@ internal static class DeskCommand
         }
     }
 
+    // Why a region read in part kept the page's grid, as the app log says it (GameSession.Desk).
+    private static string KeptWhy(DeskRegion? region) =>
+        region is null ? "" : region.Parts.Count > 0 ? "cut at the column's foot" : region.CoveredSlots.Count > 0 ? "under a window" : "not in view";
+
     // A region's tally: its cells named, one of N, unread, and a LOOT part's search state.
     private static string RegionTally(DeskRegion r) =>
         $"{r.Key} {r.Cells.Count(c => c.Ids.Count == 1)}/{r.Cells.Count(c => c.Ids.Count > 1)}/{r.Cells.Count(c => c.Ids.Count == 0)}" +
         (r.Search != DeskSearch.Searched ? $" {r.Search.ToString().ToUpperInvariant()}" : "") + (r.Cut ? " cut" : "") +
-        (r.CoveredSlots.Count > 0 || r.Covered.Count > 0 ? " covered" : "");
+        (r.CoveredSlots.Count > 0 || r.Covered.Count > 0 ? " covered" : "") + (r.Partial ? " partial" : "");
 
     private static void Print(DeskSheet sheet, GameData data, ItemSources sources, DeskLook look)
     {
@@ -384,12 +442,27 @@ internal static class DeskCommand
     private static void Score(DeskLook look, SKBitmap picture, string truthPath, GameData data, Tally tally)
     {
         var truth = new List<(char Grid, int I, int J, string Name)>();
-        foreach (var line in File.ReadAllLines(truthPath).Where(l => l.Trim().Length > 0))
+        var byRegion = new List<(string Region, string? Slot, int I, int J, string Name)>();
+        foreach (var line in File.ReadAllLines(truthPath).Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith('#')))
         {
             var parts = line.Split(' ', 3);
-            var cell = parts[1].Split(',');
-            truth.Add((parts[0][0], int.Parse(cell[0], CultureInfo.InvariantCulture), int.Parse(cell[1], CultureInfo.InvariantCulture), parts[2].Trim()));
+            if (parts[0].Length == 1 && char.IsAsciiLetterUpper(parts[0][0]))
+            {
+                var cell = parts[1].Split(',');
+                truth.Add((parts[0][0], int.Parse(cell[0], CultureInfo.InvariantCulture), int.Parse(cell[1], CultureInfo.InvariantCulture), parts[2].Trim()));
+            }
+            else if (parts[1].StartsWith('['))
+                byRegion.Add((parts[0], parts[1].Trim('[', ']'), 0, 0, parts[2].Trim()));
+            else
+            {
+                var cell = parts[1].Split(',');
+                byRegion.Add((parts[0], null, int.Parse(cell[0], CultureInfo.InvariantCulture), int.Parse(cell[1], CultureInfo.InvariantCulture), parts[2].Trim()));
+            }
         }
+        if (byRegion.Count > 0)
+            ScoreByRegion(look, byRegion, data, tally);
+        if (truth.Count == 0)
+            return;
         var gray = StashGray.Of(picture);
         var lines = new StashLines(gray);
         var grids = StashGrids.Find(lines, gray, picture.Width, picture.Height, look.Pitch).Where(g => g.Place != StashGridPlace.Message).ToList();
@@ -447,6 +520,77 @@ internal static class DeskCommand
         tally.OneOfOther += other;
         tally.Silent += silent;
         tally.Missing += missing;
+    }
+
+    // A truth by the page's regions (2026-10-25): each line's cell found in the reading's region of that key, a slot by its
+    // key, a grid's cell by the cell that takes its top left; the same tally as the grids' truth.
+    private static void ScoreByRegion(DeskLook look, List<(string Region, string? Slot, int I, int J, string Name)> truth, GameData data, Tally tally)
+    {
+        int right = 0, wrong = 0, oneOf = 0, other = 0, silent = 0, missing = 0;
+        foreach (var t in truth)
+        {
+            var region = look.Page?.Region(t.Region);
+            var found = region?.Cells.FirstOrDefault(c => t.Slot is not null ? c.Slot == t.Slot : !c.IsSlot && c.Rect.Contains(new DeskRect(t.I, t.J, 1, 1)));
+            var names = found?.Ids.Select(data.ItemShortName).ToList() ?? [];
+            var where = t.Slot is not null ? $"{t.Region} [{t.Slot}]" : $"{t.Region} {t.I},{t.J}";
+            if (found is null)
+            {
+                missing++;
+                Console.WriteLine($"   NO CELL {where}: truth {t.Name}");
+            }
+            else if (names.Count == 0)
+                silent++;
+            else if (names.Count == 1 && names[0] == t.Name)
+                right++;
+            else if (names.Count == 1)
+            {
+                wrong++;
+                Console.WriteLine($"   WRONG {where}: read {names[0]}, truth {t.Name}");
+            }
+            else if (names.Contains(t.Name))
+                oneOf++;
+            else
+            {
+                other++;
+                Console.WriteLine($"   NOT AMONG {where}: one of {names.Count} ({string.Join(", ", names.Distinct().Take(4))}), truth {t.Name}");
+            }
+        }
+        Console.WriteLine($"   truth by region: {truth.Count} items: right {right}, wrong {wrong}, one of N {oneOf} + {other} not among them, nothing said {silent}, no cell read {missing}");
+        tally.Pictures++;
+        tally.Truths += truth.Count;
+        tally.Right += right;
+        tally.Wrong += wrong;
+        tally.OneOf += oneOf;
+        tally.OneOfOther += other;
+        tally.Silent += silent;
+        tally.Missing += missing;
+    }
+
+    // The regions a picture should make (regions-<picture>.txt, 2026-10-25): its screen, then each region's key and the size
+    // of its grid in view; a region made that the truth hasn't is made up (a window of a misread heading, a region's grid
+    // taken for a window).
+    private static void ScoreRegions(DeskLook look, string path, Tally tally)
+    {
+        var lines = File.ReadAllLines(path).Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith('#')).ToList();
+        var screen = lines.FirstOrDefault(l => l.StartsWith("screen ", StringComparison.Ordinal))?["screen ".Length..].Trim() ?? "None";
+        var truth = lines.Where(l => !l.StartsWith("screen ", StringComparison.Ordinal)).Select(l => l.Split(' ', 2)).ToDictionary(p => p[0], p => p.Length > 1 ? p[1].Trim() : "", StringComparer.Ordinal);
+        var read = look.Page?.Regions ?? [];
+        string Size(DeskRegion r) => r.Kind == DeskRegionKind.Loadout ? "" : $"{r.Cols}x{r.Rows}";
+        var right = truth.Count(t => read.FirstOrDefault(r => r.Key == t.Key) is { } r && Size(r) == t.Value);
+        var missing = truth.Keys.Where(k => read.All(r => r.Key != k)).ToList();
+        var wrongSize = truth.Where(t => read.FirstOrDefault(r => r.Key == t.Key) is { } r && Size(r) != t.Value).Select(t => $"{t.Key} {Size(read.First(r => r.Key == t.Key))} (truth {t.Value})").ToList();
+        var extra = read.Where(r => !truth.ContainsKey(r.Key)).Select(r => $"{r.Key} {Size(r)}").ToList();
+        var screenRight = look.Layout.Screen.ToString() == screen;
+        Console.WriteLine($"   regions: {right} of {truth.Count} right" + (screenRight ? "" : $"; SCREEN {look.Layout.Screen}, truth {screen}") +
+                          (missing.Count > 0 ? $"; missing {string.Join(", ", missing)}" : "") + (wrongSize.Count > 0 ? $"; of another size {string.Join(", ", wrongSize)}" : "") +
+                          (extra.Count > 0 ? $"; MADE UP {string.Join(", ", extra)}" : ""));
+        tally.RegionPictures++;
+        tally.Regions += truth.Count;
+        tally.RegionsRight += right;
+        tally.RegionsMissing += missing.Count;
+        tally.RegionsWrongSize += wrongSize.Count;
+        tally.RegionsExtra += extra.Count;
+        tally.ScreensWrong += screenRight ? 0 : 1;
     }
 
     // Against the items' footprints as the picture shows them (footprints-<picture>.txt beside the truth, "A 0,7 2x1"; one by

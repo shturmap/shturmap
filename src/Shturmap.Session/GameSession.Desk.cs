@@ -96,6 +96,18 @@ public sealed partial class GameSession
                         $"{region?.ReadCells ?? 0} cells read, {region?.Unread ?? 0} unread, against {change.Page.Region(key)?.ReadCells ?? 0} on the page");
             Study.Game("desk.kept", ("kind", region?.Kind.ToString() ?? ""), ("read", region?.ReadCells ?? 0), ("unread", region?.Unread ?? 0));
         }
+        // A region shown in part (its grid cut by the column's foot, or none of it in view) keeps the page's cells and
+        // compartments outside what was read (owner, 2026-10-25; DeskLedger, DeskRegion.Partial).
+        foreach (var key in change.Kept)
+        {
+            var region = page.Region(key);
+            var why = region is null ? "" : region.Parts.Count > 0 ? "cut at the column's foot"
+                : region.CoveredSlots.Count > 0 ? "under a window" : "not in view";
+            AppLog.Info($"Desk reading kept the page's {key} grid: {why}");
+        }
+        // A window attached to nothing that three readings in a row didn't show (owner, 2026-10-25).
+        foreach (var _ in change.Dropped)
+            AppLog.Info($"Desk page dropped a window attached to nothing, not shown by {DeskLedger.MissedToDrop} readings in a row");
         SaveDeskIfDirty();
         RefreshDeskPrices();
     }

@@ -123,4 +123,79 @@ public class DeskRealPictureTests
         Assert.Equal(0, wrong);
         Assert.True(right >= 115, $"{right} of {items} named right, {unsure} one of several");
     }
+
+    // The layout round's test set (owner, 2026-10-25; docs/NEXT.md): the 13 menu screenshots of the owner's test of the
+    // GEAR tab and the stash, and one more of the same evening with ARMBAND half under the Keys window, renamed in their
+    // order without their time (00-gear-armband.png … 13-gear-keys.png in tests\fixtures\ocr\desk\session, ignored by git).
+    // Beside each, the regions it should make (regions-<picture>.txt: its screen, then each region and the size of its grid
+    // in view, "backpack 5x4"), and beside three, every item whose label shows (truth-<picture>.txt, by the page's regions:
+    // "backpack 1,0 Triton", "loadout [earpiece] ComTac II"). No screen told wrong, no region made up and none missing, no
+    // name wrong; the sizes and the names right held to a floor under what was measured on 2026-10-25 (64 of 66 regions
+    // of their size, 127 of 158 items named), as another Windows' recognition may read a letter otherwise.
+    [Fact]
+    public async Task The_layout_rounds_test_set_makes_its_regions_and_nothing_else_and_names_nothing_wrongly()
+    {
+        var folder = Fixtures(Path.Combine("desk", "session"));
+        var sets = Directory.Exists(folder)
+            ? Directory.GetFiles(folder, "regions-*.txt").Order(StringComparer.Ordinal)
+                .Select(path => (Name: Path.GetFileNameWithoutExtension(path)["regions-".Length..], Regions: path))
+                .Where(s => File.Exists(Path.Combine(folder, s.Name + ".png"))).ToList()
+            : [];
+        if (sets.Count == 0)
+            Assert.Skip("Real screenshots stay out of the repository: the layout round's test set isn't on this PC (tests\\fixtures\\ocr\\desk\\session).");
+        var (data, catalogue) = await CatalogueAsync();
+        var reader = DeskReader.Create("en");
+        if (reader is null)
+            Assert.Skip("This Windows has no text recognition language installed.");
+        var faults = new List<string>();
+        int regions = 0, sized = 0, items = 0, named = 0, wrong = 0;
+        foreach (var (name, regionsPath) in sets)
+        {
+            using var bitmap = SKBitmap.Decode(await File.ReadAllBytesAsync(Path.Combine(folder, name + ".png"), TestContext.Current.CancellationToken));
+            using var bgra = bitmap.Copy(SKColorType.Bgra8888);
+            var reading = await reader.ReadAsync(bgra, catalogue, new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), TestContext.Current.CancellationToken);
+            var lines = Lines(regionsPath);
+            var screen = lines.FirstOrDefault(l => l.StartsWith("screen ", StringComparison.Ordinal))?["screen ".Length..] ?? "None";
+            if (reading.Screen.ToString() != screen)
+                faults.Add($"{name}: screen {reading.Screen}, truth {screen}");
+            var truth = lines.Where(l => !l.StartsWith("screen ", StringComparison.Ordinal)).Select(l => l.Split(' ', 2))
+                .ToDictionary(p => p[0], p => p.Length > 1 ? p[1] : "", StringComparer.Ordinal);
+            var read = reading.Page?.Regions ?? [];
+            faults.AddRange(truth.Keys.Where(k => read.All(r => r.Key != k)).Select(k => $"{name}: {k} missing"));
+            faults.AddRange(read.Where(r => !truth.ContainsKey(r.Key)).Select(r => $"{name}: {r.Key} made up"));
+            regions += truth.Count;
+            sized += read.Count(r => truth.TryGetValue(r.Key, out var size) && size == (r.Kind == DeskRegionKind.Loadout ? "" : $"{r.Cols}x{r.Rows}"));
+
+            var cellsPath = Path.Combine(folder, "truth-" + name + ".txt");
+            if (!File.Exists(cellsPath) || reading.Page is not { } page)
+                continue;
+            foreach (var line in Lines(cellsPath))
+            {
+                var parts = line.Split(' ', 3);
+                var region = page.Region(parts[0]);
+                DeskCell? cell;
+                if (parts[1].StartsWith('['))
+                    cell = region?.Cells.FirstOrDefault(c => c.Slot == parts[1].Trim('[', ']'));
+                else
+                {
+                    var at = parts[1].Split(',');
+                    cell = region?.Cells.FirstOrDefault(c => !c.IsSlot && c.Rect.Contains(new DeskRect(int.Parse(at[0]), int.Parse(at[1]), 1, 1)));
+                }
+                var names = cell?.Ids.Select(data.ItemShortName).ToList() ?? [];
+                items++;
+                if (names.Count == 1 && names[0] == parts[2])
+                    named++;
+                else if (names.Count == 1)
+                    wrong++;
+            }
+        }
+        Assert.Empty(faults);
+        Assert.Equal(0, wrong);
+        Assert.True(sized >= 62, $"{sized} of {regions} regions of their size");
+        Assert.True(named >= 120, $"{named} of {items} items named right");
+    }
+
+    // A truth file's lines, "#" a comment.
+    private static List<string> Lines(string path) =>
+        File.ReadAllLines(path).Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith('#')).ToList();
 }

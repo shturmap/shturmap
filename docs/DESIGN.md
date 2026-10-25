@@ -324,9 +324,10 @@ day, for the in-raid glance: "Which pictures", below):
   words); a slot's box under its heading; the middle column's compartments as rectangles of whole cells framed on all
   four sides (a rig's pockets stand a few pixels apart, no lattice), each under the lowest heading above it, a
   container's own slot the first under BACKPACK, TACTICAL RIG and POUCH; a compartment the column's scrolling cuts is
-  left out (the page keeps what it had); a window by its title bar (the magnifier before the title, sort and close
-  after it, or the title's size: 15 px at 1440p, a label 11 to 14) over compartments of its own, or by its grid's
-  two-pixel lines when no title is read (its search field open: "ITEM SEARCH"); a window's lattice moved onto the lines
+  left out (the page keeps what it had; read as far as it shows since 2026-10-25, *The layout round* below); a window by
+  its title bar (the magnifier before the title, sort and close after it, or the title's size: 15 px at 1440p, a label
+  11 to 14; narrowed on 2026-10-25, below) over compartments of its own, or by its grid's two-pixel lines when no title
+  is read (its search field open: "ITEM SEARCH"); a window's lattice moved onto the lines
   between its cells, within a sixth of a cell, and the frame found a few pixels off it taken as the same compartment,
   never a second (the owner's test of 2026-10-19: the Keys window's lattice stood on the window's outline 6 px left of
   its cells; after the game's SORT its 71 keys read as one odd shape, and before it the frame beside the lattice read
@@ -363,7 +364,51 @@ day, for the in-raid glance: "Which pictures", below):
   61, one of N 10 → 11, 0 wrong; its 34 "?" pieces of 11 rifles, silencers and scopes gone); the GEAR truth 30 right,
   2 one of N, 2 unread, 0 wrong (34 items: three bottles whose labels lie above the visible grid left it); the stash
   truths unchanged; the quest marks' reader finds the Keys window's 72 keys on both pictures (23 and 28 rectangles of
-  the window before).
+  the window before). **The layout round** (owner, 2026-10-25, decision 3 of the session's decision page; docs/NEXT.md;
+  `DeskLayout`, `DeskFrames`): the 13 menu screenshots of the test of 2026-10-19 made another set of regions each, with
+  windows made of misread headings and of a region's grid, and the page never dropped them (the owner's page kept 13
+  regions, 4 of them such; §4, *What it mirrors*). Fixed, each on those pictures:
+  - **A heading one letter off still counts**: a word in capitals, the heading's word of four letters or more with one
+    letter dropped, added or changed (the first one too; accents aside), is that word ("*ACE COVER" is FACE COVER;
+    "ÄRMBANI", ARMBAND half under a window's edge, is ARMBAND). A two- or three-letter word must read as it is: ON BACK
+    needs its "ON", and the screen's own BACK button stays no BACKPACK.
+  - **No window from a misread heading**: a word level with the loadout's headings, left of 0.4 of the width, is a
+    window's title only after its bar's magnifier, whatever it reads (the Keys window dragged over the loadout has its bar
+    level with ARMBAND, magnifier and all). Left of the stash pane, a title in capitals needs its bar's glyphs read (the
+    magnifier, or sort and close), or a two-pixel lattice under it that is no region's grid. A title in small letters still
+    counts by its size there, as any title does right of the pane: the decision asked for the glyphs everywhere left of
+    the pane, but the Zhuk window over the middle column on the GEAR pictures of 2026-10-19, its glyphs unread, would
+    have been lost, and the game's headings are capitals where its containers' names mostly aren't (step 1's
+    narrowing; the owner's to overrule).
+  - **A lattice under a middle heading is that region's grid**, never a window of no name (the POUCH's grid, its lines
+    two pixels wide as a window's, read as one on three of the pictures): the frames across it (one across the POUCH's
+    slot and two columns of its grid) are dropped. A container's slot no frame shows is boxed from its heading's place
+    (5 px left of the word, 6 under it at 1440p), as the loadout's are; a part that is that box is no grid.
+  - **A grid the column's foot cuts is read as far as it shows**: a compartment framed on its top and both sides down to
+    the foot (the column's view ends a quarter of a cell above the QUICK USE bar's top; its word folds to "0u1ck" and was
+    looked for as "qu1ck" until now, so the foot was always 88.5 % of the height, 1274 px at 1440p, the bar's word at
+    1254) is its whole rows in view, and so is one ending within a quarter of a cell of the foot; a frame whose lines run
+    on past its corners is left unread. Either way the region is read in part, and the page keeps the rest (§4, *What it
+    mirrors*). Until then such a region was left out, and its slot alone, read on its own, took the page's grid away (the
+    backpack ran empty past the foot, the lines between its empty cells too faint to frame anything).
+  - **A frame whose heading a window may hide is placed under none**: one with a window over the rows between it and the
+    heading above, from the heading's place to the frame, unless a compartment stands right above it (a cell of the
+    POUCH's grid below the Keys window, the POUCH's heading under it, was the BACKPACK's grid of one cell).
+  - Compartments whose tops (or lefts) stand within a quarter of a cell are on one row of their region (until now within
+    4 px: a pocket's frame found 5 px above the others' made the pockets three rows high).
+  - In a raid the glance reads as before (a region the foot cuts left out, a lattice under a heading no region's grid):
+    the 22 raid screenshots of 2026-10-19 read the same regions and cells.
+  Measured with `shturmap-cli desk` on the 13 screenshots and one more of the same evening (ARMBAND half under the Keys
+  window), renamed in their order without their time into the git-ignored `tests\fixtures\ocr\desk\session` with the
+  regions each should make (`regions-<picture>.txt`) and, for three, every item whose label shows (`truth-<picture>.txt`,
+  by the page's regions): regions of their size 50 → 64 of 66, missing 7 → 0, invented 5 → 0 (a window of no name three
+  times, "*ACE COVER", "ÄRMBANI"), of another size 9 → 2 (the stash's rows under a page of large boxes, a pocket's frame
+  unfound: open); screens all told right; the three pictures' 158 items 123 → 127 named right, 17 → 18 "one of N", 8 → 10
+  unread, no cell read 10 → 3 (the backpack's slot and two Junk boxes, their corners under the Keys window), 0 wrong; the
+  GEAR truth of 2026-10-19 and the Keys page's unchanged (30 and 61 right, 0 wrong). Over the last six pictures of the
+  evening the page in hand ends as the GEAR tab has it: LOADOUT, TACTICAL RIG, POCKETS, SPECIAL SLOTS, BACKPACK five by
+  six (its grid emptied after the raid), POUCH three by three, STASH and the Keys window; until then a BACKPACK of no
+  cell, no POUCH and two invented windows. About 1.3 s a picture, as before.
 - **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
   the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
   cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until
@@ -2041,6 +2086,24 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     it), and the app log says so. A region the player emptied reads its empty cells as empty and still replaces the
     page's (an unloaded backpack after a raid, a stash paged to an emptier page): the coordinator's rule asked for the
     third alone; the unread share is mine, for that case.
+    **A region read in part keeps the page's rest** (owner, 2026-10-25; the test of 2026-10-19: the backpack's grid ran
+    past the middle column's foot, then lay under the Keys window, and its slot alone, read each time, took the page's
+    grid of five by six away; `DeskRegion.Partial`, `DeskLedger`): a middle region whose grid runs past what the
+    screenshot shows, cut by the column's foot or not in view at all (under a window, scrolled away), stands for the
+    compartments read alone. The page keeps its cells and compartments outside them, a compartment the foot cut as tall
+    as the page had it, the grid's size, and its slot where none was read (or one whose label wasn't), with the cells read
+    in their place: the rows in view of an emptied backpack read empty, the rows below the foot keep their last reading.
+    Not when the slot reads another container than the page's (its grid was the other one's), and a container's slot seen
+    empty, its frame in view with no label in it, takes the grid away with it. The app log says what it kept and why ("cut
+    at the column's foot", "under a window", "not in view"). (The decision said a grid cut at the foot keeps the page's
+    version; whole, the pouch at the foot after a raid, or the backpack emptied there, would then never be read anew, so
+    the rows in view are taken: step 1's reading of it, the owner's to overrule.)
+    **What leaves the page** (owner, 2026-10-25; the owner's page of 2026-10-19 kept four windows made of misread headings
+    and of the POUCH's grid, which no reading would ever take away): a window attached to nothing (no container of its
+    name on the page) that three readings in a row didn't show is dropped; a window with no cell and no title is never
+    kept, read or loaded. A window attached to its container stays however long it goes unseen. Each region keeps when the
+    screenshot that last showed it was taken and how many readings have missed it since (§8, "The desk file"; for the
+    head's "BACKPACK · 23:08" of the layout decided the same day).
   - **The head line and the fold** (the addendum, B1). Over the page, in muted capitals, "ON YOU 1.01 M ₽ · STASH
     6.84 M ₽ · KEEP 3 · 2 · 4": what is on the player against what is in the stash (after a raid, what came back
     against what stayed), then the page's cells with a now, next and later notch. A total counts what each cell would
@@ -2101,7 +2164,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       footprint, so a slot's short name shared by variants stays a "?" (4 of the 7 filled slots on the owner's
       screenshots: BAC Bastion in three colours, Death Shadow in three, the armband in seven at 0.3–294k, a dog tag by
       level). "Zhuk" names two rigs of one size (Black and SURPAT, 4×3), so its cell is a "?", and its window's grid
-      attaches to it either way.
+      attaches to it either way. The player's pick among the candidates (*The click*) stays with the cell until its
+      label changes: while the item picked is still among the candidates a newer reading gives the same slot, or the
+      grid's cell at the same place (owner, 2026-10-25).
     - **Behind the art**, ink at 5, 10 or 16 % from 20k, 100k or 300k ₽ per slot, by what the better sale brings (the
       flea's net or the trader's), not the listing price.
     - **A count past what the item stacks to** (tarkov.dev's `stackMaxSize`) is a misread: one, at least (the owner's
@@ -2147,11 +2212,13 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     the pin at a card's head pins or unpins it (the owner, 2026-10-19: "It is also not possible to 'pin' items to the
     side view"; a right-click is no input to the game either): several stack, newest on top; a pinned cell carries the
     pin's tab ("Visual language"). A "?" cell's card lists its candidates, each with its art and figure, the best first;
-    one click on one picks it, and the pick stays for that cell (in desk.json, and over a reading that shows the cell as
-    it was); a click on the "?" cell itself copies nothing and the notice says "One of 3 items: pick it on the card
-    first". The rule is one setting, "Flea price to copy": the last low matched, or 1–20 % under or over it, 3 % under
-    unless changed. Built (step C, 2026-10-19). **Guards**, said on the
-    card's plate: never a net under the best trader's (the plate says "Therapist pays more: 459 000 ₽" and why, and a
+    one click on one picks it, and the pick stays for that cell (in desk.json) until its label changes: over every newer
+    reading in which the item picked is still among the candidates of the same slot, or of the grid's cell at the same
+    place, whatever else of it was read anew (its count, its condition, another candidate), and gone with one in which it
+    isn't (owner, 2026-10-25, the layout round; until then only over a reading that showed the cell exactly as it was, so
+    a count read otherwise dropped it); a click on the "?" cell itself copies nothing and the notice says "One of 3
+    items: pick it on the card first". The rule is one setting, "Flea price to copy": the last low matched, or 1–20 %
+    under or over it, 3 % under unless changed. Built (step C, 2026-10-19). **Guards**, said on the card's plate: never a net under the best trader's (the plate says "Therapist pays more: 459 000 ₽" and why, and a
     click copies nothing); above the most a sale can net (the fee's curve: about 51 times the base price at PvE's
     rates) the plate carries the status bar's gold light and says so ("over the best net: …"); no flea price for what
     can't be listed, "Can't be listed on the flea" with the best trader's price (`noFlea`, the item's flea level, the
@@ -2292,7 +2359,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     STASH or neither) and total, the head line (`DeskTotals`), the regions the last reading changed (the fold's input) and
     the prices' age. A reading is taken into the page in hand (`DeskLedger`): the regions it shows replace the old, the
     others stay, the cells a window covered keep their last reading; a region read too blank keeps the page's (*What it
-    mirrors*, 2026-10-19). A file written before 2026-10-19 with a cell read twice (a window's compartment found twice)
+    mirrors*, 2026-10-19); a region read in part keeps the page's rest, a window attached to nothing leaves after three
+    readings that didn't show it, and one with no cell and no title is never kept (*What it mirrors*, 2026-10-25). A file
+    written before 2026-10-19 with a cell read twice (a window's compartment found twice)
     takes each place once when read back. What the rules decided where the panels left it
     open, for the owner to overrule:
     - NOW is an active quest's need: what its hand-overs and finds take as well as BRING's rows (keys, items to plant,
@@ -4348,13 +4417,20 @@ last reading had it. Its shape: `version` 1; `modes` by the mode's name (`pve`, 
 reading's screenshot time) and `regions` in the order taken; a region: `key` (`loadout`, `rig`, `pockets`, `special`,
 `backpack`, `pouch`, `stash`, `window:<its folded title>`), `kind`, `cols` and `rows`, its compartments (`parts`, each
 `[i, j, w, h]`), a window's `title` (the container's name as printed), `titleIds` (the items its title may name),
-`attachedTo` (`region`, `i`, `j`, or a `slot`) or, attached to none, `sameName` and `sameNameIn`; and `cells`, each with
-`i`, `j`, `w`, `h`, `ids` (one item, several for "one of N", none for unread), a slot's `slot`, `count` when more than
-one, `print` ("46/50"), `fir`, `holds` (`contents`, `mods`) and a "?" cell's `pick` (a candidate clicked on its card,
-step C, 2026-10-19; carried over a reading that shows the cell as it was, gone with one that changes it). Item ids and the containers' names
-only: no pixel, no path, no other word. Written as a temporary file and one move, after each change; one that can't be
-read is set aside as `desk.json.unreadable` and the pages start over (the next screenshot brings them back). Never in a
-report or the diagnostics. Deleted with the data folder.
+`attachedTo` (`region`, `i`, `j`, or a `slot`) or, attached to none, `sameName` and `sameNameIn`; `readAt` (the time of
+the screenshot that last showed the region) and `missed` (how many readings in a row since didn't show it, when one or
+more; both owner, 2026-10-25); and `cells`, each with `i`, `j`, `w`, `h`, `ids` (one item, several for "one of N", none
+for unread), a slot's `slot`, `count` when more than one, `print` ("46/50"), `fir`, `holds` (`contents`, `mods`) and a
+"?" cell's `pick` (a candidate clicked on its card, step C, 2026-10-19; carried over every reading in which the item
+picked is still among the cell's candidates, gone with one in which it isn't; until 2026-10-25 only over one that showed
+the cell as it was). Item ids and the containers' names only: no pixel, no path, no other word. Read back, a window with
+no cell and no title, and one attached to nothing that `missed` three readings, are left out (§4, *What it mirrors*); a
+file written before 2026-10-25 has neither `readAt` nor `missed` on its regions: they take the page's `readAt`, and its
+windows attached to nothing, unseen for how long it can't say, are left out (the owner's file of 2026-10-19 lost
+"*ACE COVER", "ÄRMBANI" and two windows of no name so, and kept its Keys and Junk windows, attached to their cases).
+Written as a temporary file and one move, after each change; one that can't be read is set aside as
+`desk.json.unreadable` and the pages start over (the next screenshot brings them back). Never in a report or the
+diagnostics. Deleted with the data folder.
 
 **The notes file** (`notes.json` in the data folder; owner, 2026-10-15; `QuestNotes`): the notes the player writes on
 a quest's card, one set per quest and game mode (PvE and PvP apart, as ticks and picks are), each with when it was
@@ -4634,7 +4710,8 @@ headings, a window's title, a toast), the screen and its regions from them and t
 `DeskFrames`, `StashGrids` for the stash), then each cell's label enlarged as the stash reader reads it, matched to the
 whole catalogue at 0.9 (`DeskMatch`, `DeskData.Catalogue`), about 2 s a 1440p picture in all. The page goes to the desk's
 ledger (`GameSession.Desk`: `DeskLedger.Apply`, `desk.json`, the window's attachment; a region read too blank keeps the
-page's, and the app log says so), and a reading over ten minutes after the item file was fetched asks for it again
+page's, one read in part keeps the page's rest, cut at the column's foot, under a window or not in view, and a window
+attached to nothing that three readings didn't show leaves the page, and the app log says each; 2026-10-25), and a reading over ten minutes after the item file was fetched asks for it again
 (`RefreshDeskPrices`; an hour until 2026-10-19). A snapshot carries the mode's page with its values
 (`SessionSnapshot.Desk`: `DeskSheet.Of` over the item file's facts, `DeskData.Flea`, the keep levels `DeskData.Keep`
 from the quests' states and the hideout), made again only when the page, the prices or the quests change. A snapshot (`SessionSnapshot.Operational`, `OperationalPlans`) carries the mode's tasks with their
