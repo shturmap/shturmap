@@ -45,7 +45,7 @@ public class ReadingLogSessionTests
         };
     }
 
-    private static SessionRig Rig(Func<DeskReading?>? desk = null, Func<TaskPage?>? tasks = null) =>
+    private static SessionRig Rig(Func<DeskReading?>? desk = null, Func<TaskPage?>? tasks = null, Action<string, ReadingLogEntry>? write = null) =>
         new(configure: (paths, locations) => new GameSession(paths, locations)
         {
             GivenData = Data,
@@ -54,6 +54,7 @@ public class ReadingLogSessionTests
             ScreenshotGrace = TimeSpan.FromMilliseconds(50),
             DeskReader = (_, _, _, _) => Task.FromResult<DeskReading?>(desk?.Invoke()),
             TasksReader = (_, _) => Task.FromResult<TaskPage?>(tasks?.Invoke() ?? new TaskPage(TaskScreen.None, [], 17.5)),
+            ReadingLogWriter = write,
         });
 
     private static int _shots;
@@ -151,5 +152,40 @@ public class ReadingLogSessionTests
         shot = MenuScreenshot(rig);
         var text = await LogOf(rig, shot);
         Assert.Contains("Nothing was read from it", text);
+    }
+
+    [Fact]
+    public async Task A_readings_log_that_fails_never_fails_the_reading_and_the_next_is_written()
+    {
+        // Code review, 2026-10-25: an entry the log's lines stumble over (a null where a value was expected) threw past the
+        // write into the screenshot's failure handler, which said the reading failed although it was taken. Now it is a
+        // WARN line in the app log ("Readings log not written: NullReferenceException: …"; the tests start no app log).
+        var row = new TaskRow { Name = "Elimination", Location = "Customs", Status = "active", TimeText = "10:14:11", TimeLeft = new TimeSpan(10, 14, 11), TimeVotes = 4 };
+        var writes = 0;
+        await using var rig = Rig(tasks: () => new TaskPage(TaskScreen.Table, [row], 17.5), write: (folder, log) =>
+        {
+            if (Interlocked.Increment(ref writes) == 1)
+                throw new NullReferenceException("a value the lines didn't expect");
+            ReadingLog.Write(folder, log);
+        });
+        var failures = new List<string>();
+        rig.Session.Failure += (what, _) =>
+        {
+            lock (failures)
+                failures.Add(what);
+        };
+        rig.Log("Session mode: Pve");
+        await rig.StartAsync();
+        await rig.Until(s => s.Data is not null, "the data");
+
+        var shot = MenuScreenshot(rig);
+        await rig.Until(s => s.Operational.Count == 1, "the reading taken");
+        await rig.Until(() => Volatile.Read(ref writes) == 1, "the log's write tried");
+        // The session goes on: the next screenshot is read and its log written; the first's is none, and no failure is said.
+        var next = MenuScreenshot(rig);
+        Assert.Contains("TASKS SCREEN: the OPERATIONAL table, 1 row.", await LogOf(rig, next));
+        Assert.False(File.Exists(ReadingLog.PathFor(Readings(rig), shot)));
+        lock (failures)
+            Assert.Empty(failures);
     }
 }
