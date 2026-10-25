@@ -208,7 +208,59 @@ diagnostics) and §9.
 - The UI QA pass on the settings note and help's privacy text (a clause longer), and the senior translator's review.
 - CLAUDE.md's "five things" a picture is read for doesn't name this sixth reading yet.
 
-**Built (step 2).** _pending_
+**Built (step 2, 2026-10-25: the layout, A).** Binding: DESIGN.md §4, *The stash desk* (the layout round's paragraph,
+*Its place*, *What it mirrors* with LOADOUT, *A region never read* and *A region not in the last screenshot*, *The head
+line*, *Fun*, *As built*: *The page*, *The cell*, *A window's stem and light*), "Design system" (*Motion*), "Visual
+language" (*The stash desk's marks*, a region's place), *Text size*, §8 (`-Desk`, `-DeskReading`, the script's `desk`).
+
+- The page (`Rules.DeskPageRules`: `Blocks`, `Layout`, `Arrange`, `LoadoutBoxes`, `SlotHead`, `Kept`, `HeadOf`,
+  `Entering`; `Controls.DeskBoard`, `Controls.DeskCellView`): the seven fixed regions always in the game's places, LOADOUT
+  in the first column, TACTICAL RIG, POCKETS beside SPECIAL SLOTS, BACKPACK and POUCH in the second (a container's slot
+  box two cells square left of its grid), STASH ten cells wide in the third, the windows in a fourth where the desk's
+  width allows, else under the stash. LOADOUT is the game's slot grid: boxes two cells square in three columns a cell
+  apart, the armband and the dog tag two short boxes in one box's room, the weapons five cells wide, each under its
+  slot's name (the card's `DeskSlot*` words, fitted to the box: 9 px at 40, the German FACE COVER 8.5 px without its
+  spacing), drawn as cells at the box's size with the item's grid image at the box's top; empty slots empty boxes. A
+  region no reading showed is its head over a dashed frame with "NOT IN A SCREENSHOT YET"; one older than the page is
+  drawn at 70 % with its head dated ("BACKPACK · 23:08", "· 1 JAN 14:02" on another day, a no-break space after the
+  "·"). What a reading changed comes in as before; the head line and its count-up as before.
+- The cell size by the desk alone: the largest at which the three columns fit the width and the stash's column (with
+  the windows under it) the height; else 40, scrolling; one column at 40 where three don't fit. Measured
+  (`DeskPageRulesTests`, the snapshots): the owner's page of 2026-10-19 at 56 on a 2560 monitor's desk (2176 × 1330 DIP)
+  with the Keys window in a fourth column, at 40 at 1600×900 with it under the stash; the made-up desk at 64 on the
+  2560 monitor's desk (four columns, unscrolled; 72 on a desk of 2544 × 1401), at 40 at 1600×900 in three columns (its
+  two windows under the stash take that column past the desk, so the page scrolls; LOADOUT, 426 DIP, and the middle
+  column, 552, fit the 760), at 40 in one column at 900×560 (LOADOUT fills the first screen). Its three readings take one
+  shape at every desk; a page of its cells taken out too.
+- The fold is gone: `Rules.DeskFold` and its tests, the board's `Unfolded`, the fold line and its text `DeskUnchanged`,
+  the developer script's `desk open <region>` (now a script error). The replay's `fold` and `unfold` stills became
+  `kept`; its `kept` after the raid is `back`. The stems: a window two or more columns right of its cell (the backpack's
+  Zhuk in the windows' column) is reached over the page's 12 DIP lane over the columns; a stem leaving a container's grid
+  level with its slot box goes round the box.
+- The made-up desk (`Rules.DeskExample`): no POUCH, so the placeholder is on every snapshot (the in-raid glance's made-up
+  readings keep it, `DeskExample.Pouch`); reading 2, seven minutes after the first, shows the backpack alone, so the rest
+  is dimmed and dated; reading 3, two minutes later, the same.
+- Texts (English and German, for the senior translator): RuleTexts `DeskNotRead` (new: "NOT IN A SCREENSHOT YET",
+  „NOCH IN KEINEM SCREENSHOT“), `DeskHeadSince` (new: "{head} · {time}", a no-break space after the "·"), the English
+  comments of `DeskSlotEarpiece` … `DeskSlotSheath` (now also the names over LOADOUT's boxes, their room); `DeskUnchanged`
+  removed. The tour's chapter 2 frames the switch, not the page: unchanged; What's New's desk line names no fold; the
+  0.7.0 notes' desk paragraph rewritten for the fixed shape.
+- Not as the decision wrote it: POCKETS' and SPECIAL SLOTS' placeholders four and three cells wide, not five (five each
+  made their row the middle column's widest, so a page of the stash alone stood in one column at 1600×900); LOADOUT
+  eight cells wide, not "seven and gaps" (the boxes a cell apart, so a weapon's five cells span two columns and the gap,
+  as in the game); the dog tag's box under the armband's in the body armour's band, as the game has it, not a row of its
+  own; a never-read LOADOUT draws its boxes dashed under the words. The owner's to overrule.
+- Checked: the snapshots of the three readings at 900×560, 1600×900 and 2560×1400 (English; German at 1600×900); the
+  replay (`tools\qa\desk.devscript`, its stills `kept` and `same` for the fold's, `back` for the old `kept`) at the
+  work area's size, 1600×900, 900×560 and in German; the layout check of the desk view in en-US, de-DE and qps-ploc at
+  900×560 and 1600×900: no problem found. Tests: `DeskPageRulesTests` rewritten (the size and the columns at the four
+  desks, one shape over the three readings, every region in its place, a placeholder and a kept region counted, the
+  windows' column, the slot grid, a slot's name fitted, the dated heads, what comes in), `DeskExampleTests`,
+  `DeskSwitchTests`, `DevToolsTests`; `DeskFoldTests` gone.
+- Open: at 1600×900 the made-up desk scrolls by its windows under the stash (the decision's rule; a real page without
+  windows fits); at 900×560 LOADOUT takes the first screen and the stash is two screens down; a weapon's grid image
+  leaves the lower half of its box empty; the replay's `entry` still shows every cell already in while the totals
+  count up (not compared with the build before); the UI QA pass and the senior translator's review.
 
 ## 2026-10-19: text size: Windows' own, honoured everywhere
 
