@@ -328,7 +328,7 @@ day, for the in-raid glance: "Which pictures", below):
     magnifier, or sort and close), or a two-pixel lattice under it that is no region's grid. A title in small letters still
     counts by its size there, as any title does right of the pane: the decision asked for the glyphs everywhere left of
     the pane, but the Zhuk window over the middle column on the GEAR pictures of 2026-10-19, its glyphs unread, would
-    have been lost, and the game's headings are capitals where its containers' names mostly aren't (the coordinator's
+    have been lost, and the game's headings are capitals where its containers' names mostly aren't (step 1's
     narrowing; the owner's to overrule).
   - **A lattice under a middle heading is that region's grid**, never a window of no name (the POUCH's grid, its lines
     two pixels wide as a window's, read as one on three of the pictures): the frames across it (one across the POUCH's
@@ -2034,7 +2034,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     in their place: the rows in view of an emptied backpack read empty, the rows below the foot keep their last reading.
     Not when the slot reads another container than the page's (its grid was the other one's), and a container's slot seen
     empty, its frame in view with no label in it, takes the grid away with it. The app log says what it kept and why ("cut
-    at the column's foot", "under a window", "not in view").
+    at the column's foot", "under a window", "not in view"). (The decision said a grid cut at the foot keeps the page's
+    version; whole, the pouch at the foot after a raid, or the backpack emptied there, would then never be read anew, so
+    the rows in view are taken: step 1's reading of it, the owner's to overrule.)
     **What leaves the page** (owner, 2026-10-25; the owner's page of 2026-10-19 kept four windows made of misread headings
     and of the POUCH's grid, which no reading would ever take away): a window attached to nothing (no container of its
     name on the page) that three readings in a row didn't show is dropped; a window with no cell and no title is never
