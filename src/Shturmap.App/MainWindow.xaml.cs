@@ -2932,11 +2932,18 @@ public sealed partial class MainWindow : Window
             if (_helpInSnapshot && !TourOpen && !HelpFlyout.IsOpen)
                 await OpenForSnapshotAsync(HelpFlyout, HelpButton);
             if (HelpFlyout.IsOpen && HelpFlyout.Content is UIElement help)
-                await RenderToPngAsync(help, Path.Combine(folder, "help.png"));
-            // Settings never opens by itself, so a snapshot opens it just for its picture (help closes with that).
+                await RenderToPngAsync(help, Path.Combine(folder, "help.png"), popup: true);
+            // Settings never opens by itself, so a snapshot opens it just for its picture, help closed first: opened while
+            // help closed under it, settings was laid out but drawn as nothing, every pixel of settings.png transparent
+            // (UI QA re-check of 94591a5, F4).
+            if (SnapshotMode && HelpFlyout.IsOpen)
+            {
+                HelpFlyout.Hide();
+                await Task.Delay(300);
+            }
             if (SnapshotMode && SettingsFlyout.Content is UIElement settings && await OpenSettingsForSnapshotAsync())
             {
-                await RenderToPngAsync(settings, Path.Combine(folder, "settings.png"));
+                await RenderToPngAsync(settings, Path.Combine(folder, "settings.png"), popup: true);
                 SettingsFlyout.Hide();
             }
             var cards = _cards.Cards;
@@ -2963,7 +2970,9 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async Task RenderToPngAsync(UIElement element, string path)
+    // A popup's picture (help, settings) drawn with no pixel at all is taken again, up to five times half a second apart:
+    // a popup is drawn on transparency, so an empty picture of one is a render taken before it was drawn, never the popup.
+    private async Task RenderToPngAsync(UIElement element, string path, bool popup = false)
     {
         // A larger text size: a popup opened just for its picture takes it too, and the fits settle (Controls.TextScale).
         if (Controls.TextScale.Own != 1)
@@ -2973,22 +2982,44 @@ public sealed partial class MainWindow : Window
             element.UpdateLayout();
             await Task.Delay(300);
         }
-        var rtb = new Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap();
         var scale = Content.XamlRoot?.RasterizationScale ?? 1;
-        if (SnapshotScale == 1)
-            await rtb.RenderAsync(element);
-        else
+        var (rtb, pixels) = await RenderAsync();
+        for (var again = 1; popup && again <= 5 && !Drawn(pixels); again++)
         {
-            // A scaled render alone only stretches the bitmap; raising the element's rasterization scale first makes
-            // text and vectors draw at the higher density.
-            var previous = element.RasterizationScale;
-            element.RasterizationScale = scale * SnapshotScale;
-            await Task.Delay(250);
-            await rtb.RenderAsync(element, (int)Math.Round(element.ActualSize.X * scale * SnapshotScale),
-                (int)Math.Round(element.ActualSize.Y * scale * SnapshotScale));
-            element.RasterizationScale = previous;
+            await Task.Delay(500);
+            (rtb, pixels) = await RenderAsync();
+            AppLog.Info($"Snapshot: {Path.GetFileName(path)} drawn empty, taken again ({again} of 5){(Drawn(pixels) ? ", drawn" : "")}");
         }
-        var pixels = await rtb.GetPixelsAsync();
+
+        static bool Drawn(Windows.Storage.Streams.IBuffer buffer)
+        {
+            var bytes = System.Runtime.InteropServices.WindowsRuntime.WindowsRuntimeBufferExtensions.ToArray(buffer);
+            for (var i = 3; i < bytes.Length; i += 4)
+            {
+                if (bytes[i] != 0)
+                    return true;
+            }
+            return false;
+        }
+
+        async Task<(Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap, Windows.Storage.Streams.IBuffer)> RenderAsync()
+        {
+            var rtb = new Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap();
+            if (SnapshotScale == 1)
+                await rtb.RenderAsync(element);
+            else
+            {
+                // A scaled render alone only stretches the bitmap; raising the element's rasterization scale first makes
+                // text and vectors draw at the higher density.
+                var previous = element.RasterizationScale;
+                element.RasterizationScale = scale * SnapshotScale;
+                await Task.Delay(250);
+                await rtb.RenderAsync(element, (int)Math.Round(element.ActualSize.X * scale * SnapshotScale),
+                    (int)Math.Round(element.ActualSize.Y * scale * SnapshotScale));
+                element.RasterizationScale = previous;
+            }
+            return (rtb, await rtb.GetPixelsAsync());
+        }
         var storageFolder = await Windows.Storage.StorageFolder.GetFolderFromPathAsync(Path.GetDirectoryName(path));
         var file = await storageFolder.CreateFileAsync(Path.GetFileName(path), Windows.Storage.CreationCollisionOption.ReplaceExisting);
         using var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.ReadWrite);

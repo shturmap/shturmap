@@ -24,16 +24,23 @@ public static class DeskExample
     /// <summary>The readings there are: 1, the mode's first (every region read but the POUCH, which none shows); 2, seven
     /// minutes later, one that showed the backpack alone and changed it (a LEDX more: the rest is kept from reading 1,
     /// dimmed and dated); 3, two minutes after, the same screenshot again (a reading that changed nothing changes nothing:
-    /// the backpack read anew, the rest as dimmed as before).</summary>
-    public const int Readings = 3;
+    /// the backpack read anew, the rest as dimmed as before); 4, a first reading of another page, whose POCKETS, SPECIAL SLOTS and STASH
+    /// the reading made from their headings alone (no grid and no cell: their frames under a window or under no heading),
+    /// so each stands as never read, the dashed frame (<see cref="DeskPageRules.HeadingAlone"/>; UI QA re-check of 94591a5,
+    /// F2), and no wallets' window (its wallets were in the pockets and the stash).</summary>
+    public const int Readings = 4;
 
     // When each reading's screenshot was taken (the repository's example day, 2026-01-01).
     private static DateTimeOffset Taken(int reading) => new DateTimeOffset(2026, 1, 1, 14, 2, 0, TimeSpan.Zero).AddMinutes(reading switch
     {
         1 => 0,
         2 => 7,
-        _ => 9,
+        3 => 9,
+        _ => 0,
     });
+
+    // Reading 4: a first reading whose POCKETS, SPECIAL SLOTS and STASH came from their headings alone.
+    private static bool HeadingsAlone(int reading) => reading == 4;
 
     private const string Therapist = "54cb57776803fa99248b456e";
     private const string Prapor = "54cb50c76803fa8b248b4571";
@@ -205,7 +212,7 @@ public static class DeskExample
             new DeskCell(3, 3, 1, 1, []),
             At(2, 4, Bitcoin),
         ];
-        if (reading >= 2)
+        if (reading is 2 or 3)
             pack.Add(At(3, 4, Ledx, fir: true));
         var backpack = new DeskRegion("backpack", DeskRegionKind.Backpack, 6, 5, pack);
         // The Zhuk's window as the game draws it: ten pockets of one by two (QA pass of 2026-10-19, F3); a graphics card
@@ -252,6 +259,12 @@ public static class DeskExample
             SameName = 2,
             SameNameIn = ["pockets", "stash"],
         };
+        if (HeadingsAlone(reading))
+        {
+            // Their headings read, no frame under them: no columns, no rows, no cell.
+            DeskRegion Bare(DeskRegion region) => region with { Cols = 0, Rows = 0, Cells = [], Parts = [] };
+            return new DeskPage(at, [.. new[] { Bare(stash), loadout, rig, Bare(pockets), Bare(special), backpack, zhuk }.Select(r => r with { ReadAt = at })]);
+        }
         // The backpack as this reading showed it; the rest as reading 1 did.
         DeskRegion Read(DeskRegion region) => region with { ReadAt = region.Key == "backpack" ? at : Taken(1) };
         return new DeskPage(at, [.. new[] { stash, loadout, rig, pockets, special, backpack, zhuk, wallets }.Select(Read)]);
@@ -286,11 +299,11 @@ public static class DeskExample
         var sheet = DeskSheet.Of(page, id => Facts.GetValueOrDefault(id), DeskFleaRules.Default, Keep, default, traderName);
         IReadOnlySet<string> changed = reading switch
         {
-            1 => page.Regions.Select(r => r.Key).ToHashSet(StringComparer.Ordinal),
+            1 or 4 => page.Regions.Select(r => r.Key).ToHashSet(StringComparer.Ordinal),
             2 => new HashSet<string>(StringComparer.Ordinal) { "backpack" },
             _ => new HashSet<string>(StringComparer.Ordinal),
         };
-        return new DeskView(mode, sheet, changed, reading == 1, counter, now)
+        return new DeskView(mode, sheet, changed, reading is 1 or 4, counter, now)
         {
             FactsOf = id => Facts.GetValueOrDefault(id),
             Flea = DeskFleaRules.Default,

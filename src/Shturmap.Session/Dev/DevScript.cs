@@ -77,9 +77,10 @@ public static class DevScript
             + "show n, the n-th pinned line in the rail's foot clicked, from the top (its card whole in the pointed card's place)",
         ["glance"] = "[<n>]: the made-up in-raid glance's n-th reading (1, a drawer with three items; 2, a body: its slots, an UNSEARCHED rig, "
             + "pockets being searched and a searched backpack) as a raid screenshot of an inventory screen brings it; in a raid only",
-        ["tasks"] = "[<n>] [ended]: the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, n made-up tasks (3; at most 8: "
+        ["tasks"] = "[<n>] [ended]: the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, n made-up tasks (3; at most 9: "
             + "a survival on Streets ending in 25 min, a kill on Customs, a weekly's hand-overs on any map, a kill without a countdown on Shoreline, "
-            + "a line of no known kind on Woods, a survival on Interchange, a kill on Lighthouse, a weekly's kill on Reserve; 7 or 8 bring the cue's +N); "
+            + "a line of no known kind on Woods, a survival on Interchange, a kill on Lighthouse, a weekly's kill on Reserve, a kill on Ground Zero at 0 % with no single count (the rail's 0%); 7 to 9 bring "
+            + "the cue's +N); "
             + "with ended, one more that runs out 3 s later",
         ["tour"] = "end: ends the tour as Esc does (a --dev-view session starts as a first start, and the tour opens by itself)",
         ["textsize"] = "normal | larger | largest: settings' Text size, chosen as its row chooses it and saved in the session's settings; the window's text, "
@@ -110,8 +111,8 @@ public static class DevScript
                 .Select(a => a.EndsWith('?') ? (a.TrimEnd('?').TrimEnd(), true) : (a, false)).ToList();
 
     /// <summary>
-    /// A "tasks" step's made-up operational tasks (owner, 2026-10-19, B): how many (3 without a number, at most 8, so the
-    /// cue's last place can say "+N": QA pass of 2026-10-19, F3) and whether one more runs out at once ("ended"). Null for
+    /// A "tasks" step's made-up operational tasks (owner, 2026-10-19, B): how many (3 without a number, at most 9, so the
+    /// cue's last place can say "+N": QA pass of 2026-10-19, F3; the ninth the rail's "0%": UI QA re-check of 94591a5, F3) and whether one more runs out at once ("ended"). Null for
     /// any other word.
     /// </summary>
     public static (int Count, bool Ended)? TasksOf(DevStep step)
@@ -210,8 +211,8 @@ public static class DevScript
         _ => null,
     };
 
-    /// <summary>The most made-up tasks a "tasks" step takes: the session's table has eight (GameSession.ReadExampleTasksAsync).</summary>
-    public const int MostExampleTasks = 8;
+    /// <summary>The most made-up tasks a "tasks" step takes: the session's table has nine (GameSession.ReadExampleTasksAsync).</summary>
+    public const int MostExampleTasks = 9;
 
     /// <summary>The steps of settings' Text size a "textsize" step takes, as shturmap.db keeps them (Rules.TextSize).</summary>
     public static IReadOnlyList<string> TextSizes { get; } = ["normal", "larger", "largest"];

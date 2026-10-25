@@ -118,6 +118,8 @@ positions, `--focus-item <item>` and `--pick <quest>`; `frames` 36 frames 100 ms
   (`[Drawing.Bitmap]::FromFile(…).GetPixel(x, y).A`); none is a finding.
 - **Closed 2026-10-16**: the empty `settings.png` of 2026-10-15 (f028dff, a quiet run's panel every pixel transparent)
   rendered in every run of the three passes since (74 panels counted); the pixel count stays part of a pass.
+- **Again 2026-10-25, fixed 2026-10-26** (re-check of 94591a5, F4): settings opened while help closed under it was
+  drawn as nothing in most runs; help now closes first, and an empty popup picture is taken again (the app log says so).
 - **Against the words**: DESIGN.md's for that view (what shows, in which order, colour, type role, size; what is lit,
   framed, pulsing, stepped back), `docs/tour.md` and `docs/whats-new.md` (and their German files), a replay's `.md`.
 - **Against the last pass**, where one is kept, for the views the change is judged by: what changed that the change

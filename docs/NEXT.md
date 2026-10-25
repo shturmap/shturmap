@@ -599,6 +599,33 @@ made from its heading alone and the rail's "0%" have no picture yet, and German 
 - Open: F1 to F4; F2 and F3 want a made-up reading with a region made from its heading alone and a made-up task at 0 %
   with no count.
 
+**The re-check's fixes (2026-10-26).** On the developer build of this change (its pictures outside the repository).
+
+- F1 fixed: `DeskBoard.Level` made POCKETS' and SPECIAL SLOTS' head cells as tall as the taller head text's
+  ActualHeight, a fraction under the room the layout rounds that text to, so the cell made level stood a pixel short of
+  the other; both now take the taller cell's room as laid out (its texts' desired sizes). Frame rows after, by the QA
+  pass's measure: 240/278 both at 1600×900 (POCKETS 239/277 before), 276/314 both at 900×560 (English reading 1, German
+  reading 2), 278/338 both at 2560×1440; the heads' ink 221–228 both at 1600×900; BACKPACK's rows unchanged (320/399).
+  The layout check of `desk` passed in en-US and de-DE at the three sizes.
+- F2: made-up reading 4 (`fake-raid.ps1 -Desk -DeskReading 4`, the script's `desk 4`): another first, its POCKETS,
+  SPECIAL SLOTS and STASH from their headings alone. At 1600×900 in English the three stand as the dashed frame, "NOT IN
+  A SCREENSHOT YET", POCKETS four cells by two and SPECIAL SLOTS three, their heads and frames level (rows 239/319); the
+  totals "ON YOU 3.20 M+ ₽ · STASH 0 ₽". In German at 900×560 alike („NOCH IN KEINEM / SCREENSHOT“), its layout file no
+  problem. The hand-written `desk.json` wasn't the desk's: a run with a fake game (`--fake-game`, which `--dev-view`
+  and `fake-raid.ps1` make) keeps its database and files in the fake game's own `app` folder (`App.CreateSession`), and
+  `--data` then holds the app log alone; a hand-written page goes in `<fake game>\app\desk.json`.
+- F3: a ninth made-up task (`-Operational 9`, the script's `tasks 9`), a kill on Ground Zero at 0 % with two counted
+  objectives. Ground Zero's card (`map ground-zero look`, `tasks 9`) at 1600×900: "0% · 29 H LEFT", „0 % · NOCH 29 H“,
+  left at x 57 and 20 px under its title's top, as Streets' "4 OF 7 · 24 MIN LEFT".
+- F4 fixed: here every run's settings picture was empty, English too (8 of 8, `-Desk` and `-Operational`, 900×560 and
+  1600×900): settings opened while help, open for its own picture, closed under it, and its picture taken 300 ms after
+  Opened was drawn as nothing. Help now closes first, and a popup's picture with no pixel is taken again, up to five
+  times half a second apart, the app log saying so. Four runs after: every settings.png and help.png drawn, one
+  (German, `-Operational 5`, 1600×900) on its second take: the render can come before the popup's first frame, which
+  help's closing made the rule; why it does at all isn't known.
+- Open: "STASH 0 ₽" where the stash was never read (reading 4) reads as a stash worth nothing; the placeholder's words
+  wrap in POCKETS' and SPECIAL SLOTS' frames ("NOT IN A SCREENSHOT / YET"); a UI QA pass of these pictures.
+
 **Code review of the day's merges (2026-10-25, 66fd15d..6f895a9, high).**
 
 - Fixed: a trader's list entry could take a kept task's expiry away. It refreshes the one task kept by its name whatever
