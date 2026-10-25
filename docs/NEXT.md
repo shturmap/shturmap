@@ -6,6 +6,76 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-25: the layout round: a steady desk, the reading's faults, the trader's task view
+
+**The ask** (owner, 2026-10-25, after the test of 2026-10-19): "From the last testing session it is clear that we have to
+work on the layout a lot. Sometimes it doesn't properly detect the layout so it might be a good idea to have a consistent
+layout" ("the found items from the OCR and the layout of the loadout and stash"); and "when a daily or weekly is
+screenshotted from the traders quest accept view, it is not added to shturmap."
+
+**Found** (the dev app log of 2026-10-19 and `shturmap-cli desk` over the 13 menu screenshots of that evening, 20:46 to
+23:15; the pictures stay outside the repository, as the git-ignored fixtures do):
+
+- Every GEAR screenshot shows a different set of regions (the game scrolls the middle column), so the page in hand folds,
+  flows and resizes anew each time: three readings in a row gave three shapes. The fold's written cost (DESIGN.md §4, *The
+  head line and the fold*), now the owner's complaint.
+- The reading invents regions, and the page never drops them: the owner's desk.json had 13 regions, 4 of them junk. The
+  FACE COVER heading read as "ACE COVER" is no heading, so the slot box under it became a window ("*ACE COVER", 1 cell);
+  the ARMBAND heading likewise (a window of 0 cells); the POUCH's grid at 23:08 came back as a window of no name (the
+  region left out as cut, the lattice then taken for a window); a second nameless window the same way. The backpack ended
+  as a lone slot (23:10) and then a 1×1 region of 0 cells (23:14, 23:15), replacing the page's 5×6 grid.
+- Across the eleven GEAR and stash readings: 510 cells, 367 named (72 %), 83 "one of N" (16 %; mostly loadout slots
+  without a footprint: the armband one of 11, the dog tag one of 27, the Trooper one of 2), 60 unread (12 %; labels the
+  recognition drops). The junk regions are the layout's, not the recognition's.
+- The 22:22 screenshot is Ragman's TASKS tab with the daily "Exit the location" (Shoreline, 23:54:15 left, "Survive on
+  the location") selected: told as a trader's screen and left, by the 2026-10-19 rule ("its grids are the task's
+  rewards"). The 21:22 screenshots show Skier's with a weekly ("Exit the location", Streets of Tarkov, 0/7, "6 day(s)
+  23:07:57") and a daily running out ("Elimination", 00:48:48) in the OPERATIONAL TASKS list.
+
+**Decided** (owner, 2026-10-25, on the session's decision page; the page stays outside the repository):
+
+1. **The desk's layout: A, the GEAR tab mirrored and fixed.** The desk always has the game's shape: left the loadout in
+   the game's slot grid (EARPIECE · HEADWEAR · FACE COVER / ARMBAND · BODY ARMOR · EYEWEAR / DOGTAG / ON SLING · HOLSTER /
+   ON BACK · SHEATH), in the middle TACTICAL RIG · POCKETS and SPECIAL SLOTS · BACKPACK · POUCH, each container's slot
+   beside its grid as the game draws them, right the STASH, ten wide. Every region stands in its place whether or not the
+   last screenshot showed it: one never read is a dashed empty frame ("NOT IN A SCREENSHOT YET"); one not in the last
+   screenshot keeps its last reading, drawn a step dimmer, its head saying since when ("BACKPACK · 23:08"). What a
+   reading changed glows in, as now. Nothing folds and nothing re-flows. The cell size follows the desk's size alone,
+   never the content: where even 40 DIP doesn't take the middle column's height, the page scrolls, as the game scrolls
+   that column. Container windows stand under the stash, each with its stem to its cell; a window with no title and no
+   container on the page is never drawn. This trades "the cells fill the desk" (2026-10-19) for a steady shape. Of the
+   panel's other ways, B (today's page pinned: the strip and the flow kept, the set, order and size fixed) and C (the
+   adaptive page kept, the reading fixed) were not taken.
+2. **The trader's task view is read.** A menu screenshot told as a trader's TASKS tab whose header names a task that also
+   stands in the OPERATIONAL TASKS list at the lower left (same name, a countdown beside it) is an operational task: its
+   name (the header), its location (the header's right end), its status word, its objectives with their counts, and the
+   countdown of the list entry of that name, read by the same vote as the table's bands; progress from the counts. Never
+   the task's text (DESIGN.md §3), the rewards, the traders' row with the player's name and money; of the picture's right
+   third, the header line's band alone. The one task is added or updated by name and map; the mode's other tasks stay; a
+   Tasks table screenshot later replaces the set, as now. The same cue, glow and notice. Two details, both taken: a task
+   screenshotted before ACCEPT counts (the status isn't "active" yet; the countdown runs either way); the other
+   operational tasks in the trader's list refresh the countdowns of tasks already kept, by name, never adding one.
+3. **The reading:** the fixes (no window from a misread heading: a window needs its title bar's glyphs and never stands
+   where a loadout heading belongs; a heading one letter off still counts; a grid cut at the column's foot keeps the
+   page's version instead of becoming a nameless window; a lone slot keeps the page's grid; a window attached to nothing
+   that three readings in a row don't show is dropped, and one with no cells and no title is never kept); the 13
+   screenshots as a measured, git-ignored test set with truths, so every change reports named / one of N / unread before
+   and after; a slot's pick kept while the picked item stays among the slot's candidates ("until its label changes").
+   Not now: the quest marks' stash reader through the desk's lattice (the open point of 2026-10-19); another pass at the
+   unread labels.
+4. **Go now** ("We still have a lot of quota and we can spend it, go for it.").
+
+**The plan:** step 1 (the reading's fixes, the test set, the slot's pick) and step 3 (the trader's task view) in parallel
+in worktrees of their own (separate files), step 2 (the layout, A) after step 1 (it needs a region's reading time in the
+model); each merged into main and into the dev build before the next; the senior translator for the texts of steps 2 and
+3; the UI QA pass after step 2 and for step 3's settings note; DESIGN.md updated in each step.
+
+**Built (step 1).** _pending_
+
+**Built (step 3).** _pending_
+
+**Built (step 2).** _pending_
+
 ## 2026-10-19: text size: Windows' own, honoured everywhere
 
 **The ask** (beta feedback, relayed by the owner 2026-10-18): "on some setups the text can be hard to read. We should
