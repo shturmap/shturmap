@@ -246,7 +246,10 @@ operational task, added to the set or updating it, and the list's countdowns ref
   log as a table's unknown location is. **The list's other entries refresh the tasks kept** (owner, 2026-10-25): an
   entry whose name is the list's only one of it gives the one task kept by that name, whatever its map (the list says
   none), its countdown as an expiry, through the same checks; two kept by that name, or the name twice in the list,
-  neither; it never adds a task. **The set's time stays the last table's** (none while only trader's tabs brought
+  neither; it never adds a task, and never takes an expiry away (code review, 2026-10-25): as it may be another task of
+  the name (another trader's "Exit the location"), a countdown more than 5 s off the kept expiry is left, counted as not
+  taken, the kept expiry standing (the header's task's own countdown still leaves none). **The set's time stays the
+  last table's** (none while only trader's tabs brought
   tasks: the rail's "As of" then says nothing and each row its own time left): a trader's tab never moves it, so it
   never holds a later table back, which replaces the set, the tab's task with it, as ever; a trader's screenshot
   older than the last table is left (the app log says so), and a kept task read later than the screenshot is left as

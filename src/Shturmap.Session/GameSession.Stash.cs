@@ -329,17 +329,26 @@ public sealed partial class GameSession
         };
     }
 
+    /// <summary>Writes a menu screenshot's readings log into the folder: <see cref="ReadingLog.Write"/> unless a test gives
+    /// its own (one that fails).</summary>
+    public Action<string, ReadingLogEntry>? ReadingLogWriter { get; init; }
+
     // Outside the gate: the screenshot's file in the data folder's "readings", the last 50 kept (ReadingLog). Never in a
-    // report or the diagnostics; "Delete screenshots after reading" leaves it.
+    // report or the diagnostics; "Delete screenshots after reading" leaves it. Whatever fails here, a file that can't be
+    // written or an entry its lines stumble over, is one WARN line and the session goes on: the readings were taken, and
+    // their log never fails them (code review, 2026-10-25).
     private void WriteReadingLog(ReadingLogEntry log)
     {
         try
         {
-            ReadingLog.Write(paths.Readings, log);
+            if (ReadingLogWriter is { } write)
+                write(paths.Readings, log);
+            else
+                ReadingLog.Write(paths.Readings, log);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception e) when (e is not OutOfMemoryException)
         {
-            AppLog.Warn("Readings log not written", e);
+            AppLog.Warn($"Readings log not written: {e.GetType().Name}: {e.Message}");
         }
     }
 

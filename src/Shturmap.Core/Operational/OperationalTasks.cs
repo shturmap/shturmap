@@ -255,7 +255,9 @@ public sealed class OperationalLedger
     /// do, and give the progress by their counts; none read (no line under "Objective(s)" read), the kept ones and their
     /// progress stay. Each of <paramref name="others"/> whose name is the list's only one of
     /// it refreshes the expiry of the one task kept by that name, whatever its map (the list says none); two kept of the
-    /// name, neither; it never adds a task. The set's time stays the last table's: a later table replaces the set, as
+    /// name, neither; it never adds a task, and never takes an expiry away (code review, 2026-10-25): as the entry may be
+    /// another task of the name, a countdown that disagrees with the kept expiry is left, counted as not taken, where the
+    /// header's task's would leave none. The set's time stays the last table's: a later table replaces the set, as
     /// ever. Null, and nothing changes, for a screenshot older than the set's last table; a kept task read later than
     /// the screenshot is left as it is.
     /// </summary>
@@ -305,9 +307,16 @@ public sealed class OperationalLedger
                 continue;
             if (set.Tasks.Where(t => SameName(t.Name, entry.Name)).ToList() is not [var kept] || at < kept.ReadAt)
                 continue;
-            var (expires, drop) = Expiry(at, entry.TimeLeft, left, kept.ExpiresAt);
-            dropped += drop ? 1 : 0;
-            refreshed += drop ? 0 : 1;
+            // An entry never takes an expiry away (code review, 2026-10-25): the list says no map, so an entry of the
+            // name may be another task of it (another trader's "Exit the location"). One that disagrees with the kept
+            // expiry is left, counted as not taken; one that agrees refreshes it, and a task without one takes it.
+            var expires = at + left;
+            if (kept.ExpiresAt is { } earlier && !OperationalChecks.Agree(expires, earlier))
+            {
+                dropped++;
+                continue;
+            }
+            refreshed++;
             if (expires != kept.ExpiresAt)
             {
                 set.Tasks[set.Tasks.IndexOf(kept)] = kept with { ExpiresAt = expires };
