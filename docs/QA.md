@@ -63,8 +63,10 @@ Within the time the checks the change is judged by come first; what didn't fit i
 .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -Culture de-DE -Window <px> -MoreArgs '--data', "$out\data"
 .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -Culture de-DE -Window <px> -MoreArgs '--data', "$out\data"
 .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -ShowQuest Dandies -Culture de-DE -Window <px> -MoreArgs '--data', "$out\data"
-# The layout check (developer build); -States: plan, raid, report, crash, whatsnew, quest, glance, tour1 … tour7
-# (glance: the in-raid glance's plate over the map in a fake Scav raid, no cue with it; UI QA pass of 2026-10-19, F6)
+# The layout check (developer build); -States: plan, raid, report, crash, whatsnew, quest, desk, glance, tour1 … tour7
+# (glance: the in-raid glance's plate over the map in a fake Scav raid, no cue with it; UI QA pass of 2026-10-19, F6;
+# desk: the made-up desk's reading 1, in screens where its page runs past the desk: desk, desk-2, desk-3 …, the summary
+# saying how many; UI QA pass of step 2, F4, 2026-10-25)
 .\tools\layout-check.ps1 -Out "$pass\layout" -Exe artifacts\layout-check\app\Shturmap.exe -Languages en-US,de-DE,qps-ploc -Sizes 900x560,1600x900 -States plan,raid,quest -MoreArgs '--data', "$pass\layout\data"
 # Map drawing; each frames run again with --glide, and list-read with --notch and with --step 2, into a folder of its own
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- render streets-of-tarkov "$pass\render\streets.png" --data "$pass\render\data"
@@ -104,6 +106,13 @@ positions, `--focus-item <item>` and `--pick <quest>`; `frames` 36 frames 100 ms
   moment the summary names and the last. The rest is checked without opening: the file is there and not empty, the
   layout files, the app log, the tools' summaries. A judged-by picture not opened is a check not run; one empty, cut
   short or missing is a finding.
+- **A page that scrolls is seen whole**: the layout check's `desk` view (and a developer build's snapshot of the desk)
+  takes the page in screens, each scrolled the desk's room less the scroll mark's band further down, `screen-2\window.png`
+  and on beside `window.png` (the layout check's `desk-2`, `desk-3` …), so every text of the page is in view in some
+  picture: each screen's `window.png` is opened as the first is (UI QA pass of step 2, F4: at 900×560 the desk's check
+  passed with 95 texts below the first screen, none in a picture). Other views whose lists scroll (the rail, help,
+  settings) are not taken in screens yet: their texts below the fold are checked for overflow and translation, not for
+  text over text, and no picture shows them.
 - **The popups not empty**: every `settings.png` and `help.png` of a quiet run must show its panel. They are drawn on
   transparency, so an empty one looks like a blank page: count the pixels that aren't transparent
   (`[Drawing.Bitmap]::FromFile(…).GetPixel(x, y).A`); none is a finding.
@@ -163,8 +172,8 @@ update band under MAP and its cue, UPDATE READY, from `trigger update` (the next
 raid and back; `operational-feedback` (2026-10-19) a Tasks screenshot's operational tasks read, from `tasks 5 ended`:
 the rows' glow and the notice, the ended line, the other maps' cards and the raid card's section; `desk` (2026-10-19)
 the stash desk's view from the made-up desk's readings (`desk 1`, `2`, `3`): the switch, the page's entry, a window's
-light and stem, the rail's card, the regions kept and dated (until 2026-10-25 the fold), PLAN and DESK, and a raid
-taking the window and giving it back; `glance`
+light and stem, the rail's card, the scroll mark at the desk's foot and gone at the page's end, the regions kept and
+dated (until 2026-10-25 the fold), PLAN and DESK, and a raid taking the window and giving it back; `glance`
 (2026-10-19) the in-raid glance's plate from the made-up readings (`glance 1`, a drawer; `glance 2`, a body): its look,
 a newer reading replacing it, its 6 s, a reading waiting for the roll call, and the raid's end taking it.
 
@@ -204,7 +213,10 @@ was taken. A step that found no quest or failed leaves its moments unchecked. A 
 moment inside a motion shows where the motion was by then; the map's own motion frame by frame is `shturmap-cli frames`.
 A cue's own motion (its entrance, the rows rising in 0.1 s apart from 0.5 s, 0.3 s each, in the roll call's and the
 tasks' cues) can't be checked frame by frame: the stills are a second or more apart and `frames` draws the map, not the
-cues; accepted as unchecked for now (QA pass of 2026-10-19, F4).
+cues; accepted as unchecked for now (QA pass of 2026-10-19, F4). The stash desk's entry, its cells coming in 50 ms
+apart, can't be checked by a still at all: a still draws a storyboard's opacity as if it had ended, the compositor
+running it where the still's render doesn't look (measured 2026-10-25, UI QA pass of step 2, F2: the window's thread
+read the 52nd cell at 0 for 2.4 s, the still at 1 s showed it whole); the owner's eye on the dev build checks it.
 A flow a change reaches without a script gets one, added here with the change.
 
 ## Rules

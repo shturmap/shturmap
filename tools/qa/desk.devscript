@@ -23,6 +23,14 @@ snapshot %TEMP%\shturmap-qa\desk\entry
 wait 7
 snapshot %TEMP%\shturmap-qa\desk\first
 
+# The page's foot (UI QA pass of step 2, F3): where the page runs past the desk, "MORE BELOW ▾" stands there (first);
+# the WZ window's cell, the page's last, pointed at scrolls it to its end, and the mark is gone.
+desk point wz 0 0
+wait 1
+snapshot %TEMP%\shturmap-qa\desk\end
+# Back to the page's top (LOADOUT's first cell pointed at), so the stills after stand as before.
+desk point loadout
+
 # The Zhuk's cell in the backpack: its window's head and the stem light up; the rail says "One of 2 items".
 desk point backpack 0 0
 wait 1

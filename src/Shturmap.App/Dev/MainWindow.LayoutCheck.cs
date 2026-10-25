@@ -37,6 +37,51 @@ public sealed partial class MainWindow
         {
             AppLog.Warn("Layout check of " + Path.GetFileName(path) + " failed", e);
         }
+        if (SnapshotMode && !_layoutScreens && ReferenceEquals(element, Content) && Path.GetFileName(path) == "window.png" && _deskChosen)
+            await DeskScreensAsync(Path.GetDirectoryName(path) ?? ".");
+    }
+
+    // Taking the desk's page in screens: the screens' own pictures aren't taken in screens again.
+    private bool _layoutScreens;
+
+    /// <summary>
+    /// The desk's page in screens (UI QA pass of step 2, F4: at 900×560 the desk's check passed with 95 texts below the
+    /// first screen, the middle column, STASH and the windows, none of them in a picture): in a snapshot run (--snapshot)
+    /// with the desk up, where its page runs past the desk's foot, the page is scrolled down screen by screen, each by the
+    /// desk's room less the scroll mark's band (DeskPageRules.ScreenOffsets), and the window pictured and checked at each,
+    /// "screen-2\window.png" and on beside window.png, until the page's end shows; then back to its top. tools\layout-check.ps1
+    /// takes each as a view of its own ("desk-2", "desk-3" …), so every text of the page is in view in some picture.
+    /// </summary>
+    private async Task DeskScreensAsync(string folder)
+    {
+        var offsets = StashDesk.Screens();
+        if (offsets.Count < 2)
+            return;
+        var was = StashDesk.ScrolledTo;
+        _layoutScreens = true;
+        AppLog.Info(FormattableString.Invariant($"Layout check: the desk's page in {offsets.Count} screens, window.png the first"));
+        try
+        {
+            for (var n = 2; n <= offsets.Count; n++)
+            {
+                await StashDesk.ScrollToAsync(offsets[n - 1]);
+                await Task.Delay(150);
+                var screen = Path.Combine(folder, string.Create(CultureInfo.InvariantCulture, $"screen-{n}"));
+                Directory.CreateDirectory(screen);
+                await RenderToPngAsync((UIElement)Content, Path.Combine(screen, "window.png"));
+                AppLog.Info(FormattableString.Invariant(
+                    $"Layout check: the desk's page, screen {n} of {offsets.Count}, scrolled {StashDesk.ScrolledTo:0} DIP down, the scroll mark {(StashDesk.MoreBelowShown ? "shown" : "gone")}"));
+            }
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn("Layout check of the desk's screens failed", e);
+        }
+        finally
+        {
+            await StashDesk.ScrollToAsync(was);
+            _layoutScreens = false;
+        }
     }
 
     // What each picture always shows, as its texts file writes it, in the language in use (LayoutWords.Missing): texts

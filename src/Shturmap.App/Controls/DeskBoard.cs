@@ -52,6 +52,8 @@ public sealed partial class DeskBoard : Grid
     private readonly TextBlock _head;
     private readonly TextBlock _empty;
     private readonly ScrollViewer _scroll;
+    private readonly Grid _more;
+    private TextBlock? _moreWords;
     private readonly Grid _page;
     private readonly Grid _columns;
     private readonly Canvas _stems;
@@ -109,11 +111,17 @@ public sealed partial class DeskBoard : Grid
         };
         SetRow(_scroll, 1);
         Children.Add(_scroll);
+        _more = MoreBelowMark();
+        SetRow(_more, 1);
+        Children.Add(_more);
+        _scroll.ViewChanged += (_, _) => ShowMoreBelow();
+        _scroll.SizeChanged += (_, _) => ShowMoreBelow();
+        _page.SizeChanged += (_, _) => ShowMoreBelow();
         SizeChanged += (_, _) =>
         {
             // The cell's size and the columns follow the desk's width and height (DeskPageRules): a new layout only when
             // they change.
-            if (_view is { } view && LayoutNow(view, DateTimeOffset.Now).Shape != _builtShape)
+            if (_view is { } view && LayoutNow(view).Shape != _builtShape)
                 Build(entering: null);
             _stemsDue = true;
         };
@@ -194,6 +202,108 @@ public sealed partial class DeskBoard : Grid
             _scroll.ChangeView(null, Math.Max(0, _scroll.VerticalOffset + direction * _scroll.ViewportHeight * 0.85), null, !Settings.AnimationsEnabled);
     }
 
+    // ---- the scroll mark ----
+
+    /// <summary>The scroll mark's name: a layer over the page, its words compared with none under it (Dev.LayoutCheck.Layers).</summary>
+    public const string MoreBelowName = "DeskMoreBelow";
+
+    // The fade of the page under the mark, and the band of the desk's ground the mark's line stands on, in DIP.
+    private const double MoreFade = 16;
+
+    // Where the page runs on past the desk's foot (DeskPageRules.MoreBelow; UI QA pass of step 2, F3; the coordinator's
+    // rule, the owner's to overrule): at the desk's foot, over the page, a muted line in the eyebrows' style, "MORE BELOW ▾",
+    // on the desk's ground with a short fade of the page under it; the scroll bar's lane at the right left free. It never
+    // takes the pointer, and it shows and goes without motion (the desk moves three ways and no more).
+    private Grid MoreBelowMark()
+    {
+        var ground = (Windows.UI.Color)Application.Current.Resources["GroundColor"];
+        var clear = Windows.UI.Color.FromArgb(0, ground.R, ground.G, ground.B);
+        var mark = new Grid
+        {
+            Name = MoreBelowName,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, 16, 0),
+            IsHitTestVisible = false,
+            Visibility = Visibility.Collapsed,
+        };
+        mark.RowDefinitions.Add(new RowDefinition { Height = new GridLength(MoreFade) });
+        mark.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var fade = new Border
+        {
+            Background = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0), EndPoint = new Point(0, 1),
+                GradientStops = { new GradientStop { Color = clear, Offset = 0 }, new GradientStop { Color = ground, Offset = 1 } },
+            },
+        };
+        mark.Children.Add(fade);
+        var line = new Border { Background = Brush("GroundBrush") };
+        SetRow(line, 1);
+        _moreWords = new TextBlock
+        {
+            Style = (Style)Application.Current.Resources["EyebrowText"],
+            Margin = new Thickness(Gap, 0, Gap, 10),
+            TextWrapping = TextWrapping.NoWrap,
+        };
+        line.Child = _moreWords;
+        mark.Children.Add(line);
+        return mark;
+    }
+
+    // The mark where the page runs on past the desk's foot, gone at the page's end and where it fits; its words as built
+    // (a language switch builds the page anew).
+    private void ShowMoreBelow()
+    {
+        var more = _scroll.Visibility == Visibility.Visible && _scroll.ViewportHeight > 0
+                   && DeskPageRules.MoreBelow(_scroll.ExtentHeight, _scroll.ViewportHeight, _scroll.VerticalOffset);
+        var shown = more ? Visibility.Visible : Visibility.Collapsed;
+        if (_more.Visibility != shown)
+            _more.Visibility = shown;
+    }
+
+    /// <summary>Whether the scroll mark stands at the desk's foot (the developer view and the layout check).</summary>
+    public bool MoreBelowShown => _more.Visibility == Visibility.Visible;
+
+    /// <summary>The page in screens (DeskPageRules.ScreenOffsets), for the layout check: the offsets to scroll it to, the
+    /// first its top; one where it fits or isn't up.</summary>
+    public IReadOnlyList<double> Screens()
+    {
+        if (_scroll.Visibility != Visibility.Visible || _scroll.ViewportHeight <= 0)
+            return [0];
+        var band = _more.ActualHeight > 0 ? _more.ActualHeight : MoreFade + 24;
+        return DeskPageRules.ScreenOffsets(_scroll.ExtentHeight, _scroll.ViewportHeight, band);
+    }
+
+    /// <summary>How far the page is scrolled down.</summary>
+    public double ScrolledTo => _scroll.VerticalOffset;
+
+    /// <summary>Scrolls the page to an offset at once and waits for the view to settle there (a second at the most), with
+    /// the scroll mark following it: the layout check's screens.</summary>
+    public async Task ScrollToAsync(double offset)
+    {
+        if (_scroll.Visibility != Visibility.Visible)
+            return;
+        var settled = new TaskCompletionSource();
+        void Done(object? sender, ScrollViewerViewChangedEventArgs e)
+        {
+            if (!e.IsIntermediate)
+                settled.TrySetResult();
+        }
+        _scroll.ViewChanged += Done;
+        try
+        {
+            if (!_scroll.ChangeView(null, offset, null, disableAnimation: true) || Math.Abs(_scroll.VerticalOffset - offset) < 0.5)
+                settled.TrySetResult();
+            await Task.WhenAny(settled.Task, Task.Delay(1000));
+        }
+        finally
+        {
+            _scroll.ViewChanged -= Done;
+        }
+        _scroll.UpdateLayout();
+        ShowMoreBelow();
+    }
+
     private FrameworkElement? PanelOf(DeskCellView cell) => _links.FirstOrDefault(l => l.Panel.Tag is string key && key == cell.Region.Key)?.Panel;
 
     private double DeskWidth() => ActualWidth > 0 ? ActualWidth : 516;
@@ -207,10 +317,11 @@ public sealed partial class DeskBoard : Grid
     // The size text is drawn at against the size written, for the heads' and lines' heights.
     private static double TextFactor => TextScale.Drawn(12) / 12;
 
-    // The cell's size and the columns for the page as it stands now (DeskPageRules.Layout), its heads as drawn.
-    private DeskPageRules.Arrangement LayoutNow(DeskView view, DateTimeOffset now) =>
+    // The cell's size and the columns for the page as it stands now (DeskPageRules.Layout), each head with the room of its
+    // dated form whether it is dated or not, so a date never changes the layout (UI QA pass of step 2, F1).
+    private DeskPageRules.Arrangement LayoutNow(DeskView view) =>
         DeskPageRules.Layout(view.Sheet.Regions.Select(r => r.Region).ToList(), DeskWidth(), DeskHeight(), TextFactor,
-            r => DeskPageRules.HeadOf(r, view.Sheet.Page, now));
+            r => DeskPageRules.Head(r, view.Sheet.Page));
 
     // ---- the page ----
 
@@ -228,6 +339,7 @@ public sealed partial class DeskBoard : Grid
         {
             _head.Visibility = Visibility.Collapsed;
             _scroll.Visibility = Visibility.Collapsed;
+            _more.Visibility = Visibility.Collapsed;
             // Said with each build: a language switch builds the page anew (MainWindow.RetellDesk).
             _empty.Text = AppTexts.DeskEmpty;
             _empty.Visibility = Visibility.Visible;
@@ -237,11 +349,13 @@ public sealed partial class DeskBoard : Grid
         _head.Visibility = Visibility.Visible;
         _scroll.Visibility = Visibility.Visible;
         _empty.Visibility = Visibility.Collapsed;
+        if (_moreWords is not null)
+            _moreWords.Text = RuleTexts.DeskMoreBelow;
 
         var now = DateTimeOffset.Now;
         var page = view.Sheet.Page;
         var sheets = view.Sheet.Regions.ToDictionary(r => r.Region.Key, StringComparer.Ordinal);
-        var arrangement = LayoutNow(view, now);
+        var arrangement = LayoutNow(view);
         var size = arrangement.Cell;
         _builtShape = arrangement.Shape;
         // The columns: LOADOUT, the middle column, the stash, the windows' where they stand beside it (DeskPageRules.Arrange).
@@ -325,12 +439,12 @@ public sealed partial class DeskBoard : Grid
             HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
         };
         var head = Head(DeskPageRules.HeadOf(region, page, now), size, width);
-        // The linked highlight's gold behind the head of a window whose cell is pointed at.
+        // The linked highlight's gold behind the head of a window whose cell is pointed at, as wide as the words.
         var light = new Border { Background = Brush("LinkBrush"), Opacity = 0, IsHitTestVisible = false, Margin = new Thickness(-4, -2, -4, -2) };
-        var headCell = new Grid { HorizontalAlignment = HorizontalAlignment.Left };
-        headCell.Children.Add(light);
-        headCell.Children.Add(head);
-        block.Children.Add(headCell);
+        var lit = new Grid { HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+        lit.Children.Add(light);
+        lit.Children.Add(head);
+        block.Children.Add(HeadCell(DeskPageRules.Head(region, page), lit, size, width));
         if (DeskPageRules.NotAttached(sheet) is { } line)
             block.Children.Add(new TextBlock { Style = (Style)Application.Current.Resources["NoteText"], Text = line, MaxWidth = width });
 
@@ -359,22 +473,25 @@ public sealed partial class DeskBoard : Grid
         return (block, head, light);
     }
 
-    // POCKETS and SPECIAL SLOTS side by side: their heads as tall as the taller, so their grids stand level as the game's do
-    // where one head wraps (SPECIAL SLOTS, three cells wide, dated "· 1 JAN 14:02").
+    // POCKETS and SPECIAL SLOTS side by side: their heads' cells as tall as the taller, so their grids stand level as the
+    // game's do where one head takes more lines than the other (SPECIAL SLOTS, three cells wide, dated "· 1 JAN 14:02").
     private static void Level(StackPanel pair)
     {
-        var heads = pair.Children.OfType<Panel>().Select(b => b.Children.FirstOrDefault() as Grid)
-            .Select(cell => (Cell: cell, Text: cell?.Children.OfType<TextBlock>().FirstOrDefault())).Where(h => h.Cell is not null && h.Text is not null).ToList();
+        var heads = pair.Children.OfType<Panel>().Select(b => b.Children.FirstOrDefault() as Grid).OfType<Grid>()
+            .Select(cell => (Cell: cell, Texts: Texts(cell).ToList())).Where(h => h.Texts.Count > 0).ToList();
         if (heads.Count < 2)
             return;
         void Even()
         {
-            var tallest = heads.Max(h => h.Text!.ActualHeight);
+            var tallest = heads.Max(h => h.Texts.Max(t => t.ActualHeight));
             foreach (var (cell, _) in heads)
-                cell!.MinHeight = tallest;
+                cell.MinHeight = tallest;
         }
-        foreach (var (_, text) in heads)
-            text!.SizeChanged += (_, _) => Even();
+        foreach (var text in heads.SelectMany(h => h.Texts))
+            text.SizeChanged += (_, _) => Even();
+
+        static IEnumerable<TextBlock> Texts(Panel panel) =>
+            panel.Children.SelectMany(c => c is Panel inner ? Texts(inner) : c is TextBlock t ? [t] : Enumerable.Empty<TextBlock>());
     }
 
     // A region's head, in the eyebrows' style at the page's size, wrapping in its column.
@@ -385,9 +502,27 @@ public sealed partial class DeskBoard : Grid
         Text = text,
         FontSize = DeskPageRules.HeadSize(size),
         HorizontalAlignment = HorizontalAlignment.Left,
+        VerticalAlignment = VerticalAlignment.Top,
         TextWrapping = TextWrapping.Wrap,
         MaxWidth = width,
     };
+
+    // A head's cell (UI QA pass of step 2, F1: SPECIAL SLOTS' head, dated by reading 2, wrapped to a second line and moved
+    // every row under it 13 px down): the head as drawn, and under it, unseen, the same head in its dated form at its
+    // widest (DeskPageRules.Reserved: "SPECIAL SLOTS · 28 SEP 23:58"), wrapping alike, so the cell takes the dated head's
+    // lines from the first reading, at the size the text is drawn, and nothing under a head moves when its date comes. The
+    // copy is transparent, takes no pointer and says nothing to a screen reader; the layout check passes over it.
+    private static Grid HeadCell(string head, FrameworkElement drawn, double size, double width)
+    {
+        var cell = new Grid { HorizontalAlignment = HorizontalAlignment.Left };
+        var room = Head(DeskPageRules.Reserved(head), size, width);
+        room.Opacity = 0;
+        room.IsHitTestVisible = false;
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAccessibilityView(room, Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Raw);
+        cell.Children.Add(room);
+        cell.Children.Add(drawn);
+        return cell;
+    }
 
     // A fixed region no reading showed (owner, 2026-10-25): its head, and in its place a dashed frame of five cells by two
     // (POCKETS four, SPECIAL SLOTS three; DeskPageRules.Placeholder) with "NOT IN A SCREENSHOT YET" (a container's empty
@@ -398,7 +533,8 @@ public sealed partial class DeskBoard : Grid
         {
             Spacing = DeskPageRules.HeadGap, Tag = block.Key, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
         };
-        panel.Children.Add(new Grid { HorizontalAlignment = HorizontalAlignment.Left, Children = { Head(DeskPageRules.Name(block.Kind), size, width) } });
+        var name = DeskPageRules.Name(block.Kind);
+        panel.Children.Add(HeadCell(name, Head(name, size, width), size, width));
         if (block.Kind == DeskRegionKind.Loadout)
         {
             panel.Children.Add(new TextBlock { Style = (Style)Application.Current.Resources["NoteText"], Text = RuleTexts.DeskNotRead, MaxWidth = width });
@@ -476,29 +612,79 @@ public sealed partial class DeskBoard : Grid
         {
             Width = DeskPageRules.LoadoutCells * size + 1, Height = DeskPageRules.LoadoutHeight(size, scale), HorizontalAlignment = HorizontalAlignment.Left,
         };
+        var rows = new Dictionary<double, List<TextBlock>>();
         foreach (var place in DeskPageRules.LoadoutBoxes(size, scale))
         {
             var name = DeskCards.SlotName(place.Slot) ?? "";
-            var (type, spacing) = DeskPageRules.SlotHead(name, place.Width, size, TextScale.Drawn);
+            var (type, spacing) = DeskPageRules.SlotHead(name, place.Width, size, TextScale.Drawn, (at, ems) => NameWidth(name, at, ems));
             var eyebrow = new TextBlock
             {
                 Style = (Style)Application.Current.Resources["EyebrowText"],
                 Margin = new Thickness(0),
                 Text = name,
                 FontSize = type,
-                CharacterSpacing = spacing,
+                // A name without its spacing keeps a thousandth of an em: WinUI lays a text of no spacing out otherwise, its
+                // baseline a pixel lower than its row's at the same size and its BaselineOffset saying 0.2 DIP higher
+                // (measured, 2026-10-25), so it could stand on no common baseline (UI QA pass of step 2, F5).
+                CharacterSpacing = Math.Max(1, spacing),
                 TextWrapping = TextWrapping.NoWrap,
             };
+            if (type < DeskPageRules.SlotHeadSize(size) || spacing == 0)
+                Shturmap.Session.AppLog.Debug(FormattableString.Invariant(
+                    $"Desk slot name {place.Slot} \"{name}\": {type:0.###} px as written, drawn {TextScale.Drawn(type):0.##}, spacing {spacing / 1000.0:0.##} em, over a box of {place.Width:0} DIP"));
             Canvas.SetLeft(eyebrow, place.X);
             Canvas.SetTop(eyebrow, place.Y - room);
             canvas.Children.Add(eyebrow);
+            if (!rows.TryGetValue(place.Y, out var row))
+                rows[place.Y] = row = [];
+            row.Add(eyebrow);
             var slot = sheet?.Cells.FirstOrDefault(c => c.Cell.IsSlot && c.Cell.Slot == place.Slot);
             var box = region is null ? EmptyBox(place.Width, place.Height, dashed) : Box(region, slot, place.Width, place.Height, size, comes, entered, dashed);
             Canvas.SetLeft(box, place.X);
             Canvas.SetTop(box, place.Y);
             canvas.Children.Add(box);
         }
+        foreach (var (y, row) in rows)
+        {
+            foreach (var eyebrow in row)
+                eyebrow.SizeChanged += (_, _) => OnOneBaseline(row, y - room);
+        }
         return canvas;
+    }
+
+    // The names of a row of boxes on one baseline whatever their size (UI QA pass of step 2, F5: "GESICHTSBEDECKUNG", set
+    // smaller to fit its box, stood a pixel lower than its row's names at 100 % and two higher at 125 %): each name's top
+    // moved down by what its baseline stands above the row's lowest, measured as drawn, so the names of the row's size stay
+    // where they were. Again whenever a name's size changes (the window's text size).
+    private static void OnOneBaseline(IReadOnlyList<TextBlock> row, double top)
+    {
+        if (row.Any(t => t.BaselineOffset <= 0))
+            return;
+        var baseline = row.Max(t => t.BaselineOffset);
+        foreach (var eyebrow in row)
+        {
+            var at = top + baseline - eyebrow.BaselineOffset;
+            if (Math.Abs(Canvas.GetTop(eyebrow) - at) > 0.01)
+                Canvas.SetTop(eyebrow, at);
+        }
+    }
+
+    // A slot's name's width as drawn, at a size as drawn and a spacing in ems (DeskPageRules.SlotHead's fit): measured on a
+    // copy in the eyebrows' style, which the window's text size doesn't scale again.
+    private static double NameWidth(string name, double drawn, double ems)
+    {
+        var probe = new TextBlock
+        {
+            Style = (Style)Application.Current.Resources["EyebrowText"],
+            Margin = new Thickness(0),
+            Text = name,
+            FontSize = drawn,
+            CharacterSpacing = Math.Max(1, (int)Math.Round(ems * 1000)),
+            TextWrapping = TextWrapping.NoWrap,
+            IsTextScaleFactorEnabled = false,
+        };
+        probe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        return probe.DesiredSize.Width;
     }
 
     // A region's grid: its compartments, its empty cells the panel's ground with hairlines, its items at their places; null
@@ -581,7 +767,11 @@ public sealed partial class DeskBoard : Grid
 
     // ---- motion ----
 
-    // A reading's cells come in one after another, 50 ms apart, each over 0.2 s, as the kit's pictures do.
+    // A reading's cells come in one after another, 50 ms apart, each over 0.2 s, as the kit's pictures do. A still taken
+    // meanwhile (RenderTargetBitmap: --snapshot, the developer script's "snapshot") draws every cell whole: the storyboard's
+    // opacity runs on the compositor, which that render doesn't take, while the window's thread reads it as it goes
+    // (measured 2026-10-25: the 26th and the 52nd cells at 0 for 1.3 s and 2.4 s, the still at 1 s showing them whole), so
+    // the entry is checked by eye only (UI QA pass of step 2, F2).
     private static void Enter(IReadOnlyList<DeskCellView> cells)
     {
         var story = new Storyboard();

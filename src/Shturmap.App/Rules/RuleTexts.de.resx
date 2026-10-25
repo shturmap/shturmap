@@ -368,6 +368,10 @@
     <value>{head} · {time}</value>
     <comment>en: {head} · {time}</comment>
   </data>
+  <data name="DeskMoreBelow" xml:space="preserve">
+    <value>MEHR DARUNTER ▾</value>
+    <comment>en: MORE BELOW ▾</comment>
+  </data>
   <data name="DeskSlotEarpiece" xml:space="preserve">
     <value>HEADSET</value>
     <comment>en: EARPIECE</comment>
