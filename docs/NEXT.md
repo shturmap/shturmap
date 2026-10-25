@@ -512,6 +512,43 @@ built*, *The page*); `tools\qa\desk.md` (`first`, `kept`).
   alone left off a page that has no version of it, the ledger's rule; DESIGN.md §4, *A region never read*); F2; the UI
   QA pass of the two changes (the 0×0 placeholder has no picture: the made-up desk has no such region).
 
+**Re-check of 94591a5 (2026-10-25).** The UI QA re-check of the heads at the foot of their room (28b6420) and the
+region made from its heading alone (814982a), on the developer build of 94591a5 (its pictures outside the repository):
+FAIL (0 blocks, 3 should, 1 nit). The heads and the grids that never move are confirmed; the placeholder of a region
+made from its heading alone and the rail's "0%" have no picture yet, and German runs left their settings picture empty.
+
+- Confirmed: the layout check of `desk` (and its screens) passed in en-US, de-DE and qps-ploc at 900×560, 1600×900 and
+  2560×1440, no missing, overflowing, trimmed or overlapping text. On reading 1, POCKETS' and SPECIAL SLOTS' heads stand
+  11 px over their grids (empty rows between the ink and the frame), where TACTICAL RIG's, BACKPACK's, POUCH's, STASH's
+  and the ZHUK window's stand 10 to 11 (at 2560×1440, 64 DIP, 13 like the other grids' heads; 23 px at 2b375d9). Made-up
+  readings 1 and 2 (`fake-raid.ps1 -Desk -DeskReading`) compared by the rows where the brightness steps: every grid's,
+  box's and frame's rows the same (1600×900: POCKETS 239/277, SPECIAL SLOTS 240/278, the rig 106/145/184, BACKPACK
+  320/399, POUCH 561/641, STASH 105, ZHUK 587/666/745, LOADOUT's boxes), the best shift 0 on every screen in English
+  and German at the three sizes. Where the date wraps (SPECIAL SLOTS at 40 DIP), the name's line goes up 14 px (ink
+  207–214 for 221–228) and the date's line stands where the name stood; in German at 900×560 alike („SPEZIAL-SLOTS“ over
+  „· 1. JAN., 15:02“, ink 243–250 and 257–264). The never-read frame (POUCH) dashed, "NOT IN A SCREENSHOT YET" /
+  „NOCH IN KEINEM SCREENSHOT“ as the texts files have them. The 208 desk tests of `Shturmap.Core.Tests` pass,
+  `HeadingAlone`'s among them (its blocks the placeholder's, the totals less theirs).
+- F1 (nit): SPECIAL SLOTS' grid a pixel under POCKETS' at 40 DIP, in both readings and both languages (1600×900: frame
+  rows 240/278 against 239/277; 900×560: 276/314 against 275/313), its head's ink a pixel lower too; level at 64 DIP
+  (278 both). DESIGN.md §4, *As built*: "their heads as tall as the taller so their grids stand level". Whether it came
+  before 94591a5 isn't known (no older build, docs/QA.md).
+- F2 (should, not run): the placeholder of a POCKETS, SPECIAL SLOTS or STASH made from its heading alone has no picture.
+  The made-up desk has no such region, and a `desk.json` written into a run's own data folder (those three 0×0, a rig of
+  one cell, a backpack 0×0) loaded without a warning, but DESK said "Screenshot your stash in the game's menus." on a
+  run without a game; whether a kept page shows there after a start, and why not here, wasn't found in the time. By the
+  code it is the never-read frame POUCH draws (the same `Placeholder`), POCKETS four cells by two, SPECIAL SLOTS three.
+- F3 (should, not run): the rail's "0%" (a task at 0 % with no single count, `OperationalRail.Progress`): none of the
+  made-up tasks (`-Operational 1` to `8`) is one (Customs' 0 % has its "0 of 3", by the code), and the layout check's
+  views don't show the tasks. The progress lines Streets' card shows ("4 OF 7 · 24 MIN LEFT") stand aligned at
+  1600×900.
+- F4 (should): in 4 of 5 German `fake-raid.ps1` runs on the developer build (`-Desk -DeskReading 2` at 1600×900 twice,
+  `-Operational 5` at 1600×900 and 900×560) `settings.png` came out empty (2107 bytes, every pixel transparent; its
+  layout file there); the layout check's German settings pictures and all six English runs' were drawn. Not this
+  change's; docs/QA.md, "The popups not empty" (closed 2026-10-16).
+- Open: F1 to F4; F2 and F3 want a made-up reading with a region made from its heading alone and a made-up task at 0 %
+  with no count.
+
 **Code review of the day's merges (2026-10-25, 66fd15d..6f895a9, high).**
 
 - Fixed: a trader's list entry could take a kept task's expiry away. It refreshes the one task kept by its name whatever
