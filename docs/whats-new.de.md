@@ -7,7 +7,7 @@ are; the release's name stays as it is. Words: docs/glossary-de.md.
 ## 0.7.0 · Kaomoji
 
 - tour:2 · Der Desk · Stash- oder Gear-Screenshot: Preis je Item, Flea oder Trader, und was du behältst. DESK, oben links.
-- tour:1 · Dailies und Weeklies · Screenshot vom Aufgaben-Bildschirm (Spiel auf Englisch): Dailies und Weeklies mit Restzeit, je Map.
+- tour:1 · Dailies und Weeklies · Screenshot: Aufgaben-Bildschirm oder TASKS-Tab eines Traders (Englisch): Dailies, Weeklies je Map.
 - tour:7 · Text so groß wie nötig · Die Map folgt nun auch der Textgröße von Windows; die Einstellungen bieten GRÖSSER und AM GRÖSSTEN.
 - tour:6 · Loot auf einen Blick · Screenshot von Body oder Container im Raid: Preis je Item, angeordnet wie im Spiel.
 
