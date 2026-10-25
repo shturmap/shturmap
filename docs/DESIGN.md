@@ -184,18 +184,23 @@ operational task, added to the set or updating it, and the list's countdowns ref
   location, status and time left; an expanded row's objective lines with their counts n/m. **Rewards are never read
   or kept**: the expanded row's rewards make no row. **On a trader's tab** (owner, 2026-10-25), of the same words: the
   header's task name (right of its glyph, on the line of COMPLETE | REPLACE) and the list's OPERATIONAL TASKS entries
-  (each a name, and its countdown from a band of its own at the list's right end); and **one band of the right third,
-  the header line's** (from the left part's edge to the picture's right edge, the height of the task's name with half
-  a unit above and below), for the task's location and status word at the header's right end ("Shoreline",
-  "active!"; "Any location" as on the table, seen on a trader's tab): the one exception to the left two thirds, read
-  only when the header names one of the list's tasks. Nothing else of the right third: not the traders' row with the
-  player's name and money above that band, not the task's picture, text, objectives or rewards below it, not the
-  game's toasts. **The task's text is never kept** (§3): its words in the left part are recognised with the page's and
-  nothing of them is kept, logged or written. **Its objectives are not read**: on the tab they stand centred across
-  the screen's width, their counts in the right third (measured on the owner's screenshots of 2026-10-19 at 1440p: an
-  objective's line runs over the left part's edge, its count at 0.76 of the width), so the left part holds them cut;
-  the decision's "objectives with their counts" needs a band through the right third the owner hasn't given (open,
-  docs/NEXT.md). The digits (the countdown, the percentage) are what Windows'
+  (each a name, and its countdown from a band of its own at the list's right end); and **bands across the right third,
+  the only ones**, read only when the header names one of the list's tasks: **the header line's** (from the left part's
+  edge to the picture's right edge, the height of the task's name with half a unit above and below), for the task's
+  location and status word at the header's right end ("Shoreline", "active!"; "Any location" as on the table, seen on
+  a trader's tab); and **one per objective line** (owner, 2026-10-25, the decision's "its objectives with their
+  counts"; the coordinator's first "the header line's band alone" was its own limit, not the owner's): the objectives
+  stand centred across the screen in the bar under "Objective(s)" and above "Rewards" (or the game's menu bar at the
+  picture's foot where the task shows no rewards), each line's words cut at the left part's edge and its count at 0.76
+  of the width (measured on the owner's screenshots of 2026-10-19 at 1440p); each line the left part's words show is
+  one band from the "Objective(s)" label's left edge to the picture's right edge, the line's height with half a unit
+  above and below, never above the label nor into the rewards, read as the countdown bands are: the line's words as a
+  plain look at the band reads them, up to the progress bar's gap and without the line's icon or the TURN IN button,
+  and its count n/m at its end by the 14-way vote (the counts are the game's small digits). Nothing else of the right
+  third: not the traders' row with the player's name and money above the header's band, not the task's picture and
+  text between it and "Objective(s)", not the rewards below the objectives, not the game's toasts. **The task's text
+  is never kept** (§3): its words in the left part are recognised with the page's and nothing of them is kept, logged
+  or written. The digits (the countdown, the percentage) are what Windows'
   recognition drops, as the raid timer's (below): each row's own bands are read 14 ways and the value most of them
   read is taken (the spike: the countdowns 12 of 12, the percentages 7 of 12, none wrong); a list entry's countdown
   the same way. A weekly's countdown reads "6 day(s) 23:07:57", in the table and the list alike (measured 2026-10-25;
@@ -221,8 +226,9 @@ operational task, added to the set or updating it, and the list's countdowns ref
   (one of that name on another map is another task; of two kept on one map, the one whose expiry agrees with its
   countdown, else neither), the mode's other tasks staying: its countdown through the same checks (the list's entries
   as one screenshot's rows, then against the kept task's expiry: a countdown that fails leaves the earlier expiry, one
-  more than 5 s off it leaves none), objectives replacing the kept ones when read and its progress then from their
-  counts (the tab reads none, so the kept objectives and progress stay), its time the screenshot's. A task whose
+  more than 5 s off it leaves none), its objectives read on the tab replacing the kept ones as a table's expanded row's
+  do and its progress then from their counts (none read: the kept objectives and progress stay), its time the
+  screenshot's. A task whose
   status isn't "active" counts all the same (owner, 2026-10-25: a task screenshotted before ACCEPT shows another word,
   or none). A header that shows no location, or one naming no map of the data, leaves the task out, counted in the app
   log as a table's unknown location is. **The list's other entries refresh the tasks kept** (owner, 2026-10-25): an
@@ -233,7 +239,8 @@ operational task, added to the set or updating it, and the list's countdowns ref
   never holds a later table back, which replaces the set, the tab's task with it, as ever; a trader's screenshot
   older than the last table is left (the app log says so), and a kept task read later than the screenshot is left as
   it is. A task goes at its expiry. No pixel, no other word, nothing of the picture's right third but the header's
-  location and status; the study log counts rows, entries and refreshes, never names; the app log says how many
+  location and status and the objectives' words and counts; the study log counts rows, entries and refreshes, never
+  names; the app log says how many
   ("Operational task read from a trader's screen: 1 new, 2 countdowns refreshed, …"); the file never goes into a
   report.
 - **How:** as the stash's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
@@ -4616,7 +4623,8 @@ its checks, the file; `OperationalReadings`, which tells a run of screenshots an
 task, and the cue `CueKind.TasksRead` with every task the run read); a trader's TASKS tab (owner, 2026-10-25) has its
 list's OPERATIONAL TASKS entries' countdown bands voted on (`TasksReader.VoteCountdownAsync`, a weekly's days and time
 of day apart when need be) and, when its header names one of them, the header line's band read once for the location
-and status (`ReadBandWordsAsync`, `TaskTable.TakeHeader`; about 150 to 300 ms in all on the owner's five), and goes to
+and status (`ReadBandWordsAsync`, `TaskTable.TakeHeader`) and each objective line's band for its words, its count by
+vote (`TaskTable.ObjectiveBands`, `ObjectiveOf`, `CountOf`; about 350 to 750 ms in all on the owner's four tabs), and goes to
 the same ledger (`GameSession.TakeTrader`: the location matched to a map as a table's, `OperationalLedger.ApplyTrader`
 with the same checks, the file, the same `OperationalReadings` and cue for a task the set didn't have); another Tasks
 table goes nowhere; any other picture goes to the stash reader (`StashReader`), as before, and on to the stash's ledger, the cue

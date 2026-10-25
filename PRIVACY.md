@@ -21,8 +21,9 @@ two thirds the same way (each task's name, location, time left and, for the row 
 their rewards), and keeps those words with the times on your PC (the "operational.json" file) until the tasks run
 out. Of a screenshot of a trader's TASKS tab with a daily or weekly selected, it reads the same two thirds for that
 task's name and the time left of each daily and weekly in the trader's list, and of the right third only the header's
-line, for the task's location and status (never the trader's row with your name and money above it, nor the task's
-text or rewards below it), and keeps them in the same file. All of it happens on your PC; nothing of a picture is kept or sent, and unticking "Read the extract list from
+line, for the task's location and status, and each objective's line, for its words and count (never the trader's row
+with your name and money above the header, the task's text between it and the objectives, nor the rewards below
+them), and keeps them in the same file. All of it happens on your PC; nothing of a picture is kept or sent, and unticking "Read the extract list from
 screenshots" or "Read your stash, gear and tasks from menu screenshots, and loot in a raid" in settings stops each.
 Nothing about you leaves your PC, with two exceptions that you control; and it asks GitHub for new versions of itself
 (3) and downloads public data and pictures (4).

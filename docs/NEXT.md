@@ -84,7 +84,17 @@ diagnostics) and §9.
   glyph on REPLACE's line) when an entry has its name, else none (a story quest's tab); for that task alone the header
   line's band from 0.665 of the width to the picture's edge, read once at its size: the location, then the status word
   apart from it (a lone run is the location unless it reads "active"). Two entries of the header's name: the task
-  without a countdown. The objectives are not read (open, below).
+  without a countdown.
+- **The objectives** (the coordinator, the same day: the decision's "its objectives with their counts" is the owner's,
+  "the header line's band alone" was the coordinator's own limit; `TaskTable.ObjectiveBands`, `ObjectiveOf`,
+  `CountOf`): they stand centred across the screen in a bar under "Objective(s)" (776 to 2522 px at 1440p), a line's
+  words over the left part's edge (the daily's "Survive on the location" from 1542 to 1820), every count in the right
+  third (1938 to 1980). Each line the left part's words show under the label and above "Rewards" (or the menu bar at the
+  foot where no rewards show) is one band from the label's left edge to the picture's right edge, the line's height
+  with half a unit above and below, never above the label nor into the rewards; its words from a plain look at the
+  band, up to the progress bar's gap (a plain look reads the weekly's "Ø/7" as "øn"), without the line's icon or TURN
+  IN; its count at its end by the 14-way vote. Read only for a task the header names; the objectives read replace the
+  task's, as a table's expanded row's do, and the progress comes from their counts.
 - A weekly's countdown is "6 day(s) 23:07:57" in the table too: the table's "hours as written" was an assumption
   (UPDATES.md). `TaskTable.TimeLeft` reads days and a time of day under 24 h; and as the recognition read "6 day(s)" and
   dropped the time after it in 13 of 14 ways on the selected list entry, `TasksReader.VoteCountdownAsync` votes on the
@@ -93,8 +103,9 @@ diagnostics) and §9.
   table's bands go the same way.
 - The set (`OperationalLedger.ApplyTrader`, beside `ApplyTable`): the task added, or the kept one of its name and map
   updated (another map: another task; two on one map: the one whose expiry agrees, else neither); its countdown checked
-  with the list's other entries as one screenshot's rows, then against the kept expiry as a table's row; the kept
-  objectives and progress stay (the tab reads none); its `readAt` the screenshot's. The list's other entries refresh
+  with the list's other entries as one screenshot's rows, then against the kept expiry as a table's row; its
+  objectives replace the kept ones when read, the progress from their counts (none read: the kept ones and their
+  progress stay); its `readAt` the screenshot's. The list's other entries refresh
   the one task kept by their name, whatever its map (two kept, or a name twice in the list: neither), through the same
   checks, never adding one. **The set's `readAt` stays the last table's** (null while only trader's tabs brought
   tasks; `operational.json` writes none then, and older files read as before): a trader's screenshot older than it is
@@ -105,8 +116,9 @@ diagnostics) and §9.
   refresh alone; the app log "Operational task read from a trader's screen: 1 new, 0 countdowns refreshed, 0 on no
   known map, 0 countdowns not taken (… ms)", the study log `operational.trader` with counts, never names.
 - `shturmap-cli tasks` prints a trader's tab (the task, its map as read, status, its countdown with its votes and
-  expiry, each other entry with its countdown and expiry) and scores it against truths, whose format takes `task` and
-  `entry` lines; `--raw` prints every way's text beside the votes.
+  expiry, its objectives with their counts, each other entry with its countdown and expiry) and scores it against
+  truths, whose format takes `task` and `entry` lines and the task's `objective` lines; `--raw` prints every way's text
+  beside the votes.
 - Texts (English and German, for the senior translator): the values of AppTexts `SettingsReadStashNote`, ViewTexts
   `HelpPrivacy` and `OperationalGlyphTip` ("a trader's TASKS tab", „TASKS-Tab eines Traders“, never their text or
   rewards); the English comments of ViewTexts `SettingsReadStash`, RuleTexts `OperationalAsOf`, `OperationalCueEyebrow`,
@@ -117,18 +129,25 @@ diagnostics) and §9.
 - Measured (`shturmap-cli tasks`; the owner's five screenshots of that evening, renamed, in the ignored
   `tests\fixtures\ocr\operational\trader` with hand-written truths, and the two trader's tabs of that morning in
   `operational`, whose truths now name their task):
-  - Ragman's daily: "Exit the location", Shoreline, active, 23:54:15 from the page's words.
+  - Ragman's daily: "Exit the location", Shoreline, active, 23:54:15 from the page's words; its objective "Survive on
+    the location", no count (none read in any of the 14 ways, rightly: it has none).
   - Skier's weekly: Streets of Tarkov, active, "6 day(s) 23:07:57" by 10 of 14 ways with the days apart; its expiry
-    agrees with the three tables' within a second. The list's other daily, "Elimination" (orange "00:48:48"), read in
-    no way, nor in a band of the time alone.
+    agrees with the three tables' within a second. Its objective "Survive on the location 0/7": the words right, the
+    count 0/7 by 1 of 14 ways (binary at 1x; seven ways read "øn", six nothing after the words): read, on one vote. The
+    list's other daily, "Elimination" (orange "00:48:48"), read in no way, nor in a band of the time alone.
   - The other three of that minute aren't trader's tabs but the OPERATIONAL table, 18 to 24 s later, a row expanded in
     each: names, locations and statuses 9 of 9, countdowns 8 of 9 (the weekly's days 3 of 3).
-  - The morning's: Therapist's "Exit the location", Shoreline, 08:33:03 by 4 votes; Peacekeeper's "Find and transfer",
-    Any location, 10:13:48 by 3 under the hand-over's icon. So "Any location" is seen in a trader's header.
-  - A trader's tab reads in 150 to 260 ms.
-- Tests: `TaskTableTests` (7 more: the header's task with its countdown, the entries' bands clear of the version line, a
-  story quest's tab, two entries of one name, the header band's words, the days' countdowns and the days alone, and the
-  real trader's screenshots; the real-picture test takes the trader's truths), `OperationalTasksTests` (8 more: added,
+  - The morning's: Therapist's "Exit the location", Shoreline, 08:33:03 by 4 votes, "Survive on the location 4/7" (the
+    count by 13 of 14); Peacekeeper's "Find and transfer", Any location, 10:13:48 by 3 under the hand-over's icon, its
+    two hand-overs ("SSD drive", and "CPU fan" with TURN IN after it, left out) without counts. So "Any location" is
+    seen in a trader's header.
+  - Objectives on the four tabs: words 5 of 5, counts 2 of 2, none wrong. A trader's tab reads in 350 to 730 ms with its
+    objective bands (150 to 260 without).
+- Tests: `TaskTableTests` (11 more: the header's task with its countdown, a band per objective line between the label
+  and the rewards, never into them, the menu bar where no rewards show, an objective line's words and voted count,
+  the count at a band's end, the entries' bands clear of the version line, a story quest's tab, two entries of one name,
+  the header band's words, the days' countdowns and the days alone, and the real trader's screenshots; the real-picture
+  test takes the trader's truths, objectives included), `OperationalTasksTests` (8 more: added,
   updated by name and map, objectives and progress, the checks, older than the table and a later table, a set a
   trader's tab began and its file, the list's refreshes, a name kept twice or listed twice), `OperationalSessionTests`
   (4 more: onto its map with the cue and the file, a refresh alone calls no cue and a story quest's tab adds nothing, no
@@ -136,12 +155,9 @@ diagnostics) and §9.
 
 **Open (step 3).**
 
-- **For the owner: a trader's tab's objectives.** The decision reads its objectives with their counts, and of the right
-  third the header line's band alone; measured, both can't hold: the objectives stand centred in a bar across the
-  screen (776 to 2522 px at 1440p), a line runs over the left part's edge (the daily's "Survive on the location" from
-  1542 to 1820) and every count stands in the right third (1938 to 1980). So the tab reads no objectives, and the kept
-  ones stay (a table's expanded row brings them). Reading them takes one band per objective line through the right
-  third, between "Objective(s)" and "Rewards": the bar's words and count, no name, money, toast, text or reward.
+- **For the owner, to confirm:** the decision above says "of the picture's right third, the header line's band alone";
+  the objective bands go past that on the coordinator's word that it was the coordinator's limit and not the owner's.
+- The weekly's count 0/7 on its trader's tab reads on one vote of 14 (seven ways read "øn"): right here, thin.
 - A list entry's orange countdown (not the selected one's) reads in no way: a refresh works where it reads (the
   selected entries' white ones did, 4 of 4).
 - The table's own faults these screenshots show: the weekly's "Ø/7" read as "øn" (an objective "Survive on the location

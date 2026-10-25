@@ -164,8 +164,8 @@ internal static class TasksSpike
     }
 
     // A trader's TASKS tab (owner, 2026-10-25): the header's task as the app takes it (the location is matched to a map of
-    // the data in the app; "Any location" is every map), then each entry of the list with its countdown, the selected one
-    // its task's, the others refreshing a kept task of their name in the app. Its objectives aren't read.
+    // the data in the app; "Any location" is every map) with its objectives and their counts, then each entry of the list
+    // with its countdown, the selected one its task's, the others refreshing a kept task of their name in the app.
     private static void PrintTrader(TaskPage page, DateTime taken, IReadOnlyList<TimeSpan?> kept)
     {
         string Left(TaskRow row) => row.TimeLeft is { } t ? $"{row.TimeText} = {TaskTable.Hms(t)} ({row.TimeVotes} votes)" : "unread";
@@ -177,6 +177,8 @@ internal static class TasksSpike
             var index = page.Rows.ToList().IndexOf(task);
             Console.WriteLine($"   task  {task.Name,-20} | map {task.Location ?? "unread",-18} | {task.Status ?? "no status",-9} | left " +
                               (index < 0 ? "none (two entries of its name)" : $"{Left(task)} | expires {Expiry(index)}"));
+            foreach (var o in task.Objectives)
+                Console.WriteLine($"      objective \"{o.Text}\"" + (o.Of is not null ? $" {o.Done}/{o.Of}" : ""));
         }
         for (var i = 0; i < page.Rows.Count; i++)
         {
@@ -257,6 +259,14 @@ internal static class TasksSpike
             var entry = truth.Entries.FirstOrDefault(e => TaskTruth.Same(e.Name, task.Name));
             if (entry.Name is not null)
                 tally.TraderTime.Score(page.Selected?.TimeLeft is { } left ? TaskTable.Hms(left) : null, Hms(entry.Time));
+            var wanted = truth.Objectives.Where(o => TaskTruth.Same(o.Row, task.Name)).ToList();
+            var said = page.Selected?.Objectives ?? [];
+            for (var i = 0; i < wanted.Count; i++)
+            {
+                tally.Objective.Score(said.ElementAtOrDefault(i)?.Text, wanted[i].Text);
+                tally.Count.Score(said.ElementAtOrDefault(i) is { } o ? TaskTruth.Count(o) : null, wanted[i].Count);
+            }
+            tally.Objective.Wrong += Math.Max(0, said.Count - wanted.Count);
         }
         else if (page.Selected is not null)
         {

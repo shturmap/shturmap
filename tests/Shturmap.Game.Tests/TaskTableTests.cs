@@ -163,15 +163,18 @@ public sealed class TaskTableTests
     // quest's text and objective cut at the left part's edge, the list's sections (a story quest under ESSENTIAL TASKS),
     // OPERATIONAL TASKS with its glyph, each entry a glyph, a name and (where the page carries it) a countdown at the
     // list's right end, and the game's version line under the list.
-    private static List<TaskWord> TraderTab(string[] header, params (string Name, string[] Countdown)[] entries)
+    private static List<TaskWord> TraderTab(string[] header, params (string Name, string[] Countdown)[] entries) =>
+        TraderTab(header, [W("Survive", 1544, 841, 87, 19), W("on", 1641, 845, 26, 15), W("th", 1677, 841, 25, 19), W("Rewards", 777, 915, 95, 18)], entries);
+
+    // The same with the words under "Objective(s)" given: the objective lines' left parts, "Rewards" and the rewards.
+    private static List<TaskWord> TraderTab(string[] header, List<TaskWord> objectives, params (string Name, string[] Countdown)[] entries)
     {
         List<TaskWord> words =
         [
             W("TRADING", 78, 35), W("TASKS", 253, 37, 63, 16), W("SERVICES", 428, 36, 94, 16), W("Zorbov", 61, 201), W("225", 77, 242),
             W("O", 781, 336, 27, 27), W("COMPLETE", 118, 338, 156, 23), W("REPLACE", 500, 338, 130, 24),
             .. Sentence(1386, 418, "Here you are friend some made up"),
-            W("Objective(s)", 777, 778, 126, 22), W("Survive", 1544, 841, 87, 19), W("on", 1641, 845, 26, 15), W("th", 1677, 841, 25, 19),
-            W("Rewards", 777, 915, 95, 18),
+            W("Objective(s)", 777, 778, 126, 22), .. objectives,
             W("=", 28, 950, 29, 15), W("ESSENTIAL", 72, 954, 127, 18), W("TASKS", 208, 954, 73, 18),
             W("&", 74, 1025, 31, 30), .. Sentence(118, 1031, "Zorbs on Parade"),
             W("O", 26, 1113, 33, 33), W("OPERATIONAL", 71, 1121, 165, 18), W("TASKS", 246, 1121, 72, 18),
@@ -217,6 +220,70 @@ public sealed class TaskTableTests
         Assert.InRange(page.HeaderBand.Y, 320, 338);
         Assert.InRange(page.HeaderBand.Y + page.HeaderBand.H, 362, 380);
     }
+
+    // The objectives stand centred in a bar across the screen, cut at the left part's edge (owner, 2026-10-25): one band
+    // per line the left part shows, from the "Objective(s)" label's left edge to the picture's right edge, never above
+    // the label (the task's text) nor into the rewards.
+    [Fact]
+    public void A_traders_tab_gives_a_band_per_objective_line_between_the_label_and_the_rewards()
+    {
+        List<TaskWord> objectives =
+        [
+            W("&", 1360, 836, 31, 30), .. Sentence(1408, 841, "Hand over the found in"),
+            .. Sentence(1384, 920, "Survive on the location"),
+            W("Rewards", 777, 945, 95, 18), W("EXPERIENCE", 925, 1010, 90, 12), .. Sentence(1259, 1020, "Roubles (12 345)"),
+        ];
+        var page = TaskTable.Read(TraderTab(["Zorblat"], objectives, ("Zorblat", ["08:33:03"])), Width, Height);
+        Assert.NotNull(page.Selected);
+        Assert.Equal(2, page.ObjectiveBands.Count);
+        Assert.All(page.ObjectiveBands, b => Assert.Equal((777, Width), (b.X, b.X + b.W)));
+        var (first, second) = (page.ObjectiveBands[0], page.ObjectiveBands[1]);
+        // Each the line's height with half a unit above and below; under the label (its foot at 800), the text above it
+        // in none.
+        Assert.InRange(first.Y, 800, 836);
+        Assert.InRange(first.Y + first.H, 866, 880);
+        Assert.InRange(second.Y, 900, 920);
+        // The second line's half unit below would reach into "Rewards" (at 945): the band stops there.
+        Assert.Equal(945, second.Y + second.H);
+        // The task's text, the rewards and the list are in no band.
+        Assert.DoesNotContain(page.ObjectiveBands, b => b.Y < 800 || b.Y + b.H > 945);
+    }
+
+    [Fact]
+    public void An_objective_band_without_rewards_ends_over_the_menu_bar_and_a_story_quests_tab_has_none()
+    {
+        List<TaskWord> objectives = [.. Sentence(1384, 841, "Survive on the location"), W("CHARACTER", 1095, 1411, 114, 16), W("TRADERS", 1288, 1411, 88, 16)];
+        var page = TaskTable.Read(TraderTab(["Zorblat"], objectives, ("Zorblat", [])), Width, Height);
+        Assert.Single(page.ObjectiveBands);
+        Assert.True(page.ObjectiveBands[0].Y + page.ObjectiveBands[0].H < 1411);
+        Assert.Empty(TaskTable.Read(TraderTab(["Zorbs", "on", "Parade"], objectives, ("Zorblat", [])), Width, Height).ObjectiveBands);
+    }
+
+    [Fact]
+    public void An_objective_line_is_its_words_and_the_count_its_band_voted()
+    {
+        // As a plain look at the band reads them: the icon, the words, the progress bar's gap, the count ("ø/7", or "øn"
+        // where the slash and the 7 run together).
+        List<TaskWord> Line(string count) =>
+            [W("R", 1339, 836, 26, 26), .. Sentence(1384, 841, "Survive on the location"), W(count, 1938, 841, 42, 19)];
+        Assert.Equal(new TaskObjective("Survive on the location", 0, 7), TaskTable.ObjectiveOf(Line("ø/7"), TaskTable.CountOf("Survive on the location ø/7"), 17.5));
+        Assert.Equal(new TaskObjective("Survive on the location", 0, 7), TaskTable.ObjectiveOf(Line("øn"), "0/7", 17.5));
+        // The count unread by the vote: none, and the misread mark isn't a word of the objective.
+        Assert.Equal(new TaskObjective("Survive on the location", null, null), TaskTable.ObjectiveOf(Line("øn"), null, 17.5));
+        // Without a count; a hand-over ready to turn in, its button no word of it.
+        Assert.Equal(new TaskObjective("Survive on the location", null, null), TaskTable.ObjectiveOf([.. Sentence(1542, 841, "Survive on the location")], null, 17.5));
+        List<TaskWord> handOver = [W("&", 1286, 836, 31, 30), .. Sentence(1328, 841, "Hand over the found in raid item: \"Quill fan\""), W("TURN", 1892, 838, 50, 22), W("IN", 1950, 838, 26, 22)];
+        Assert.Equal(new TaskObjective("Hand over the found in raid item: \"Quill fan\"", null, null), TaskTable.ObjectiveOf(handOver, null, 17.5));
+        Assert.Null(TaskTable.ObjectiveOf([], null, 17.5));
+    }
+
+    [Theory]
+    [InlineData("Survive on the location ø/7", "0/7")]
+    [InlineData("Survive on the location 4/7", "4/7")]
+    [InlineData("Survive on the location øn", null)]
+    [InlineData("Survive on the location", null)]
+    [InlineData("", null)]
+    public void An_objective_bands_count_is_read_at_its_end(string text, string? count) => Assert.Equal(count, TaskTable.CountOf(text));
 
     [Fact]
     public void A_list_entrys_countdown_band_lies_at_the_lists_right_end_clear_of_the_version_line()
@@ -390,8 +457,8 @@ public sealed class TaskTableTests
         return (page, truth);
     }
 
-    // A trader's screen against its truth (owner, 2026-10-25): the header's task, its location and status exactly (or
-    // none for a story quest's tab); the list's entries by name in order; every countdown read right. Counts the list's
+    // A trader's screen against its truth (owner, 2026-10-25): the header's task, its location, status and objectives
+    // exactly (or none for a story quest's tab); the list's entries by name in order; every countdown read right. Counts the list's
     // countdowns and how many were read. The messages name the file, never what the picture says.
     private static (int Countdowns, int Read) CheckTrader(TaskPage page, TaskTruth truth, string file)
     {
@@ -401,7 +468,9 @@ public sealed class TaskTableTests
             Assert.True(TaskTruth.Same(page.Selected!.Name, task.Name), $"{file}: the task's name");
             Assert.True(page.Selected.Location == task.Location, $"{file}: the task's location");
             Assert.True(page.Selected.Status == TaskTable.Status(task.Status), $"{file}: the task's status");
-            Assert.Empty(page.Selected.Objectives);
+            // Its objectives from their bands, words and counts exactly (2026-10-25: five of five, the counts 2 of 2).
+            var objectives = truth.Objectives.Where(o => TaskTruth.Same(o.Row, task.Name)).Select(o => (o.Text, o.Count));
+            Assert.True(objectives.SequenceEqual(page.Selected.Objectives.Select(o => (o.Text, TaskTruth.Count(o)))), $"{file}: the task's objectives");
             // Its own countdown, white on the selected entry, is read (2026-10-25: four of four).
             Assert.True(page.Selected.TimeLeft is not null || truth.Entries.Count(e => TaskTruth.Same(e.Name, task.Name)) != 1, $"{file}: the task's countdown unread");
         }

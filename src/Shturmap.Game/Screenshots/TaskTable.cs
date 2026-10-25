@@ -89,9 +89,14 @@ public sealed record TaskPage(TaskScreen Screen, IReadOnlyList<TaskRow> Rows, do
     public TaskRow? Selected { get; init; }
 
     /// <summary>On a trader's screen with a <see cref="Selected"/> task: the header line from the picture's left part to
-    /// its right edge, where the task's location and status stand; the one band of the picture's right third that is
-    /// read.</summary>
+    /// its right edge, where the task's location and status stand.</summary>
     public TaskBand HeaderBand { get; init; }
+
+    /// <summary>On a trader's screen with a <see cref="Selected"/> task: one band per objective line, from the
+    /// "Objective(s)" label's left edge to the picture's right edge, between that label and "Rewards" (owner, 2026-10-25),
+    /// read by the caller and handed to <see cref="TaskTable.ObjectiveOf"/>. With <see cref="HeaderBand"/>, the bands of
+    /// the picture's right third that are read; nothing above the label (the task's text) or below "Rewards".</summary>
+    public IReadOnlyList<TaskBand> ObjectiveBands { get; init; } = [];
 }
 
 /// <summary>
@@ -114,9 +119,10 @@ public sealed record TaskPage(TaskScreen Screen, IReadOnlyList<TaskRow> Rows, do
 /// view, it is not added"): the entries under the list's OPERATIONAL TASKS heading, each a name and a countdown band at
 /// the list's right edge; the header's task (right of its glyph, on the line of COMPLETE | REPLACE) is an operational
 /// task when an entry has its name. Its location and status stand at the header's right end, in the picture's right
-/// third: that one band is read by the caller and handed to <see cref="TakeHeader"/>. Its objectives are not read: they
-/// stand centred across the screen's width, their counts in the right third (measured at 1440p, 2026-10-25), so the
-/// left part holds them cut.</item>
+/// third: that band is read by the caller and handed to <see cref="TakeHeader"/>. Its objectives stand centred across
+/// the screen's width in a bar under "Objective(s)", their counts in the right third (measured at 1440p, 2026-10-25), so
+/// the left part holds them cut: each line the left part's words show gets a band of its own across the picture, read
+/// by the caller and handed to <see cref="ObjectiveOf"/>.</item>
 /// </list>
 /// </summary>
 public static class TaskTable
@@ -335,6 +341,77 @@ public static class TaskTable
         {
             Selected = named.Count == 1 ? named[0] : new TaskRow { Name = Clean(header.Text), Cy = header.Cy },
             HeaderBand = new TaskBand(bandLeft, (int)Math.Round(header.Y - 0.5 * u), width - bandLeft, (int)Math.Round(header.Bottom - header.Y + u)),
+            ObjectiveBands = ObjectiveBands(words, header, listRight, width, height, u),
+        };
+    }
+
+    // The menu bar's words at the picture's foot, where the objectives end when no "Rewards" label was read.
+    private static readonly HashSet<string> MenuBar = ["mainmenu", "main", "hideout", "character", "traders", "flea", "market", "builds", "handbook", "messenger", "survey", "expansions"];
+
+    /// <summary>
+    /// The task's objective lines on a trader's tab (owner, 2026-10-25): the lines the left part's words show in the bar
+    /// under "Objective(s)" (right of the list, under the header) and above "Rewards" (or the game's menu bar at the
+    /// picture's foot where no rewards are shown), each one band from the label's left edge to the picture's right edge,
+    /// the line's height with half a unit above and below, never reaching above the label or into the rewards. The
+    /// task's text above the label and the rewards below are in no band.
+    /// </summary>
+    private static List<TaskBand> ObjectiveBands(IReadOnlyList<TaskWord> words, TaskChain header, double listRight, int width, int height, double u)
+    {
+        var label = words.Where(w => w.X >= listRight && w.Y > header.Bottom && Fold(w.Text).StartsWith("objective", StringComparison.Ordinal))
+            .OrderBy(w => w.Y).FirstOrDefault();
+        if (label is null)
+            return [];
+        var rewards = words.Where(w => w.Y > label.Bottom && Math.Abs(w.X - label.X) <= 2 * u && Fold(w.Text).StartsWith("reward", StringComparison.Ordinal))
+            .OrderBy(w => w.Y).FirstOrDefault();
+        var end = rewards?.Y ?? words.Where(w => w.Y > height * 0.8 && MenuBar.Contains(Fold(w.Text))).Select(w => w.Y).DefaultIfEmpty(height).Min();
+        var top = label.Bottom;
+        var inside = Chains(words.Where(w => w.X >= label.X - 0.5 * u && w.Y > top && w.Bottom < end).ToList(), u);
+        var bands = new List<TaskBand>();
+        foreach (var line in Lines(inside))
+        {
+            var y = Math.Max(line.Min(w => w.Y) - 0.5 * u, top);
+            var bottom = Math.Min(line.Max(w => w.Bottom) + 0.5 * u, end);
+            var x = (int)Math.Round(label.X);
+            bands.Add(new TaskBand(x, (int)Math.Round(y), width - x, (int)Math.Round(bottom - y)));
+        }
+        return bands;
+    }
+
+    private static readonly Regex CountAtEnd = new(@"(\S+)\s*$", RegexOptions.CultureInvariant);
+
+    /// <summary>An objective line's count n/m at its end as a band read it ("0/7", the slashed zero as 0), or null.</summary>
+    internal static string? CountOf(string text)
+    {
+        if (CountAtEnd.Match(text.Trim()) is not { Success: true } m || CountPattern.Match(Digits(m.Groups[1].Value)) is not { Success: true } count)
+            return null;
+        return $"{count.Groups[1].Value}/{count.Groups[2].Value}";
+    }
+
+    /// <summary>
+    /// One objective line of a trader's tab from its band (owner, 2026-10-25): its words as a plain look at the band read
+    /// them, up to the first gap of more than four units (the progress bar a counted objective has before its count, which
+    /// a plain look reads as "ø/7" or "øn"), the line's icon left aside; and its count n/m when the band's vote read one
+    /// (<paramref name="count"/>, as <see cref="CountOf"/> writes it), else none. The objective bar's TURN IN button, where
+    /// a hand-over is ready, is no word of it. Null when no word is left.
+    /// </summary>
+    public static TaskObjective? ObjectiveOf(IReadOnlyList<TaskWord> words, string? count, double u)
+    {
+        var line = words.OrderBy(w => w.X).ToList();
+        if (line.Count > 0 && Glyphless(new TaskChain(line), u) is { } chain)
+            line = [.. chain.Words];
+        var gap = Enumerable.Range(1, Math.Max(0, line.Count - 1)).FirstOrDefault(i => line[i].X - line[i - 1].Right > 4 * u);
+        if (gap > 0)
+            line = line[..gap];
+        while (line.Count > 1 && line[^1].Text is "IN" && line[^2].Text is "TURN")
+            line.RemoveRange(line.Count - 2, 2);
+        if (Objective(line) is not { } read)
+            return null;
+        if (count is null || CountPattern.Match(count) is not { Success: true } m)
+            return read with { Done = null, Of = null };
+        return read with
+        {
+            Done = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture),
+            Of = int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture),
         };
     }
 

@@ -27,7 +27,7 @@ public sealed record OperationalObjective(string Text, int? Done = null, int? Of
 /// One row of the OPERATIONAL table as a screenshot showed it, for <see cref="OperationalLedger.ApplyTable"/>, or the
 /// task a trader's TASKS tab showed, for <see cref="OperationalLedger.ApplyTrader"/>: the task's name, its map (a
 /// tarkov.dev map id; null for "Any location"), the countdown and how many of the ways the reading tried agreed on it,
-/// the progress read, and the objectives when the row was expanded (else none; a trader's tab reads none).
+/// the progress read, and the objectives when the row was expanded or a trader's tab showed them (else none).
 /// </summary>
 public sealed record OperationalRead(string Name, string? MapId, TimeSpan? TimeLeft, int TimeVotes, int? Progress,
     IReadOnlyList<OperationalObjective> Objectives);
@@ -251,8 +251,9 @@ public sealed class OperationalLedger
     /// the mode's set or updates the kept task of its name and map (when two are kept, the one whose expiry agrees with
     /// its countdown; neither else); the mode's other tasks stay. Its countdown is its list entry's, checked with the
     /// list's <paramref name="others"/> as one screenshot's rows (<see cref="OperationalChecks.Countdowns"/>) and against
-    /// the kept task's expiry as a table's row is. Objectives replace the kept ones when read (a trader's tab reads none,
-    /// so the kept ones and their progress stay). Each of <paramref name="others"/> whose name is the list's only one of
+    /// the kept task's expiry as a table's row is. Objectives replace the kept ones when read, as a table's expanded row's
+    /// do, and give the progress by their counts; none read (no line under "Objective(s)" read), the kept ones and their
+    /// progress stay. Each of <paramref name="others"/> whose name is the list's only one of
     /// it refreshes the expiry of the one task kept by that name, whatever its map (the list says none); two kept of the
     /// name, neither; it never adds a task. The set's time stays the last table's: a later table replaces the set, as
     /// ever. Null, and nothing changes, for a screenshot older than the set's last table; a kept task read later than

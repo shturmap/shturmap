@@ -17,10 +17,12 @@ namespace Shturmap.Game.Screenshots;
 /// every band is read in all the <see cref="Ways"/> and the value most of them read is taken, with how many did
 /// (<see cref="TaskRow.TimeVotes"/>), for the checks that follow (Shturmap.Core.Operational.OperationalChecks). On a
 /// trader's TASKS tab (owner, 2026-10-25) the same: the page's words, then each entry of the list's OPERATIONAL TASKS
-/// its countdown band by vote, and, when the header names one of them, the header line's band in the picture's right
-/// third for the task's location and status, the one band there that is ever read (the traders' row with the player's
-/// name and money stands above it, the task's text, objectives and rewards below it). The file is opened for reading
-/// only, shared with the game that may still be writing it, and nothing of the picture is kept or written anywhere.
+/// its countdown band by vote, and, when the header names one of them, the bands across the picture's right third that
+/// are ever read there: the header line's, for the task's location and status, and one per objective line under
+/// "Objective(s)", for its words and its count by vote (the traders' row with the player's name and money stands above
+/// the header, the task's text between the header and the objectives, its rewards below them: none of it in a band).
+/// The file is opened for reading only, shared with the game that may still be writing it, and nothing of the picture
+/// is kept or written anywhere.
 /// </summary>
 public sealed class TasksReader
 {
@@ -106,14 +108,27 @@ public sealed class TasksReader
         return page with { Screen = TaskTable.Settle(page) };
     }
 
-    // A trader's TASKS tab: the header's location and status from the header line's band when the header names an
-    // operational task (a story quest's tab reads no band of the right third), and each list entry's countdown by vote.
+    // A trader's TASKS tab: the header's location and status from the header line's band and the objectives from theirs
+    // when the header names an operational task (a story quest's tab reads no band of the right third), and each list
+    // entry's countdown by vote.
     private async Task<TaskPage> ReadTraderAsync(SKBitmap picture, TaskPage page, Action<string>? note, CancellationToken ct)
     {
         if (page.Selected is { } selected)
         {
             TaskTable.TakeHeader(selected, await ReadBandWordsAsync(picture, page.HeaderBand, ct), page.Unit);
             note?.Invoke($"header band {page.HeaderBand.X},{page.HeaderBand.Y}: location {selected.Location ?? "unread"}, status {selected.Status ?? "unread"}");
+            // Each objective line: its words as it is, its count at its end by vote (the counts are the game's small
+            // digits, as the countdowns are).
+            foreach (var band in page.ObjectiveBands)
+            {
+                var words = await ReadBandWordsAsync(picture, band, ct);
+                var (count, votes, _) = await VoteAsync(picture, band, TaskTable.CountOf, "objective count", note, ct);
+                var objective = TaskTable.ObjectiveOf(words, count is null ? null : TaskTable.CountOf(count), page.Unit);
+                if (objective is not null)
+                    selected.Objectives.Add(objective);
+                note?.Invoke($"objective band {band.X},{band.Y}: " + (objective is null ? "no words"
+                    : $"\"{objective.Text}\", count {(objective.Of is null ? "none" : $"{objective.Done}/{objective.Of} ({votes} votes)")}"));
+            }
         }
         foreach (var entry in page.Rows.Where(r => r.TimeLeft is null))
             await VoteCountdownAsync(picture, entry, note, ct);
