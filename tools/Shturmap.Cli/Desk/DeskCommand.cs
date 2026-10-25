@@ -42,6 +42,7 @@ internal static class DeskCommand
         var quiet = false;
         bool? raid = null;
         var audit = false;
+        var noIcons = false;
         (double Width, double Height)? plate = null;
         var mode = GameMode.Pve;
         var inputs = new List<string>();
@@ -55,6 +56,7 @@ internal static class DeskCommand
                 case "--raid": raid = true; break;
                 case "--menus": raid = false; break;
                 case "--lattice": Lattice = true; break;
+                case "--no-icons": noIcons = true; break;
                 case "--audit": audit = true; break;
                 case "--plate" when i + 1 < args.Count && args[i + 1].Split('x') is [var w, var h]
                                     && double.TryParse(w, CultureInfo.InvariantCulture, out var pw) && double.TryParse(h, CultureInfo.InvariantCulture, out var ph):
@@ -67,7 +69,7 @@ internal static class DeskCommand
         }
         if (inputs.Count == 0 && !audit)
         {
-            Console.WriteLine("Use: shturmap-cli desk <png or folder>... [--quiet] [--online] [--mode pve|pvp] [--raid | --menus] [--plate <w>x<h>] [--why] [--lattice]");
+            Console.WriteLine("Use: shturmap-cli desk <png or folder>... [--quiet] [--online] [--mode pve|pvp] [--raid | --menus] [--plate <w>x<h>] [--why] [--lattice] [--no-icons]");
             Console.WriteLine("  each picture's page: regions, cells (name or \"one of N\", count, condition, figure and source, marks), the head line;");
             Console.WriteLine("  with truth-<picture>.txt beside a picture, the tally against it (and footprints-<picture>.txt, the items' footprints).");
             Console.WriteLine("  A truth's line: \"A 3,0 <short name>\" (grid A, the biggest the stash's lines give, its cell), or by the page's");
@@ -75,6 +77,7 @@ internal static class DeskCommand
             Console.WriteLine("  them) and \"<region> [<slot>] <short name>\" (a slot: loadout [earpiece], backpack [backpack]); \"#\" a comment.");
             Console.WriteLine("  With regions-<picture>.txt beside it, the regions the reading should make: \"screen Gear\" (None, Gear, Stash),");
             Console.WriteLine("  then a line a region, \"loadout\" or \"<region> <cols>x<rows>\" (the whole rows in view; 0x0, none of its grid).");
+            Console.WriteLine("  --no-icons: a \"one of N\" cell's picture not compared with its candidates' grid images (the label alone).");
             Console.WriteLine("  --quiet: the tallies only. A raid's inventory screen (by recognition, or --raid: as the in-raid glance reads it,");
             Console.WriteLine("  the world's pictures said none) prints its LOOT regions and is never taken into the page in hand.");
             Console.WriteLine("  --plate <w>x<h>: a raid's LOOT regions laid out as the in-raid glance's plate lays them out in a room that wide and");
@@ -89,7 +92,11 @@ internal static class DeskCommand
         var loader = new GameDataLoader(new CachedHttp(http, paths.DataCache));
         var data = await loader.LoadAsync(mode, "en");
         var sources = await loader.LoadSourcesAsync(mode, "en");
-        var catalogue = DeskData.Catalogue(data, sources);
+        // A "one of N" cell's picture against its candidates' grid images, from the download cache (asked for with --online;
+        // --no-icons: the label alone, as before 2026-10-25).
+        var art = new Shturmap.Data.Images.GameArt(http, paths.GameArtCache);
+        var catalogue = new DeskCatalogue(DeskData.Candidates(data, sources), noIcons ? null : new DeskIcons(id => art.Cached(Shturmap.Data.Images.ArtKind.Grid, id) is { } png
+            ? File.ReadAllBytes(png) : null, online ? id => _ = art.GetAsync(Shturmap.Data.Images.ArtKind.Grid, id) : null));
         var flea = DeskData.Flea(sources);
         // No quest history here: every quest counts as not started, so NEXT is the quests open to start, LATER the rest.
         var keep = DeskData.Keep(data, new Dictionary<string, QuestStatus>(), sources);
@@ -380,7 +387,11 @@ internal static class DeskCommand
                 if (c.Keep != DeskKeepLevel.None)
                     line.Append($" KEEP {c.Keep.ToString().ToLowerInvariant()}");
                 if (Why && look.Cells.FirstOrDefault(l => l.Region == r.Key && l.Cell.I == cell.I && l.Cell.J == cell.J && l.Cell.Slot == cell.Slot) is { } seen)
-                    line.Append($"   | label \"{seen.Label}\" fit {seen.Fit:0.00}" + (seen.Contradicted ? " FOOTPRINT" : "") + (seen.CountText is { } ct ? $" count \"{ct}\"" : ""));
+                    line.Append($"   | label \"{seen.Label}\" fit {seen.Fit:0.00}" + (seen.Contradicted ? " FOOTPRINT" : "") + (seen.CountText is { } ct ? $" count \"{ct}\"" : "") +
+                                // A "one of N" cell's picture against each candidate's grid image: its likeness and, after the
+                                // slash, its likeness where their images differ (DeskIcons; 2026-10-25).
+                                (seen.Icons.Count > 0 ? " | icons " + string.Join(", ", seen.Icons.Select(s => $"{data.ItemName(s.ItemId)} " +
+                                    (s.Score is { } v ? v.ToString("0.00", CultureInfo.InvariantCulture) + (s.Contrast is { } d ? "/" + d.ToString("0.00", CultureInfo.InvariantCulture) : "") : "no image"))) : ""));
                 Console.WriteLine(line);
             }
         }
@@ -482,12 +493,13 @@ internal static class DeskCommand
                 return look.Cells.FirstOrDefault(c => !c.Cell.IsSlot && c.Pixels.Contains(x, y));
             }
             var offset = Enumerable.Range(0, Math.Max(1, grid.Rows))
-                .Select(d => (d, Hits: group.Count(t => At(t.I, t.J + d) is { } c && c.Cell.Ids.Any(id => data.ItemShortName(id) == t.Name))))
+                .Select(d => (d, Hits: group.Count(t => At(t.I, t.J + d) is { } c && c.Cell.Ids.Any(id => data.ItemShortName(id) == t.Name || data.ItemName(id) == t.Name))))
                 .OrderByDescending(x => x.Hits).ThenBy(x => x.d).First().d;
             foreach (var t in group)
             {
                 var found = At(t.I, t.J + offset);
-                var names = found?.Cell.Ids.Select(data.ItemShortName).ToList() ?? [];
+                // A truth names an item by its short name, or by its full name where items share the short name (2026-10-25).
+                var names = found?.Cell.Ids.Select(id => data.ItemName(id) == t.Name ? t.Name : data.ItemShortName(id)).ToList() ?? [];
                 if (found is null)
                     missing++;
                 else if (names.Count == 0)
@@ -531,7 +543,7 @@ internal static class DeskCommand
         {
             var region = look.Page?.Region(t.Region);
             var found = region?.Cells.FirstOrDefault(c => t.Slot is not null ? c.Slot == t.Slot : !c.IsSlot && c.Rect.Contains(new DeskRect(t.I, t.J, 1, 1)));
-            var names = found?.Ids.Select(data.ItemShortName).ToList() ?? [];
+            var names = found?.Ids.Select(id => data.ItemName(id) == t.Name ? t.Name : data.ItemShortName(id)).ToList() ?? [];
             var where = t.Slot is not null ? $"{t.Region} [{t.Slot}]" : $"{t.Region} {t.I},{t.J}";
             if (found is null)
             {

@@ -63,7 +63,7 @@ public sealed partial class GameSession
             return null;
         if (_deskCatalogue is null || !ReferenceEquals(_deskCatalogueOf.Data, _data) || !ReferenceEquals(_deskCatalogueOf.Sources, _sources))
         {
-            _deskCatalogue = DeskData.Catalogue(_data, _sources);
+            _deskCatalogue = new DeskCatalogue(DeskData.Candidates(_data, _sources), DeskIconsNow());
             _deskCatalogueOf = (_data, _sources);
         }
         return _deskCatalogue;
