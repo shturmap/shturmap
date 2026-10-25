@@ -15,9 +15,11 @@
   </ItemGroup>
 
   <!-- The stash desk's reading of real screenshots against the whole catalogue (DeskRealPictureTests): the owner's GEAR-tab
-       and stash pictures with their hand-written truths stay in the ignored tests\fixtures\ocr\desk and \stash. -->
+       and stash pictures with their hand-written truths stay in the ignored tests\fixtures\ocr\desk and \stash, the layout
+       round's test set (2026-10-25) in \desk\session. -->
   <ItemGroup>
     <None Include="..\fixtures\ocr\desk\*.png;..\fixtures\ocr\desk\*.txt" LinkBase="fixtures\ocr\desk" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\ocr\desk\session\*.png;..\fixtures\ocr\desk\session\*.txt" LinkBase="fixtures\ocr\desk\session" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\ocr\stash\*.png;..\fixtures\ocr\stash\*.txt" LinkBase="fixtures\ocr\stash" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
