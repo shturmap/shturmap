@@ -76,9 +76,12 @@ Shturmap works only from files the game writes for you and from public community
   ids, with their counts and, for the desk, where each lay;
 - of a screenshot you take of the game's Tasks screen, on its OPERATIONAL tab, **the table of your daily and weekly
   tasks** in the picture's left two thirds: each task's name, location and time left and, for the row you opened, its
-  objectives, read the same way, so the tasks show on their maps in Plan and in a raid until they run out. Never their
-  rewards; nothing of the picture is kept or sent; the tasks' words stay on your PC. Untick **Read your stash, gear
-  and tasks from menu screenshots, and loot in a raid** in settings and no menu screenshot is opened;
+  objectives, read the same way, so the tasks show on their maps in Plan and in a raid until they run out. A screenshot
+  of a trader's TASKS tab with a daily or weekly selected is read too: from the same two thirds that task's name and
+  the time left of each daily and weekly in the trader's list, and of the right third only the header's line, for the
+  task's location and status, and its objective lines with their counts. Never their text or rewards; nothing of the picture is kept or sent; the tasks' words
+  stay on your PC. Untick **Read your stash, gear and tasks from menu screenshots, and loot in a raid** in settings and
+  no menu screenshot is opened;
 - of a screenshot you take in a raid with your inventory open, alone or beside a container or body you loot, **the
   item cells of its grids**, read as the desk reads them, after the extract list's corner (a strip at the picture's
   top tells an inventory screen from the world; a picture of the world goes no further): a plate over the map, for

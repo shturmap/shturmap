@@ -149,6 +149,158 @@ public class OperationalTasksTests
         Assert.Equal(["Eliminate Zorbs", "Eliminate Quenviks"], ledger.Tasks(GameMode.Pve).Select(t => t.Objectives.Single().Text));
     }
 
+    // ---- a trader's TASKS tab (owner, 2026-10-25) ----
+
+    private const string Shoreline = "map-shoreline";
+
+    private static OperationalEntry Entry(string name, TimeSpan? left, int votes = 3) => new(name, left, votes);
+
+    [Fact]
+    public void A_traders_screenshot_adds_its_task_and_the_modes_other_tasks_stay()
+    {
+        var ledger = new OperationalLedger();
+        ledger.ApplyTable(GameMode.Pve, Day, [Row("Elimination", Customs, new TimeSpan(10, 14, 11)), Row("Find and transfer", null, TimeSpan.FromDays(2))]);
+        var at = Day.AddMinutes(10);
+        var applied = ledger.ApplyTrader(GameMode.Pve, at, Row("Exit the location", Shoreline, new TimeSpan(23, 54, 15)), []);
+        Assert.Equal(new OperationalTraderApplied(Added: true, Updated: false, Refreshed: 0, Dropped: 0), applied);
+        var tasks = ledger.Tasks(GameMode.Pve);
+        Assert.Equal(["Elimination", "Find and transfer", "Exit the location"], tasks.Select(t => t.Name));
+        Assert.Equal(at + new TimeSpan(23, 54, 15), tasks[2].ExpiresAt);
+        Assert.Equal(at, tasks[2].ReadAt);
+        Assert.Equal(OperationalKind.Survive, tasks[2].Kind);
+        // The set's time stays the table's; the other tasks are as the table left them.
+        Assert.Equal(Day, ledger.ReadAt(GameMode.Pve));
+        Assert.Equal(Day, tasks[0].ReadAt);
+        Assert.True(ledger.Dirty);
+    }
+
+    [Fact]
+    public void A_traders_screenshot_updates_the_task_of_its_name_and_map_and_one_on_another_map_is_another()
+    {
+        var ledger = new OperationalLedger();
+        var kill = new OperationalObjective("Eliminate Zorbs", 1, 3);
+        ledger.ApplyTable(GameMode.Pve, Day, [Row("Elimination", Customs, new TimeSpan(10, 0, 0), objectives: kill)]);
+        // Ten minutes later, ten minutes less: the same task, its expiry agreeing; its objectives and progress stay.
+        var at = Day.AddMinutes(10);
+        Assert.True(ledger.ApplyTrader(GameMode.Pve, at, Row("elimination", Customs, new TimeSpan(9, 50, 2)), [])!.Updated);
+        var task = Assert.Single(ledger.Tasks(GameMode.Pve));
+        Assert.Equal(at + new TimeSpan(9, 50, 2), task.ExpiresAt);
+        Assert.Equal([kill], task.Objectives);
+        Assert.Equal(33, task.Progress);
+        Assert.Equal(Day, task.ObjectivesAt);
+        Assert.Equal(at, task.ReadAt);
+
+        // The same name on another map: another task.
+        Assert.True(ledger.ApplyTrader(GameMode.Pve, at.AddMinutes(1), Row("Elimination", Woods, new TimeSpan(20, 0, 0)), [])!.Added);
+        Assert.Equal([Customs, Woods], ledger.Tasks(GameMode.Pve).Select(t => t.MapId));
+    }
+
+    [Fact]
+    public void A_merges_objectives_replace_the_kept_ones_when_read_and_give_the_progress()
+    {
+        var ledger = new OperationalLedger();
+        ledger.ApplyTable(GameMode.Pve, Day, [Row("Exit the location", Woods, null, progress: 57, objectives: new OperationalObjective("Survive and extract from the location", 4, 7))]);
+        var survive = new OperationalObjective("Survive and extract from the location", 5, 7);
+        ledger.ApplyTrader(GameMode.Pve, Day.AddHours(1), Row("Exit the location", Woods, null, objectives: survive), []);
+        var task = Assert.Single(ledger.Tasks(GameMode.Pve));
+        Assert.Equal([survive], task.Objectives);
+        Assert.Equal(71, task.Progress);
+        Assert.Equal(Day.AddHours(1), task.ObjectivesAt);
+        Assert.Equal((5, 7), task.Count);
+    }
+
+    [Fact]
+    public void A_traders_countdown_goes_through_the_checks()
+    {
+        var ledger = new OperationalLedger();
+        ledger.ApplyTable(GameMode.Pve, Day, [Row("Elimination", Customs, new TimeSpan(10, 0, 0))]);
+        var expiry = Day + new TimeSpan(10, 0, 0);
+        // Unread, or past a week: the earlier expiry stands.
+        Assert.Equal(0, ledger.ApplyTrader(GameMode.Pve, Day.AddMinutes(1), Row("Elimination", Customs, null), [])!.Dropped);
+        Assert.Equal(expiry, ledger.Tasks(GameMode.Pve)[0].ExpiresAt);
+        Assert.Equal(1, ledger.ApplyTrader(GameMode.Pve, Day.AddMinutes(2), Row("Elimination", Customs, TimeSpan.FromDays(8)), [])!.Dropped);
+        Assert.Equal(expiry, ledger.Tasks(GameMode.Pve)[0].ExpiresAt);
+        // Shared with another entry's within a minute but seconds apart: the one fewer ways read gives way.
+        Assert.Equal(1, ledger.ApplyTrader(GameMode.Pve, Day.AddMinutes(3), Row("Elimination", Customs, new TimeSpan(9, 57, 0), votes: 1),
+            [Entry("Quenvik", new TimeSpan(9, 57, 30), 4)])!.Dropped);
+        Assert.Equal(expiry, ledger.Tasks(GameMode.Pve)[0].ExpiresAt);
+        // A digit off the earlier screenshot's: which is wrong can't be told, none.
+        Assert.Equal(1, ledger.ApplyTrader(GameMode.Pve, Day.AddMinutes(4), Row("Elimination", Customs, new TimeSpan(9, 46, 0)), [])!.Dropped);
+        Assert.Null(ledger.Tasks(GameMode.Pve)[0].ExpiresAt);
+    }
+
+    [Fact]
+    public void A_traders_screenshot_older_than_the_last_table_is_left_and_a_merge_never_holds_a_table_back()
+    {
+        var ledger = new OperationalLedger();
+        ledger.ApplyTable(GameMode.Pve, Day.AddHours(1), [Row("Elimination", Customs, new TimeSpan(10, 0, 0))]);
+        Assert.Null(ledger.ApplyTrader(GameMode.Pve, Day, Row("Exit the location", Woods, new TimeSpan(5, 0, 0)), []));
+        Assert.Single(ledger.Tasks(GameMode.Pve));
+
+        // A merge, then a later table: the table replaces the set, the merged task with it.
+        ledger.ApplyTrader(GameMode.Pve, Day.AddHours(2), Row("Exit the location", Woods, new TimeSpan(5, 0, 0)), []);
+        Assert.Equal(2, ledger.Tasks(GameMode.Pve).Count);
+        Assert.NotNull(ledger.ApplyTable(GameMode.Pve, Day.AddHours(3), [Row("Elimination", Customs, new TimeSpan(8, 0, 0))]));
+        Assert.Equal(["Elimination"], ledger.Tasks(GameMode.Pve).Select(t => t.Name));
+        Assert.Equal(Day.AddHours(3), ledger.ReadAt(GameMode.Pve));
+    }
+
+    [Fact]
+    public void A_set_a_traders_screenshot_began_has_no_tables_time_and_is_kept_in_the_file()
+    {
+        var folder = Directory.CreateTempSubdirectory("shturmap-operational-");
+        try
+        {
+            var ledger = new OperationalLedger();
+            Assert.True(ledger.ApplyTrader(GameMode.Pve, Day, Row("Exit the location", Shoreline, new TimeSpan(23, 54, 15)), [])!.Added);
+            Assert.Null(ledger.ReadAt(GameMode.Pve));
+            var path = Path.Combine(folder.FullName, OperationalLedger.FileName);
+            ledger.Save(path);
+            var back = OperationalLedger.Load(path);
+            Assert.Null(back.ReadAt(GameMode.Pve));
+            var task = Assert.Single(back.Tasks(GameMode.Pve));
+            Assert.Equal((Day, Day + new TimeSpan(23, 54, 15)), (task.ReadAt, task.ExpiresAt));
+        }
+        finally
+        {
+            folder.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void The_lists_other_entries_refresh_the_one_task_kept_by_their_name_and_never_add_one()
+    {
+        var ledger = new OperationalLedger();
+        // Elimination's countdown failed on the table (none kept); Find and transfer has one.
+        ledger.ApplyTable(GameMode.Pve, Day, [Row("Elimination", Customs, null), Row("Find and transfer", null, TimeSpan.FromDays(2))]);
+        var at = Day.AddMinutes(30);
+        var applied = ledger.ApplyTrader(GameMode.Pve, at, Row("Exit the location", Woods, new TimeSpan(6, 23, 7, 57)),
+            [Entry("Elimination", new TimeSpan(8, 0, 0)), Entry("find and transfer", TimeSpan.FromDays(2) - TimeSpan.FromMinutes(30)), Entry("Quenvik", new TimeSpan(5, 0, 0))]);
+        Assert.Equal(new OperationalTraderApplied(Added: true, Updated: false, Refreshed: 2, Dropped: 0), applied);
+        var tasks = ledger.Tasks(GameMode.Pve);
+        Assert.Equal(["Elimination", "Find and transfer", "Exit the location"], tasks.Select(t => t.Name));
+        Assert.Equal(at + new TimeSpan(8, 0, 0), tasks[0].ExpiresAt);
+        Assert.Equal(Day + TimeSpan.FromDays(2), tasks[1].ExpiresAt);
+        // A refresh is a countdown, not a reading of the task: its time stays.
+        Assert.Equal(Day, tasks[0].ReadAt);
+
+        // A story quest's tab (no task): its list still refreshes, and a refresh that disagrees leaves none.
+        var refreshed = ledger.ApplyTrader(GameMode.Pve, at.AddMinutes(1), null, [Entry("Elimination", new TimeSpan(7, 30, 0))]);
+        Assert.Equal(new OperationalTraderApplied(Added: false, Updated: false, Refreshed: 0, Dropped: 1), refreshed);
+        Assert.Null(ledger.Tasks(GameMode.Pve)[0].ExpiresAt);
+    }
+
+    [Fact]
+    public void An_entry_whose_name_two_kept_tasks_share_or_the_list_has_twice_refreshes_neither()
+    {
+        var ledger = new OperationalLedger();
+        ledger.ApplyTable(GameMode.Pve, Day, [Row("Elimination", Customs, null), Row("Elimination", Woods, null), Row("Exit the location", Woods, null)]);
+        var applied = ledger.ApplyTrader(GameMode.Pve, Day.AddMinutes(5), null,
+            [Entry("Elimination", new TimeSpan(8, 0, 0)), Entry("Exit the location", new TimeSpan(9, 0, 0)), Entry("Exit the location", new TimeSpan(6, 0, 0))]);
+        Assert.Equal(new OperationalTraderApplied(Added: false, Updated: false, Refreshed: 0, Dropped: 0), applied);
+        Assert.All(ledger.Tasks(GameMode.Pve), t => Assert.Null(t.ExpiresAt));
+    }
+
     [Fact]
     public void A_task_goes_at_its_expiry_and_is_said_to_have_ended_until_the_next_table_or_a_day()
     {

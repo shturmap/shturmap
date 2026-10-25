@@ -24,8 +24,10 @@
   </ItemGroup>
 
   <!-- The operational tasks' table (TasksReader; owner, 2026-10-19: from a panel of four, B): the owner's pictures and
-       their hand-written truths stay in the ignored tests\fixtures\ocr\operational. -->
+       their hand-written truths stay in the ignored tests\fixtures\ocr\operational; a trader's task view (owner,
+       2026-10-25) and the tables taken with it in its trader folder. -->
   <ItemGroup>
     <None Include="..\fixtures\ocr\operational\*.png;..\fixtures\ocr\operational\*.txt" LinkBase="fixtures\ocr\operational" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\ocr\operational\trader\*.png;..\fixtures\ocr\operational\trader\*.txt" LinkBase="fixtures\ocr\operational\trader" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

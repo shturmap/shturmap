@@ -41,6 +41,9 @@ internal static class TasksSpike
     {
         public readonly Field Screen = new(), Rows = new(), Name = new(), Location = new(), Status = new(), Time = new(),
             Progress = new(), Objective = new(), Count = new();
+
+        // A trader's screen: the header's task, its location, status and countdown; the list's entries and their countdowns.
+        public readonly Field TraderTask = new(), TraderLocation = new(), TraderStatus = new(), TraderTime = new(), Entry = new(), EntryTime = new();
     }
 
     public static async Task RunAsync(IReadOnlyList<string> args)
@@ -57,12 +60,13 @@ internal static class TasksSpike
                 case "--bands": printBands = true; break;
                 case "--ways": TasksReader.Ways = TasksReader.ParseWays(args[++i]); break;
                 case "--dump": TasksReader.Dump = Directory.CreateDirectory(args[++i]).FullName; break;
+                case "--raw": TasksReader.Raw = printBands = true; break;
                 default: inputs.Add(args[i]); break;
             }
         }
         if (inputs.Count == 0)
         {
-            Console.WriteLine("Use: shturmap-cli tasks <png or folder>... [--bands] [--words] [--ways plain@1,binary@2,...] [--zoom <page zoom>] [--dump <folder>]");
+            Console.WriteLine("Use: shturmap-cli tasks <png or folder>... [--bands] [--raw] [--words] [--ways plain@1,binary@2,...] [--zoom <page zoom>] [--dump <folder>]");
             return;
         }
         var ocr = TasksReader.Create();
@@ -111,6 +115,13 @@ internal static class TasksSpike
             Console.WriteLine($"  progress   {tally.Progress}");
             Console.WriteLine($"  objective  {tally.Objective}");
             Console.WriteLine($"  count      {tally.Count}");
+            Console.WriteLine("  on a trader's screen:");
+            Console.WriteLine($"  task       {tally.TraderTask}");
+            Console.WriteLine($"  location   {tally.TraderLocation}");
+            Console.WriteLine($"  status     {tally.TraderStatus}");
+            Console.WriteLine($"  time left  {tally.TraderTime}");
+            Console.WriteLine($"  entry      {tally.Entry}");
+            Console.WriteLine($"  its time   {tally.EntryTime}");
         }
     }
 
@@ -124,14 +135,21 @@ internal static class TasksSpike
         {
             TaskScreen.Table => $"the operational table, {page.Rows.Count} rows",
             TaskScreen.OtherTable => $"a Tasks table without countdowns ({page.Rows.Count} rows): not the operational one, not read",
-            TaskScreen.TraderScreen => "a trader's tasks screen: told, not read",
+            TaskScreen.TraderScreen => page.Selected is null
+                ? $"a trader's tasks screen, no operational task in its header; its list's {page.Rows.Count} operational entries"
+                : $"a trader's tasks screen with an operational task; its list's {page.Rows.Count} operational entries",
             _ => "no Tasks table: not read",
         };
         Console.WriteLine($"== {Path.GetFileName(file)}: {screen}; {ms} ms; file time {taken:yyyy-MM-dd HH:mm:ss}");
-        if (page.Screen != TaskScreen.Table)
+        if (page.Screen is not (TaskScreen.Table or TaskScreen.TraderScreen))
             return;
         // The app's checks on one screenshot's countdowns (OperationalChecks): a countdown that fails them gives no expiry.
         var kept = Shturmap.Core.Operational.OperationalChecks.Countdowns(page.Rows.Select(r => (r.TimeLeft, r.TimeVotes)).ToList());
+        if (page.Screen == TaskScreen.TraderScreen)
+        {
+            PrintTrader(page, taken, kept);
+            return;
+        }
         foreach (var (row, index) in page.Rows.Select((r, i) => (r, i)))
         {
             var left = row.TimeLeft is { } t ? $"{TaskTable.Hms(t)} ({row.TimeVotes} votes)" : "?";
@@ -145,6 +163,32 @@ internal static class TasksSpike
         }
     }
 
+    // A trader's TASKS tab (owner, 2026-10-25): the header's task as the app takes it (the location is matched to a map of
+    // the data in the app; "Any location" is every map) with its objectives and their counts, then each entry of the list
+    // with its countdown, the selected one its task's, the others refreshing a kept task of their name in the app.
+    private static void PrintTrader(TaskPage page, DateTime taken, IReadOnlyList<TimeSpan?> kept)
+    {
+        string Left(TaskRow row) => row.TimeLeft is { } t ? $"{row.TimeText} = {TaskTable.Hms(t)} ({row.TimeVotes} votes)" : "unread";
+        string Expiry(int index) => page.Rows[index].TimeLeft is null ? "?"
+            : kept[index] is { } l ? (taken + l).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
+            : "none (fails the checks)";
+        if (page.Selected is { } task)
+        {
+            var index = page.Rows.ToList().IndexOf(task);
+            Console.WriteLine($"   task  {task.Name,-20} | map {task.Location ?? "unread",-18} | {task.Status ?? "no status",-9} | left " +
+                              (index < 0 ? "none (two entries of its name)" : $"{Left(task)} | expires {Expiry(index)}"));
+            foreach (var o in task.Objectives)
+                Console.WriteLine($"      objective \"{o.Text}\"" + (o.Of is not null ? $" {o.Done}/{o.Of}" : ""));
+        }
+        for (var i = 0; i < page.Rows.Count; i++)
+        {
+            var entry = page.Rows[i];
+            if (ReferenceEquals(entry, page.Selected))
+                continue;
+            Console.WriteLine($"   entry {entry.Name,-20} | left {Left(entry)} | expires {Expiry(i)} (refreshes a kept task of this name)");
+        }
+    }
+
     private static void Score(TaskPage page, TaskTruth truth, Tally tally)
     {
         var screen = page.Screen switch
@@ -155,6 +199,11 @@ internal static class TasksSpike
             _ => "none",
         };
         tally.Screen.Score(screen, truth.Screen);
+        if (truth.Screen == "trader" && page.Screen == TaskScreen.TraderScreen)
+        {
+            ScoreTrader(page, truth, tally);
+            return;
+        }
         if (truth.Screen != "table")
         {
             // A screen not to read: any row read from it is wrong.
@@ -181,7 +230,7 @@ internal static class TasksSpike
             tally.Name.Score(row.Name, t.Name);
             tally.Location.Score(row.Location, t.Location);
             tally.Status.Score(row.Status, TaskTable.Status(t.Status));
-            tally.Time.Score(row.TimeLeft is { } left ? TaskTable.Hms(left) : null, t.Time);
+            tally.Time.Score(row.TimeLeft is { } left ? TaskTable.Hms(left) : null, Hms(t.Time));
             tally.Progress.Score(row.Progress?.ToString(CultureInfo.InvariantCulture), t.Progress.TrimEnd('%'));
             var wanted = truth.Objectives.Where(o => TaskTruth.Same(o.Row, t.Name)).ToList();
             for (var i = 0; i < wanted.Count; i++)
@@ -194,5 +243,41 @@ internal static class TasksSpike
             tally.Objective.Wrong += Math.Max(0, row.Objectives.Count - wanted.Count);
         }
         tally.Rows.Wrong += page.Rows.Count(r => !matched.Contains(r));
+    }
+
+    // A countdown as a truth writes it, as Hms writes it: "6 day(s) 23:07:57" is "167:07:57".
+    private static string Hms(string truth) => TaskTable.TimeLeft(truth) is { } t ? TaskTable.Hms(t) : truth;
+
+    // A trader's screen: the header's task (or none, for a story quest's), then the list's entries in order.
+    private static void ScoreTrader(TaskPage page, TaskTruth truth, Tally tally)
+    {
+        if (truth.Task is { } task)
+        {
+            tally.TraderTask.Score(page.Selected?.Name, task.Name);
+            tally.TraderLocation.Score(page.Selected?.Location, task.Location);
+            tally.TraderStatus.Score(page.Selected?.Status, TaskTable.Status(task.Status));
+            var entry = truth.Entries.FirstOrDefault(e => TaskTruth.Same(e.Name, task.Name));
+            if (entry.Name is not null)
+                tally.TraderTime.Score(page.Selected?.TimeLeft is { } left ? TaskTable.Hms(left) : null, Hms(entry.Time));
+            var wanted = truth.Objectives.Where(o => TaskTruth.Same(o.Row, task.Name)).ToList();
+            var said = page.Selected?.Objectives ?? [];
+            for (var i = 0; i < wanted.Count; i++)
+            {
+                tally.Objective.Score(said.ElementAtOrDefault(i)?.Text, wanted[i].Text);
+                tally.Count.Score(said.ElementAtOrDefault(i) is { } o ? TaskTruth.Count(o) : null, wanted[i].Count);
+            }
+            tally.Objective.Wrong += Math.Max(0, said.Count - wanted.Count);
+        }
+        else if (page.Selected is not null)
+        {
+            tally.TraderTask.Wrong++;
+        }
+        for (var i = 0; i < truth.Entries.Count; i++)
+        {
+            var row = page.Rows.ElementAtOrDefault(i);
+            tally.Entry.Score(row?.Name, truth.Entries[i].Name);
+            tally.EntryTime.Score(row?.TimeLeft is { } left ? TaskTable.Hms(left) : null, Hms(truth.Entries[i].Time));
+        }
+        tally.Entry.Wrong += Math.Max(0, page.Rows.Count - truth.Entries.Count);
     }
 }

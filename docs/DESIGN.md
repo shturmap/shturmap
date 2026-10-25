@@ -37,9 +37,10 @@ its roll call (owner, 2026-10-15: "When the extraction list is read, I want a ni
 others where a list of the extracts appears in the middle of the screen along with their icons. Then, the icons move
 where extracts are (also outside of the current view pane) so it contextualizes them and the player knows where they
 are"; from a panel of four, 2026-10-15: A; §4, principle 11, and "Map drawing", *The player's extracts this raid*).
-And one for the daily and weekly tasks a Tasks screenshot brought: their cue, one for all of them (owner, 2026-10-19,
-after trying the dev build: "they should get the same animation as the other quests. Be mindful of multiple missions
-started at the same time, we might want to have them in one animation included"; §4, principle 11).
+And one for the daily and weekly tasks a Tasks screenshot brought (or, since 2026-10-25, a trader's task view): their
+cue, one for all of them (owner, 2026-10-19, after trying the dev build: "they should get the same animation as the
+other quests. Be mindful of multiple missions started at the same time, we might want to have them in one animation
+included"; §4, principle 11).
 
 **Not goals** (declined on purpose; don't add them): hideout tracking, loot or container maps beyond what quests
 need, item scanning by hotkey, ammo charts, squad sharing, achievements, overlays on the game window, statistics
@@ -162,21 +163,51 @@ dailies and weeklies via screenshot"; from a panel of four, 2026-10-19: B, "Use 
 the same day, docs/NEXT.md). The game's operational tasks (dailies and weeklies) are in neither its logs nor
 tarkov.dev's data; the game lists them on Character › TASKS › OPERATIONAL. So a screenshot the player takes of that
 table is read as the stash's is, in the same path, and its tasks show where the map's work is (§4, "Screen anatomy",
-*Operational tasks*; `TasksReader`, `TaskTable`, `GameSession.Operational`):
+*Operational tasks*; `TasksReader`, `TaskTable`, `GameSession.Operational`). **A trader's task view is read too**
+(owner, 2026-10-25, after the test of 2026-10-19: "when a daily or weekly is screenshotted from the traders quest
+accept view, it is not added to shturmap"; on the session's decision page, docs/NEXT.md, "the layout round", decision
+2): a trader's TASKS tab whose header names a task that also stands in its list's OPERATIONAL TASKS is that one
+operational task, added to the set or updating it, and the list's countdowns refresh the tasks kept:
 
 - **Which pictures:** the stash's (above): a screenshot the watcher reported as new, named without a position, while
   the log shows the menus. Its picture is opened once for both readings (`MenuScreenshotReader`): the tasks reader
   looks first, and a picture with the table's header (Trader, Type, Class, Task, Location, Status, Progress) goes to
   it alone; the stash reader never sees it, and sees every other picture as before. A trader's TASKS tab (TRADING with
-  SERVICES, or REPLACE with TASKS) goes to neither: its grid is the task's rewards. A Tasks table without any countdown
-  (STORY or SIDE, presumably) is told and not read.
+  SERVICES, or REPLACE with TASKS) goes to the tasks reader alone too, never to the stash's: its grids are the task's
+  rewards. Its header's task is an operational one when the same name stands in the list's OPERATIONAL TASKS at the
+  lower left, a countdown beside it (owner, 2026-10-25; until then the tab was told and left); a tab with a story or
+  side quest selected gives no task, and its list's entries still refresh countdowns. A Tasks table without any
+  countdown (STORY or SIDE, presumably) is told and not read.
 - **How much of it:** the picture's left two thirds (0.665 of its width: the right third carries the player's name
   and money on a trader's tab and the game's toasts with the screenshot's path), read with Windows' text recognition
   in English (the table's words are the English game's; the German game's aren't known): per row the task's name,
   location, status and time left; an expanded row's objective lines with their counts n/m. **Rewards are never read
-  or kept**: the expanded row's rewards make no row. The digits (the countdown, the percentage) are what Windows'
+  or kept**: the expanded row's rewards make no row. **On a trader's tab** (owner, 2026-10-25), of the same words: the
+  header's task name (right of its glyph, on the line of COMPLETE | REPLACE) and the list's OPERATIONAL TASKS entries
+  (each a name, and its countdown from a band of its own at the list's right end); and **bands across the right third,
+  the only ones**, read only when the header names one of the list's tasks: **the header line's** (from the left part's
+  edge to the picture's right edge, the height of the task's name with half a unit above and below), for the task's
+  location and status word at the header's right end ("Shoreline", "active!"; "Any location" as on the table, seen on
+  a trader's tab); and **one per objective line** (owner, 2026-10-25, the decision's "its objectives with their
+  counts"; the coordinator's first "the header line's band alone" was its own limit, not the owner's): the objectives
+  stand centred across the screen in the bar under "Objective(s)" and above "Rewards" (or the game's menu bar at the
+  picture's foot where the task shows no rewards), each line's words cut at the left part's edge and its count at 0.76
+  of the width (measured on the owner's screenshots of 2026-10-19 at 1440p); each line the left part's words show is
+  one band from the "Objective(s)" label's left edge to the picture's right edge, the line's height with half a unit
+  above and below, never above the label nor into the rewards, read as the countdown bands are: the line's words as a
+  plain look at the band reads them, up to the progress bar's gap and without the line's icon or the TURN IN button,
+  and its count n/m at its end by the 14-way vote (the counts are the game's small digits). Nothing else of the right
+  third: not the traders' row with the player's name and money above the header's band, not the task's picture and
+  text between it and "Objective(s)", not the rewards below the objectives, not the game's toasts. **The task's text
+  is never kept** (§3): its words in the left part are recognised with the page's and nothing of them is kept, logged
+  or written. The digits (the countdown, the percentage) are what Windows'
   recognition drops, as the raid timer's (below): each row's own bands are read 14 ways and the value most of them
-  read is taken (the spike: the countdowns 12 of 12, the percentages 7 of 12, none wrong). The countdowns must then
+  read is taken (the spike: the countdowns 12 of 12, the percentages 7 of 12, none wrong); a list entry's countdown
+  the same way. A weekly's countdown reads "6 day(s) 23:07:57", in the table and the list alike (measured 2026-10-25;
+  "hours as written" was an assumption): days, then a time of day under 24 hours. Most ways read its days and drop
+  the time after them (on a trader's list 13 of 14), so when most ways read days and no value with those days won, the
+  time is voted on again in a band of its own right of "day(s)" (12 of 14) and the days go before it; a value whose
+  days most ways contradict (one read "S day(s)", five days) is not taken. The countdowns must then
   pass checks (`OperationalChecks`): within 0 and 7 days; rows that share a countdown (within a minute of each other)
   agree to 2 s, else the one more of the ways agreed on keeps its own and on a tie neither does; the same task's expiry
   from two screenshots agrees within 5 s, else it has none (which is wrong can't be told). A countdown that fails
@@ -190,17 +221,36 @@ table is read as the stash's is, in the same path, and its tasks show where the 
   data is left out), its objectives' words with their counts, its kind, its progress, its expiry or none, and when it
   and its objectives were read, in `operational.json` in the data folder (§8, "The operational tasks file"). A newer
   table screenshot replaces the mode's set (a task gone from it was handed in, replaced or ran out); a row expanded on
-  it brings that task's objectives, a folded row keeps the ones read before. A task goes at its expiry. No pixel, no
-  other word, nothing of the picture's right third; the study log counts rows, never names; the file never goes into a
+  it brings that task's objectives, a folded row keeps the ones read before. **A trader's tab's task** (owner,
+  2026-10-25; `OperationalLedger.ApplyTrader`) is added to the mode's set, or updates the kept task of its name and map
+  (one of that name on another map is another task; of two kept on one map, the one whose expiry agrees with its
+  countdown, else neither), the mode's other tasks staying: its countdown through the same checks (the list's entries
+  as one screenshot's rows, then against the kept task's expiry: a countdown that fails leaves the earlier expiry, one
+  more than 5 s off it leaves none), its objectives read on the tab replacing the kept ones as a table's expanded row's
+  do and its progress then from their counts (none read: the kept objectives and progress stay), its time the
+  screenshot's. A task whose
+  status isn't "active" counts all the same (owner, 2026-10-25: a task screenshotted before ACCEPT shows another word,
+  or none). A header that shows no location, or one naming no map of the data, leaves the task out, counted in the app
+  log as a table's unknown location is. **The list's other entries refresh the tasks kept** (owner, 2026-10-25): an
+  entry whose name is the list's only one of it gives the one task kept by that name, whatever its map (the list says
+  none), its countdown as an expiry, through the same checks; two kept by that name, or the name twice in the list,
+  neither; it never adds a task. **The set's time stays the last table's** (none while only trader's tabs brought
+  tasks: the rail's "As of" then says nothing and each row its own time left): a trader's tab never moves it, so it
+  never holds a later table back, which replaces the set, the tab's task with it, as ever; a trader's screenshot
+  older than the last table is left (the app log says so), and a kept task read later than the screenshot is left as
+  it is. A task goes at its expiry. No pixel, no other word, nothing of the picture's right third but the header's
+  location and status and the objectives' words and counts; the study log counts rows, entries and refreshes, never
+  names; the app log says how many
+  ("Operational task read from a trader's screen: 1 new, 2 countdowns refreshed, …"); the file never goes into a
   report.
 - **How:** as the stash's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
   screen captured; a screenshot the player took with their own key press, never one taken for them; deleted after
   reading when "Delete screenshots after reading" is ticked.
 - **The player's say:** the stash's one tick, its words widened to cover the Tasks screen (owner, 2026-10-19, B: one
   tick, no new setting): "Read your stash and tasks from menu screenshots" (widened again for the desk, below); its
-  note says the OPERATIONAL tab's daily and weekly tasks are read, never their rewards. Unticked, no menu screenshot is
-  opened; the tasks kept stay until they run out. Its note, help, the README, PRIVACY.md and the tour's first chapter
-  say it.
+  note says the OPERATIONAL tab's daily and weekly tasks are read, and since 2026-10-25 a trader's task view (owner),
+  never their text or rewards. Unticked, no menu screenshot is opened; the tasks kept stay until they run out. Its
+  note, help, the README, PRIVACY.md and the tour's first chapter say it.
 
 **For the stash desk, the item grids are read against the whole catalogue** (owner, 2026-10-19, keeping the price view
 in Shturmap as a view of its own, §1; designed the same day, §4, "Screen anatomy", *The stash desk*; its reading and
@@ -571,8 +621,11 @@ quoting it anywhere new.
   2026-10-09). The check over all quests reads the user's local tarkov.dev cache.
   `tests/fixtures/ocr` is ignored by git: it holds the owner's own screenshots (Tasks screens from the removed OCR
   feature, and since 2026-10-05 raid screenshots with and without the extract list, which `ExitListReaderTests` read
-  where a PC has them and skip elsewhere; the same reader is tested everywhere on a list the tests draw themselves).
-  Never commit or publish it; it was removed from the whole history on 2026-10-02, before going public.
+  where a PC has them and skip elsewhere; the same reader is tested everywhere on a list the tests draw themselves;
+  since 2026-10-19 the OPERATIONAL table's, in `operational`, and since 2026-10-25 a trader's task view's with the
+  tables taken beside them, in `operational\trader`, renamed without their time of play; their hand-written truths hold
+  the task names and never a task's text). Never commit or publish it; it was removed from the whole history on
+  2026-10-02, before going public.
 
 ## 4. UX principles
 
@@ -609,8 +662,8 @@ quoting it anywhere new.
 7. **Never ask.** No confirmations, no prompts. Quest states come from the game's logs alone (owner, 2026-10-01:
    players don't screenshot their Tasks screen, so Tasks-screen reading and the TarkovEyes import were removed).
    The daily and weekly operational tasks, which neither the logs nor the data carry, are read from a screenshot of
-   the Tasks screen's OPERATIONAL tab when the player takes one (owner, 2026-10-19; §2): never asked for, and every
-   quest's state still comes from the logs alone.
+   the Tasks screen's OPERATIONAL tab, or of a trader's task view (2026-10-25), when the player takes one (owner,
+   2026-10-19; §2): never asked for, and every quest's state still comes from the logs alone.
    The exceptions, each named where it is described (review of 2026-10-04: the principle didn't name them): the
    one question after a crash (send a report?), the question before an uninstall the player started, and the
    PMC ⇄ SCAV tag of a raid whose side the logs can't tell, which is a switch the player may use, never a prompt.
@@ -816,7 +869,8 @@ quoting it anywhere new.
     multiple missions started at the same time, we might want to have them in one animation included"; §1's fifth
     exception; until then, from the panel of four of the same morning, B, glow and notice and no cue: "a screenshot
     of the daily tasks is a routine, and a cue every day would be noise"): when a screenshot of the Tasks screen's
-    OPERATIONAL table brings a task the set before it didn't have (§2), the cue says "FROM YOUR SCREENSHOT" over the
+    OPERATIONAL table, or of a trader's task view (owner, 2026-10-25: "the same cue, glow and notice"), brings a task
+    the set before it didn't have (§2), the cue says "FROM YOUR SCREENSHOT" over the
     count and the kind, "3 DAILIES AND WEEKLIES" ("1 DAILY OR WEEKLY": the reading doesn't tell a daily from a weekly;
     German „3 DAILIES UND WEEKLIES“, „1 DAILY ODER WEEKLY“), decoding as every title does, under QUEST COMPLETE's stamp
     with the generic operational glyph (the stopwatch) in place of the check; and under the title **a row for every
@@ -840,8 +894,10 @@ quoting it anywhere new.
     first of them that brings a new task calls the cue, which lists every task the run read; a later one joins it while
     it is up (its tasks not yet listed come in as rows after the others, a listed one's words become what it last read,
     the title counts them all and decodes again, the stamp pops again) and calls none once it has gone: the table, then
-    a row expanded seconds later, is one cue, the objectives arriving without a second. **A reading that brings no new
-    task calls none**: the same set again, a row's objectives, a task handed in; only "As of" and the rows it changed
+    a row expanded seconds later, is one cue, the objectives arriving without a second; a trader's tab's task joins the
+    run as a table's rows do. **A reading that brings no new task calls none**: the same set again, a row's objectives,
+    a task handed in, a trader's tab that only updated a kept task or refreshed countdowns (owner, 2026-10-25); only "As
+    of" and the rows it changed
     say it. It stays 5 s after the last reading joined it, 12 s at most, as QUEST COMPLETE does, and moves no view.
     While a replay plays, QUEST COMPLETE or SEEN IN YOUR STASH is up or the tour shows its own cue, the one-line notice
     says it instead ("Operational tasks read: 3."): none of those is cut for it, and SEEN IN YOUR STASH, which steps
@@ -1549,8 +1605,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   - *Operational tasks* (owner, 2026-10-17: "Add dailies and weeklies via screenshot"; from a panel of four,
     2026-10-19: B, "OPERATIONAL rows where the map's work is", which settled three things as drawn: any-map tasks in
     every open card, the planner's order untouched, a reading's feedback by glow and notice, no cue). The daily and
-    weekly tasks read from the Tasks screen (§2) show where a map's work already is, never in a block or a card of their
-    own (`Rules.OperationalRail`, `MainWindow.Operational`). Of the panel's other ways, one line on the map's card (A),
+    weekly tasks read from the Tasks screen, or from a trader's task view (owner, 2026-10-25: the same rows, cue, glow
+    and notice; §2), show where a map's work already is, never in a block or a card of their own
+    (`Rules.OperationalRail`, `MainWindow.Operational`). Of the panel's other ways, one line on the map's card (A),
     a block of its own at the rail's top (C) and tasks counted as work and packed, with a cue (D) were not taken.
     **Changed the same day, after trying the dev build** (owner, 2026-10-19: "I think they should be sorted on top of
     the list always as they are time-sensitive. Also they should get the same animation as the other quests. Be
@@ -1571,7 +1628,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     - **The open card** gets OPERATIONAL under PICKED, above COMPLETE (owner, 2026-10-19: "Ordering - under picked.";
       that morning, after trying the dev build, first, above PICKED: "sorted on top of the list always as they are
       time-sensitive"; until then after PROGRESS, before BRING): the eyebrow, with "As of 14:02" at its right
-      in the eyebrow's style (the date too when read on an earlier day); one row per task: its glyph, its synopsis in
+      in the eyebrow's style (the date too when read on an earlier day; the last table screenshot's time, which a
+      trader's task view doesn't move, and nothing while only trader's views brought tasks: owner, 2026-10-25, §2);
+      one row per task: its glyph, its synopsis in
       ink, then in small muted capitals its progress and time left ("4 OF 7 · 8 H LEFT"; a weekly "2 D LEFT"; a
       hand-over on any map "ANY MAP · HAND OVER AFTER · 2 D LEFT"; a task whose countdown wasn't taken "READ 3 H AGO").
       **Every time left is rounded down**, in Plan and in a raid alike, and 1 in its last minute: a time never says
@@ -1614,7 +1673,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     - A reading that brings new tasks calls the cue DAILIES AND WEEKLIES, one for a run of screenshots taken within a
       minute of each other, a row for every task read; the rows it brought or changed glow in on the rail; the same set
       again calls none and changes only "As of" (principle 11; owner, 2026-10-19, after trying the dev build: "the same
-      animation as the other quests"; until then glow and notice, no cue).
+      animation as the other quests"; until then glow and notice, no cue). A trader's task view whose task the set
+      didn't have calls the same cue, its one row; one that only updated a kept task or refreshed countdowns calls none,
+      its changed rows glowing (owner, 2026-10-25).
   - *Desk* (owner, 2026-10-19, from a panel: A1; built, step B, 2026-10-19, part 2: the view): out of a raid, with the
     stash desk in the map's place, the rail is the desk's cards under the MAP list and the trader strip, the card of the
     cell pointed at, then the pinned ones newest on top, at the rail's foot while a cell is pointed at (step C,
@@ -4266,13 +4327,16 @@ is never in the shared cache, a report or the diagnostics. Deleted with the data
 
 **The operational tasks file** (`operational.json` in the data folder; owner, from a panel of four, 2026-10-19: B; §2,
 "Menu screenshots"; `OperationalLedger`): the daily and weekly tasks the last screenshot of the Tasks screen's
-OPERATIONAL table showed, one set per game mode (PvE and PvP apart). Its shape: `version` 1; `modes` by the mode's name
-(`pve`, `pvp`), each with `readAt` (the table screenshot's time), `tasks` in the table's order and `ended` (when tasks
-that ran out since did, for "1 ended at 22:35"; kept a day at most). A task: `name` and its objectives' words as the
-game writes them (`objectives`, each `text` with `done` and `of` where the game shows a count), `map` (tarkov.dev's map
-id; none for any location), `kind` (`kill`, `survive`, `handOver`, `unknown`), `progress` (0 to 100, when known),
-`expiresAt` (none when the countdown failed its checks), `readAt` and `objectivesAt` (a folded row keeps objectives
-read before). Dates to the second with the PC's offset. No reward, no pixel, no path, no other word. Written as a
+OPERATIONAL table showed, and those a trader's task view added or updated since (owner, 2026-10-25), one set per game
+mode (PvE and PvP apart). Its shape: `version` 1; `modes` by the mode's name (`pve`, `pvp`), each with `readAt` (the
+last table screenshot's time; none while only trader's task views brought tasks: a trader's screenshot never moves
+it), `tasks` in the table's order, then as trader's views added them, and `ended` (when tasks that ran out since did,
+for "1 ended at 22:35"; kept a day at most). A task: `name` and its objectives' words as the game writes them
+(`objectives`, each `text` with `done` and `of` where the game shows a count), `map` (tarkov.dev's map id; none for any
+location), `kind` (`kill`, `survive`, `handOver`, `unknown`), `progress` (0 to 100, when known), `expiresAt` (none
+when the countdown failed its checks; a trader's list refreshes it), `readAt` (the screenshot that last read the task,
+a table's or a trader's) and `objectivesAt` (a folded row and a trader's view keep objectives read before). Dates to
+the second with the PC's offset. No reward, no pixel, no path, no other word. Written as a
 temporary file and one move, after each change; a task past its expiry is dropped at load and as it runs out. One that
 can't be read is set aside as `operational.json.unreadable` and the tasks start over (the next screenshot brings them
 back). Never in a report or the diagnostics. A snapshot's made-up tasks (`--operational`) are never written. Deleted
@@ -4556,8 +4620,14 @@ reader reads the words of its left two thirds (`TasksReader`, about 110 ms) and 
 the OPERATIONAL table is read row by row, its bands' digits by vote (about 400 ms more), and goes to the operational
 ledger (`GameSession.Operational`: the location matched to a map of the data, `OperationalLedger.ApplyTable` with
 its checks, the file; `OperationalReadings`, which tells a run of screenshots and whether the reading brought a new
-task, and the cue `CueKind.TasksRead` with every task the run read); a trader's tasks or another Tasks table goes
-nowhere; any other picture goes to the stash reader (`StashReader`), as before, and on to the stash's ledger, the cue
+task, and the cue `CueKind.TasksRead` with every task the run read); a trader's TASKS tab (owner, 2026-10-25) has its
+list's OPERATIONAL TASKS entries' countdown bands voted on (`TasksReader.VoteCountdownAsync`, a weekly's days and time
+of day apart when need be) and, when its header names one of them, the header line's band read once for the location
+and status (`ReadBandWordsAsync`, `TaskTable.TakeHeader`) and each objective line's band for its words, its count by
+vote (`TaskTable.ObjectiveBands`, `ObjectiveOf`, `CountOf`; about 350 to 750 ms in all on the owner's four tabs), and goes to
+the same ledger (`GameSession.TakeTrader`: the location matched to a map as a table's, `OperationalLedger.ApplyTrader`
+with the same checks, the file, the same `OperationalReadings` and cue for a task the set didn't have); another Tasks
+table goes nowhere; any other picture goes to the stash reader (`StashReader`), as before, and on to the stash's ledger, the cue
 and the marks' glow; and, once the item file is in, to the stash desk's reader as well (`DeskReader`, step B part 1),
 on the same picture with a recognition of its own words: the whole picture's words once at its size (about 150 ms: the
 headings, a window's title, a toast), the screen and its regions from them and the compartments' frames (`DeskLayout`,
@@ -4921,7 +4991,8 @@ screenshots after reading", "Read the extract list from screenshots" and "Read y
 screenshots" are on (§2; the two readings with the recognition's language); the study log
 on or off (developer builds); and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is
 cut to `<id>`, and no quest names or lists go along (`Redact`), nor anything of the stash file, the operational tasks
-file or the notes file.
+file or the notes file (the app log's lines on the operational readings, a table's and since 2026-10-25 a trader's
+task view's, count rows, entries and refreshes and never name a task).
 Copying sends nothing; a report carries the same text when the player keeps "Include diagnostics", shown first.
 
 **Reports** (owner, 2026-10-03: "as easy as possible … one coherent easy to use thing, otherwise people won't
@@ -5049,6 +5120,8 @@ every issue goes through it, and the app's report is offered beside it.
   rows, an OPERATIONAL section in the open card and the raid card, a Scav's hand-over items under FIND IN RAID; the
   same day, after the owner tried the dev build, the section on top of the quest list (to move under the picks: owner,
   2026-10-19, "Ordering - under picked."), the task that ends soonest
-  first, and the cue DAILIES AND WEEKLIES for a reading that brings new tasks, one for a run of screenshots.
+  first, and the cue DAILIES AND WEEKLIES for a reading that brings new tasks, one for a run of screenshots. Since
+  2026-10-25 (owner, the layout round, decision 2; docs/NEXT.md) a trader's task view brings its one task too and its
+  list refreshes the kept tasks' countdowns; a weekly's "6 day(s) 23:07:57" is read in the table and the list.
 - Removed (owner, 2026-10-09, the pre-release review): popped-out quest cards (§4, "Quest cards"); the keyboard's
   steps through the rail (§4, "Keyboard"); the raid clock's decode at each minute ("Screen anatomy", *The readout*).

@@ -50,8 +50,8 @@ public static class MenuPicture
     }
 }
 
-/// <summary>What one menu screenshot showed: the operational tasks' table, or a trader's tasks (told, nothing read), or
-/// the item grids; Stash is null when the picture went to the tasks' reading or nothing needed looking for; Desk is the
+/// <summary>What one menu screenshot showed: the operational tasks' table, or a trader's TASKS tab (its operational task
+/// and its list's countdowns, owner, 2026-10-25), or the item grids; Stash is null when the picture went to the tasks' reading or nothing needed looking for; Desk is the
 /// stash desk's reading of the same picture (null when it wasn't asked for, or the picture went to the tasks).</summary>
 public sealed record MenuReading(TaskPage? Tasks, StashReading? Stash, DeskReading? Desk = null);
 
