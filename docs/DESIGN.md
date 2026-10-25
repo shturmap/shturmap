@@ -203,8 +203,17 @@ operational task, added to the set or updating it, and the list's countdowns ref
   or written. The digits (the countdown, the percentage) are what Windows'
   recognition drops, as the raid timer's (below): each row's own bands are read 14 ways and the value most of them
   read is taken (the spike: the countdowns 12 of 12, the percentages 7 of 12, none wrong); a list entry's countdown
-  the same way. A weekly's countdown reads "6 day(s) 23:07:57", in the table and the list alike (measured 2026-10-25;
-  "hours as written" was an assumption): days, then a time of day under 24 hours. Most ways read its days and drop
+  the same way. **An expanded row's objective counts are read by vote too** (2026-10-25), where the page's words drop
+  a count or misread it (the weekly's slashed "Ø/7" read as "øn", which stood in the objective as "0n"): each
+  objective line is a band from its first word (its icon left out) to the left part's edge, the line's height with
+  half a unit above and below, its count n/m at its end by the 14-way vote, as on a trader's tab; a misread count (a
+  short last word starting with the slashed zero, or with a digit after the progress bar's gap) is never a word of the
+  objective. The percent sign reads as "0/0", so a lone "0%" reads "00/0" (or "ØO/O") and counts as 0, the number
+  before the sign taking all its digits (a "500/0" is 50). Measured on the owner's 14 screenshots with truths: the
+  objectives' counts 15 → 17 of 17 (the "Ø/7" by 2 of the 14 ways, six reading "øn"; a dropped "Ø/3" by 8), their
+  words 16 → 17 of 17, the progresses 12 → 30 of 30 (a 0 % by 1 to 4 ways, a 57 % by 7 to 9), none wrong. A weekly's
+  countdown reads "6 day(s) 23:07:57", in the table and the list alike (measured 2026-10-25; "hours as written" was an
+  assumption): days, then a time of day under 24 hours. Most ways read its days and drop
   the time after them (on a trader's list 13 of 14), so when most ways read days and no value with those days won, the
   time is voted on again in a band of its own right of "day(s)" (12 of 14) and the days go before it; a value whose
   days most ways contradict (one read "S day(s)", five days) is not taken. The countdowns must then

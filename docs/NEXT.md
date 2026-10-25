@@ -201,12 +201,43 @@ diagnostics) and §9.
 - The weekly's count 0/7 on its trader's tab reads on one vote of 14 (seven ways read "øn"): right here, thin.
 - A list entry's orange countdown (not the selected one's) reads in no way: a refresh works where it reads (the
   selected entries' white ones did, 4 of 4).
-- The table's own faults these screenshots show: the weekly's "Ø/7" read as "øn" (an objective "Survive on the location
-  0n" without its count), a "0/3" unread, every lone "0%" unread.
 - Not seen: a task before ACCEPT on a trader's tab (UPDATES.md's ⚠ row), two entries of one name in a list, the German
   game, other resolutions.
 - The UI QA pass on the settings note and help's privacy text (a clause longer), and the senior translator's review.
 - CLAUDE.md's "five things" a picture is read for doesn't name this sixth reading yet.
+
+**Built (step 3, the table's two misreads, 2026-10-25).** Open in step 3: the table's own faults these screenshots
+showed, the weekly's "Ø/7" read as "øn" (an objective "Survive on the location 0n" without its count), a "0/3" unread,
+every lone "0%" unread. Binding: DESIGN.md §2, the OPERATIONAL paragraph's "How much of it".
+
+- The objective counts (`TaskTable.Read`, `TaskTable.Objective`, `TasksReader.VoteObjectiveCountsAsync`): a misread
+  count is no word of the objective (the line's last word, five characters at most, starting with the slashed zero or
+  a 0, or with another digit after the progress bar's gap of more than four units; a distance's "5øm" a word's gap
+  after "than" stays); each objective line of an expanded row has a band (`TaskRow.ObjectiveBands`) from its first
+  word, its icon left out, to the left part's edge, the line's height with half a unit above and below, and where the
+  page's words gave no count its count is voted on at the band's end in the 14 ways (`CountOf`, as on a trader's tab).
+  Measured (`shturmap-cli tasks --raw`): the "Ø/7" by binary at 1x and 2x (2 of 14; six ways read "øn", six nothing);
+  the dropped "Ø/3" by binary at 1x, 1.5x, 2x and 4x, inverted at 1x, 1.5x and 2x and stretched (8 of 14); the six
+  hand-over lines read no count in any way. The band from the "Objective(s)" label's left edge, as a trader's tab has
+  it, read the "Ø/7" in no way and the "Ø/3" in 6; with the line's icon in it, the "Ø/7" in at most one.
+- The progress (`TaskTable.Percent`): the percent sign reads as "0/0" (its rings and bar), so the game's "0%" reads
+  "00/0" or "ØO/O" and its "57%" "570/0"; the number takes all its digits before the sign ("500/0" is 50, never 0).
+  Of the 23 bands of a 0 %: "00/0" 40 times, "0%" 5, "ØO/O" 4, in binary and inverted at 0.75x, stretched and inverted
+  at 1x and inverted at 1.5x.
+- Measured over `tests\fixtures\ocr\operational` and its `trader` folder (14 truths), before → after: objectives' words
+  16 → 17 of 17 (the "0n" gone), counts 15 → 17 of 17 (the evening's weekly 0/7 and daily 0/3), progresses 12 → 30
+  of 30 (every 0 %: 1 to 4 votes each; the 57 % now by 7 to 9 instead of 1 or 2), none wrong; the rest unchanged
+  (countdowns 29 of 30 on the tables, the trader's tabs as before). A table whose expanded row shows two hand-overs
+  reads in 1.15 to 1.3 s (before 0.75 to 0.95 s): their lines' bands are read too, finding nothing; one with a count
+  the page dropped 0.95 to 1.05 s (before 0.9 to 1.0), the others as before (0.6 to 0.8 s).
+- Tests: `TaskTableTests` (a misread count no word of the objective and a band per line, the misread counts as the
+  recognition gives them, the progress through its sign's "0/0" and its digits kept; the real-picture tests hold the
+  progresses to nine in ten and the trader folder's tables to their objectives, counts and progresses).
+- Open: the table's "Ø/7" reads on 2 votes of 14, as thin as the trader's tab's (1 of 14; its band starts at the label's
+  left edge, where the table's read in none: a band from the line's first word there is untried); a single way's
+  misread now votes too ("30/0" as 3, "510/0" as 51, each outvoted by 57's 7 to 9 here; where the right value has one
+  vote, a tie goes to the earlier way). The rail now shows "0 %" for a task at 0 % where it showed nothing, and the
+  objective without "0n": the UI QA pass's to look at.
 
 **Built (step 2).** _pending_
 

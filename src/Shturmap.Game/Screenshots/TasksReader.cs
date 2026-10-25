@@ -10,7 +10,8 @@ namespace Shturmap.Game.Screenshots;
 /// <see cref="TaskTable"/> (owner, 2026-10-19: from a panel of four, B; docs/DESIGN.md §2, "Menu screenshots"): first
 /// the words of the picture's left part (<see cref="TaskTable.LeftPart"/>), where the table stands (the right part
 /// carries the task items' grids, the player's name and money on a trader's screen, and the game's toasts with the
-/// screenshot's path, none of which is ever read); then each row's countdown and progress from their own bands. The
+/// screenshot's path, none of which is ever read); then each row's countdown and progress from their own bands, and an
+/// expanded row's objective counts the page's words didn't give from their lines' bands (2026-10-25). The
 /// recognition reads the table's names and objectives at the picture's own size, but drops most of the game's small
 /// digits whatever is done to them (the spike of 2026-10-19: enlarged, stretched, cut to black and white, stacked with
 /// the page's other bands, a word set before them, the glyphs set apart), and drops each band in a different way; so
@@ -104,8 +105,24 @@ public sealed class TasksReader
                     TaskTable.TakeProgress(row, text);
                 row.ProgressVotes = votes;
             }
+            await VoteObjectiveCountsAsync(picture, row, note, ct);
         }
         return page with { Screen = TaskTable.Settle(page) };
+    }
+
+    // An expanded row's objectives whose count the page's words gave none of (dropped, or a lookalike such as the
+    // weekly's "Ø/7" read "øn"; 2026-10-25): the count at the end of the line's band, by vote, as on a trader's tab. A
+    // line without a count (a hand-over) reads none in any way and stays without.
+    private async Task VoteObjectiveCountsAsync(SKBitmap picture, TaskRow row, Action<string>? note, CancellationToken ct)
+    {
+        for (var i = 0; i < row.Objectives.Count && i < row.ObjectiveBands.Count; i++)
+        {
+            if (row.Objectives[i].Of is not null)
+                continue;
+            var (count, _, _) = await VoteAsync(picture, row.ObjectiveBands[i], TaskTable.CountOf, "objective count", note, ct);
+            if (count is not null && TaskTable.CountValue(TaskTable.CountOf(count)) is { } value)
+                row.Objectives[i] = row.Objectives[i] with { Done = value.Done, Of = value.Of };
+        }
     }
 
     // A trader's TASKS tab: the header's location and status from the header line's band and the objectives from theirs
