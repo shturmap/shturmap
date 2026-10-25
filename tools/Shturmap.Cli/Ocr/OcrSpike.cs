@@ -57,6 +57,12 @@ internal static class OcrSpike
     public static async Task RunAsync(IReadOnlyList<string> args)
     {
         Console.OutputEncoding = Encoding.UTF8;
+        // The spike of 2026-10-25: Windows first, Paddle only where the desk read nothing, on the desk's own geometry.
+        if (args.Contains("--fallback"))
+        {
+            await OcrFallback.RunAsync(args.Where(a => a != "--fallback").ToList());
+            return;
+        }
         string? truths = null, dump = null;
         var cellsOut = false;
         var gridsOut = false;
@@ -91,6 +97,8 @@ internal static class OcrSpike
             Console.WriteLine("  against the truth and the whole catalogue at the desk's fit, with times and the letters each engine confuses.");
             Console.WriteLine("  footprints-<picture>.txt beside a truth (\"A 0,7 2x1\") gives the items' footprints: they are read there, and --desk");
             Console.WriteLine("  tells the desk's \"?\" cells on that page apart: a piece of a larger item (the grid finder's split) or a whole item unread.");
+            Console.WriteLine("  --fallback (2026-10-25): the desk's truths read by the desk, by Paddle alone and by the desk then Paddle where it named");
+            Console.WriteLine("  nothing; with --tasks, the operational pictures' countdown and count bands so (one --paddle model).");
             return;
         }
         var files = inputs.SelectMany(p => Directory.Exists(p) ? Directory.GetFiles(p, "*.png").Order(StringComparer.Ordinal).ToArray() : [p]).ToList();
@@ -817,7 +825,7 @@ internal static class OcrSpike
     /// (PaddleOCR's resize_norm_img, the rest zero), in the model's BGR order normalised to −1..1; the output's best
     /// class per column, repeats and blanks dropped, is the text.
     /// </summary>
-    private sealed class PaddleRec : IDisposable
+    internal sealed class PaddleRec : IDisposable
     {
         private readonly InferenceSession _session;
         private readonly string _input;
