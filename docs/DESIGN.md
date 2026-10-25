@@ -331,7 +331,9 @@ day, for the in-raid glance: "Which pictures", below):
   (they carry the screenshot's path). A cell that fits more than one item is said honestly, never guessed: "one of N",
   with the group's price range and a "?", and its hover card lists the candidates for the player to pick with one click
   (of the 3,159 flea-priced items that aren't guns or presets, 672 share their short name and footprint with another; a
-  silent guess prices the wrong item). A name is never taken from the picture alone. The stash spike measured the false
+  silent guess prices the wrong item); since 2026-10-25 the cell's picture settles it where it is clearly one of its
+  candidates' grid images, never by a guess (*The layout round*, "A cell's picture against its candidates' icons",
+  below). A name is never taken from the picture alone. The stash spike measured the false
   names against the whole catalogue (2026-10-19, docs/NEXT.md): the label alone is safe at a fit of 0.9, not at the
   quest path's 0.8, so the desk names a cell at 0.9, the item file's footprint (either way round) the tie-break; a slot
   has no footprint. **Built** (step B part 1, 2026-10-19; `DeskReader`, `DeskLayout`, `DeskFrames`, `DeskMatch`): the
@@ -484,10 +486,37 @@ day, for the in-raid glance: "Which pictures", below):
   read the same regions but one more (a POCKETS the old window reckoning covered), more of their cells named on eight.
   About 8 % slower than before, measured back to back. Open: the PS and F-1 in the rig's pockets in picture 17, labels of two and three glyphs
   Windows' recognition reads in none of its nine ways; the CR MK2 (R) behind its window in 15.
+
+  **A cell's picture against its candidates' icons** (owner, 2026-10-25, "go ham", step 1c of the layout round;
+  docs/NEXT.md; `DeskIcons`): a cell whose label fits several items of its footprint (a slot's: several the slot takes;
+  93 of the 411 cells of the second test's four pictures) is compared with each candidate's grid image, tarkov.dev's art
+  the mirror draws its cells with (§3), from the download cache only. The label stays the first word: only the
+  candidates it left are compared. The likeness is the cosine of the luma less its mean (a hover's light changes
+  nothing) and the colour, weighted 1.5 (armbands, helmets and plate carriers of one model differ by colour alone), at
+  32 samples along a cell's side, the label's band, the count's, the found-in-raid mark's corner and a quick slot's plate
+  left out; the cell's part is tried at three sizes (the game draws the art somewhat larger than tarkov.dev's image) and
+  shifted a sample each way, one alignment for all its candidates; a slot's item is fitted into its box as the game
+  draws it, centred, and a grid item's image turned a quarter where the cell stands the other way. A cell is taken as
+  its likeliest candidate only when every candidate's image was at hand, the likeliest is like the cell's art at all
+  (0.5 over the whole cell: below it a tooltip lies over it, or tarkov.dev no longer draws it so), and where the
+  candidates' images differ (by 12 grey levels or more, in 24 samples or more) it is first and ahead of the next by
+  0.08; a larger footprint the reading also kept as a candidate must be 0.08 less like. Else the cell stays "one of N",
+  its candidates the likeliest first; items drawn with one art (two keys of one look, a magazine in two lengths of one
+  look) stay so. The thresholds were measured on the owner's screenshots (2026-10-25: 325 "one of N" cells of 29 kinds,
+  each item checked by eye, the cells also brightened by 24 levels and blurred): a wrong candidate first by 0.028 at
+  the most (two Big Stick magazines of one look), the right ones by 0.108 at the least (the BAC Bastion's colours,
+  blurred); 0.08 settles the same cells as anything from 0.03 to 0.10. An image not in the cache is asked for through
+  the art path the view uses, for the next reading; a reading never waits for it (the view fetches the grid image of
+  every cell it shows, a "?" cell's likeliest candidate's, so a stash read once has most of its art). A cell so settled
+  has one id and no pick (*The click*'s pick of an earlier reading doesn't carry over to it). Measured with
+  `shturmap-cli desk` (`--no-icons` as before; docs/NEXT.md, step 1c): the cells named / "one of N" of the four test
+  sets 2,910 / 747 → 3,486 / 171, the unread unchanged; their truths' 592 items 490 → 558 named right, "one of N" 85 →
+  17, 0 wrong; of the 329 "one of N" cells checked by eye, 248 settled, none wrongly; about 1 to 3 % slower a picture.
 - **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
   the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
   cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until
   a newer reading changes it (§4, "Screen anatomy", *The stash desk*); never a register of the stash over time (§1).
+  A cell compared with its candidates' icons is sampled small, compared and let go.
   Per game mode, in `desk.json` in the data folder (§8, "The desk file"). The readings log (above) has the layout in
   pixels and each cell's label as the recognition read it, its fit and what it matched, and what the page did.
 - **How:** as the stash's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
@@ -2352,7 +2381,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       ammo's "FMJ" on a cell one by one stays "one of 26" (owner's second test, 2026-10-25: 93 of the 411 cells of its
       four GEAR pictures are "one of N", 33 of them a Bandage of two, 18 a RIP of six, 6 an SP BT of two); a label cut at
       the cell's edge names the item it begins ("Marksma", the Marksman 3x30), and a cell whose only print is a
-      condition (an armour plate's "45/45") stays a "?" where nothing names it.
+      condition (an armour plate's "45/45") stays a "?" where nothing names it. Since step 1c (2026-10-25) such a cell's
+      picture settles it where it is clearly one of its candidates' grid images (§2, "For the stash desk", "A cell's
+      picture against its candidates' icons"): on the owner's screenshots the BAC Bastion, the Death Shadow, the
+      armband, the Trooper, the Zhuk, the Bandages, the RIP and the 5.45x39mm FMJ; the rest stay a "?", the reading
+      giving their candidates the likeliest first.
     - **Behind the art**, ink at 5, 10 or 16 % from 20k, 100k or 300k ₽ per slot, by what the better sale brings (the
       flea's net or the trader's), not the listing price.
     - **A count past what the item stacks to** (tarkov.dev's `stackMaxSize`) is a misread: one, at least (the owner's

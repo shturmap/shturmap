@@ -279,7 +279,8 @@ public sealed class DeskIcons
         canvas.Translate(turned.Width / 2f, turned.Height / 2f);
         canvas.RotateDegrees(degrees);
         canvas.Translate(-image.Width / 2f, -image.Height / 2f);
-        canvas.DrawBitmap(image, 0, 0);
+        using var art = SKImage.FromBitmap(image);
+        canvas.DrawImage(art, 0, 0, StashPicture.BlockySampling);
         return turned;
     }
 

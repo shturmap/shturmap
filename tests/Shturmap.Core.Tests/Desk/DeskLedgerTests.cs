@@ -200,6 +200,28 @@ public sealed class DeskLedgerTests : IDisposable
         Assert.Null(ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single().Pick);
     }
 
+    // Owner, 2026-10-25 (step 1c, DeskIcons): a cell its picture settled has one id and no pick; the picture's item stands,
+    // whatever was picked of the cell's candidates before.
+    [Fact]
+    public void A_cell_its_picture_settled_keeps_its_one_id_and_takes_no_earlier_pick()
+    {
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(0, 0, 1, 1, Zhuk, ZhukOther))));
+        Assert.True(ledger.Pick(GameMode.Pve, "stash", null, 0, 0, ZhukOther));
+        // Read again, the picture settling it as the item picked: one id, no pick.
+        ledger.Apply(GameMode.Pve, Page(1, Stash(Cell(0, 0, 1, 1, ZhukOther))));
+        var settled = ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single();
+        Assert.Equal([ZhukOther], settled.Ids);
+        Assert.Null(settled.Pick);
+        // Picked again as "one of N", then settled as the other: the picture's item stands.
+        ledger.Apply(GameMode.Pve, Page(2, Stash(Cell(0, 0, 1, 1, Zhuk, ZhukOther))));
+        Assert.True(ledger.Pick(GameMode.Pve, "stash", null, 0, 0, ZhukOther));
+        ledger.Apply(GameMode.Pve, Page(3, Stash(Cell(0, 0, 1, 1, Zhuk))));
+        settled = ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single();
+        Assert.Equal(Zhuk, settled.ItemId);
+        Assert.Null(settled.Pick);
+    }
+
     [Fact]
     public void A_slots_pick_stays_while_its_item_is_among_the_slots_candidates()
     {
