@@ -122,6 +122,25 @@ public class SafetyTests
         Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
     }
 
+    // The readings log (owner, 2026-10-25; docs/DESIGN.md §8, "Developer aids", *Readings log*) stays on the PC: what a
+    // report carries (the player's words, the diagnostics, a crash record's exception and log lines) is made by the reporting
+    // code and the diagnostics, and none of it names the log or its folder.
+    [Fact]
+    public void Nothing_that_makes_a_report_or_the_diagnostics_reads_the_readings_log()
+    {
+        var src = Path.Combine(RepositoryRoot(), "src");
+        var session = Path.Combine(src, "Shturmap.Session");
+        string[] reporting = [Path.Combine(session, "Reporting") + Path.DirectorySeparatorChar, Path.Combine(session, "Diagnostics.cs"), Path.Combine(session, "Redact.cs")];
+        var violations = Lines(src)
+            .Where(l => reporting.Any(r => l.File.StartsWith(r, StringComparison.OrdinalIgnoreCase)))
+            .Where(l => l.Text.Contains("ReadingLog", StringComparison.Ordinal) || l.Text.Contains("Readings", StringComparison.Ordinal) ||
+                        l.Text.Contains("\"readings\"", StringComparison.OrdinalIgnoreCase))
+            .Select(l => $"{Path.GetRelativePath(src, l.File)}:{l.Line} names the readings log, which never goes into a report")
+            .ToList();
+        Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
+        Assert.True(Directory.Exists(Path.Combine(session, "Reporting")), "the reporting code moved: point this test at it");
+    }
+
     // The shipped code's lines, comments left out.
     private static IEnumerable<(string File, int Line, string Text)> Lines(string src) =>
         Directory.EnumerateFiles(src, "*.cs", SearchOption.AllDirectories)

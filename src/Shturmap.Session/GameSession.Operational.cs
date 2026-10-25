@@ -62,44 +62,42 @@ public sealed partial class GameSession
     // Under the gate: what the Tasks screen showed. The other Tasks tables are told and left; the operational table's rows
     // replace the mode's set, each on the map its location names ("Any location": every map); a trader's tab brings its
     // one task and refreshes countdowns (TakeTrader). A location that names no map of the data is left out: shown on no
-    // map rather than on the wrong one.
-    private void TakeTasks(TaskPage page, DateTime at, double ms)
+    // map rather than on the wrong one. What the set did, for the readings log; null when the screen was only told.
+    private OperationalTaken? TakeTasks(TaskPage page, DateTime at, double ms)
     {
         if (page.Screen == TaskScreen.TraderScreen && (page.Selected is not null || page.Rows.Count > 0))
-        {
-            TakeTrader(page, new DateTimeOffset(at), ms);
-            return;
-        }
+            return TakeTrader(page, new DateTimeOffset(at), ms);
         if (page.Screen != TaskScreen.Table)
         {
             Study.Game("operational.screen", ("screen", page.Screen), ("ms", ms));
-            return;
+            return null;
         }
         var rows = new List<OperationalRead>(page.Rows.Count);
-        var unplaced = 0;
+        var unplaced = new List<string?>();
         foreach (var row in page.Rows)
         {
             if (OperationalMap(row.Location) is not { Known: true } place)
             {
-                unplaced++;
+                unplaced.Add(row.Location);
                 continue;
             }
             rows.Add(new OperationalRead(row.Name, place.MapId, row.TimeLeft, row.TimeVotes, row.Progress,
                 row.Objectives.Select(o => new OperationalObjective(o.Text, o.Done, o.Of)).ToList()));
         }
-        TakeOperational(rows, new DateTimeOffset(at), ms, unplaced);
+        return TakeOperational(rows, new DateTimeOffset(at), ms, unplaced);
     }
 
-    // Under the gate: a table's rows, from a screenshot taken at that moment (or a developer script's).
-    private void TakeOperational(IReadOnlyList<OperationalRead> rows, DateTimeOffset at, double ms, int unplaced = 0)
+    // Under the gate: a table's rows, from a screenshot taken at that moment (or a developer script's); what the set did.
+    private OperationalTaken TakeOperational(IReadOnlyList<OperationalRead> rows, DateTimeOffset at, double ms, IReadOnlyList<string?>? unplacedAt = null)
     {
+        var unplaced = unplacedAt?.Count ?? 0;
         // The set as it stood, less what ran out by now: what the reading's tasks are new against.
         var now = DateTimeOffset.Now;
         var before = _operational.Tasks(_mode).Where(t => t.ExpiresAt is not { } end || end > now).ToList();
         if (_operational.ApplyTable(_mode, at, rows) is not { } dropped)
         {
             AppLog.Info("Operational tasks: a screenshot older than the tasks kept, left");
-            return;
+            return new OperationalTaken { Older = true, Unplaced = unplacedAt ?? [], Set = before };
         }
         _operational.Expire(now);
         var tasks = _operational.Tasks(_mode);
@@ -116,6 +114,7 @@ public sealed partial class GameSession
         if (call is not null && _data is { } data)
             Announce(new ViewCue(CueKind.TasksRead, "", Tasks: call.Tasks.Select(t => ShownOf(data, t)).ToList(), Joins: call.Joins));
         Publish();
+        return new OperationalTaken { Rows = rows.Count, Unplaced = unplacedAt ?? [], Dropped = dropped, Set = tasks.ToList() };
     }
 
     // Under the gate: a trader's TASKS tab (owner, 2026-10-25: "when a daily or weekly is screenshotted from the traders
@@ -124,8 +123,8 @@ public sealed partial class GameSession
     // no known map: left out and counted), added to the mode's set or updating the kept task of its name and map; the
     // list's other entries refresh the countdowns of tasks kept by their names, and never add one. A task the set didn't
     // have calls the same cue as a table's, one for a run of screenshots; a reading that only refreshed countdowns, or
-    // updated a kept task, calls none. The study log counts, never names.
-    private void TakeTrader(TaskPage page, DateTimeOffset at, double ms)
+    // updated a kept task, calls none. The study log counts, never names. What the set did, for the readings log.
+    private OperationalTaken TakeTrader(TaskPage page, DateTimeOffset at, double ms)
     {
         OperationalRead? task = null;
         var unplaced = 0;
@@ -141,6 +140,7 @@ public sealed partial class GameSession
                 unplaced = 1;
             }
         }
+        IReadOnlyList<string?> unplacedAt = unplaced == 1 ? [page.Selected!.Location] : [];
         // The task's own entry carries its countdown; the others refresh.
         var others = page.Rows.Where(r => task is null || !ReferenceEquals(r, page.Selected))
             .Select(r => new OperationalEntry(r.Name, r.TimeLeft, r.TimeVotes)).ToList();
@@ -150,7 +150,7 @@ public sealed partial class GameSession
         {
             Study.Game("operational.trader", ("older", true), ("ms", ms));
             AppLog.Info("Operational tasks: a trader's screenshot older than the last Tasks table, left");
-            return;
+            return new OperationalTaken { Trader = true, Older = true, Unplaced = unplacedAt, Set = before };
         }
         _operational.Expire(now);
         var taken = task is null || !(applied.Added || applied.Updated) ? null
@@ -167,6 +167,16 @@ public sealed partial class GameSession
         if (call is not null && _data is { } data)
             Announce(new ViewCue(CueKind.TasksRead, "", Tasks: call.Tasks.Select(t => ShownOf(data, t)).ToList(), Joins: call.Joins));
         Publish();
+        return new OperationalTaken
+        {
+            Trader = true,
+            Added = applied.Added,
+            Updated = applied.Updated,
+            Refreshed = applied.Refreshed,
+            Dropped = applied.Dropped,
+            Unplaced = unplacedAt,
+            Set = _operational.Tasks(_mode).ToList(),
+        };
     }
 
     // "Any location" is every map; a map's name as the game's English screen writes it ("Streets of Tarkov", "The Lab")

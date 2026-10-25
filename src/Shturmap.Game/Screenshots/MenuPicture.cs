@@ -53,7 +53,31 @@ public static class MenuPicture
 /// <summary>What one menu screenshot showed: the operational tasks' table, or a trader's TASKS tab (its operational task
 /// and its list's countdowns, owner, 2026-10-25), or the item grids; Stash is null when the picture went to the tasks' reading or nothing needed looking for; Desk is the
 /// stash desk's reading of the same picture (null when it wasn't asked for, or the picture went to the tasks).</summary>
-public sealed record MenuReading(TaskPage? Tasks, StashReading? Stash, DeskReading? Desk = null);
+public sealed record MenuReading(TaskPage? Tasks, StashReading? Stash, DeskReading? Desk = null)
+{
+    /// <summary>What the readings saw on the way, for the readings log (<see cref="ReadingLog"/>); null from a reader that
+    /// doesn't say (a test's).</summary>
+    public MenuSeen? Seen { get; init; }
+}
+
+/// <summary>
+/// What the menus' readers saw of one picture beyond what they hand on, for the readings log (owner, 2026-10-25;
+/// <see cref="ReadingLog"/>): the picture's size, the Tasks screen the tasks' reading told and each of its bands' votes
+/// as the reading heard them, and the desk's look (the layout in pixels; per cell its place, the label as the recognition
+/// read it and its fit). Never a pixel of the picture.
+/// </summary>
+public sealed record MenuSeen(int Width, int Height)
+{
+    /// <summary>The Tasks screen the tasks' reading told (None for a picture of no Tasks screen), or null when there was no
+    /// tasks reader.</summary>
+    public TaskScreen? TasksScreen { get; init; }
+
+    /// <summary>Each band's votes in the order read, as <see cref="TasksReader.ReadPageAsync"/>'s note gives them.</summary>
+    public IReadOnlyList<string> Bands { get; init; } = [];
+
+    /// <summary>The desk's look at the picture, when it was read for the desk.</summary>
+    internal DeskLook? Desk { get; init; }
+}
 
 /// <summary>
 /// The menus' readings of one screenshot, its picture opened once (owner, 2026-10-19: from a panel of four, B): the
@@ -80,7 +104,8 @@ public sealed class MenuScreenshotReader(TasksReader? tasks, StashReader? stash,
     /// The same, and the stash desk's reading of the picture against <paramref name="catalogue"/> (owner, 2026-10-19;
     /// docs/DESIGN.md §2, "For the stash desk") when one is given: the picture opened once, the stash reader's look (the
     /// items the quests need, for What You Have) and the desk's (the whole catalogue) one after the other; each reads its
-    /// cells' labels itself, the desk at its own fit.
+    /// cells' labels itself, the desk at its own fit. What the readings saw on the way goes along for the readings log
+    /// (<see cref="MenuReading.Seen"/>): the bands' votes, the desk's look.
     /// </summary>
     /// <param name="at">The screenshot's time, the desk page's.</param>
     public async Task<MenuReading?> ReadAsync(string path, IReadOnlyList<StashCandidate> candidates, DeskCatalogue? catalogue, DateTimeOffset at,
@@ -89,12 +114,24 @@ public sealed class MenuScreenshotReader(TasksReader? tasks, StashReader? stash,
         using var picture = await MenuPicture.OpenAsync(path, ct: ct);
         if (picture is null)
             return null;
-        if (tasks is not null && await tasks.ReadPageAsync(picture, ct: ct) is { Screen: not TaskScreen.None } page)
-            return new MenuReading(page, null);
+        var bands = new List<string>();
+        var seen = new MenuSeen(picture.Width, picture.Height) { Bands = bands };
+        if (tasks is not null)
+        {
+            var page = await tasks.ReadPageAsync(picture, note: bands.Add, ct: ct);
+            seen = seen with { TasksScreen = page.Screen };
+            if (page.Screen != TaskScreen.None)
+                return new MenuReading(page, null) { Seen = seen };
+        }
         var stashReading = stash is not null && candidates.Count > 0 ? await stash.ReadAsync(picture, candidates, ct) : null;
-        var deskReading = desk is not null && catalogue is not null && stashReading?.IsTradingScreen != true
-            ? await desk.ReadAsync(picture, catalogue, at, ct)
-            : null;
-        return new MenuReading(null, stashReading, deskReading);
+        DeskReading? deskReading = null;
+        if (desk is not null && catalogue is not null && stashReading?.IsTradingScreen != true)
+        {
+            // The desk's reading as DeskReader.ReadAsync makes it, its look kept for the readings log.
+            var look = await desk.LookAsync(picture, catalogue, at, ct, raid: false);
+            deskReading = new DeskReading(look.Layout.Screen, look.Page, look.TotalMs);
+            seen = seen with { Desk = look };
+        }
+        return new MenuReading(null, stashReading, deskReading) { Seen = seen };
     }
 }

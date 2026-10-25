@@ -115,4 +115,8 @@ public sealed class AppPaths(string root, string? cacheRoot = null, DataFolderKi
 
     /// <summary>The study log: game events and what the player did in Shturmap, one JSON line each.</summary>
     public string Study => Path.Combine(Root, "study");
+
+    /// <summary>The readings log: what was read from each of the last menu screenshots, one text file each, named after the
+    /// screenshot (owner, 2026-10-25; <c>ReadingLog</c>). Never in a report.</summary>
+    public string Readings => Path.Combine(Root, Shturmap.Game.Screenshots.ReadingLog.FolderName);
 }
