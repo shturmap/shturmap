@@ -185,6 +185,55 @@ git-ignored test set (`14-gear-beta-window-tooltip.png`, `15-gear-beta-window.pn
   two by one, and can't be named (their labels under the pane's head); the "one of N" above, the coordinator's to
   propose; the reading's time.
 
+**Built (step 1c, 2026-10-25: a cell's picture against its candidates' icons).** (Binding: DESIGN.md §2, "For the
+stash desk", *The layout round*, its paragraph "A cell's picture against its candidates' icons" and "What is kept"; §4,
+*The cell* ("A cell that fits several items").) The owner's "go ham" on the coordinator's proposal: a "one of N" cell (a
+label several items of its footprint, or of its slot, share: "Bandage" two, "RIP" six, "Armband" eleven, "USEC" 27 dog
+tags) is settled by comparing its picture with each candidate's tarkov.dev grid image, from the download cache only.
+
+- The rules (`DeskIcons`, called by `DeskReader` for a slot's cell and a grid's): only the candidates the label left
+  are compared; the likeness is the cosine of luma less its mean and colour (weighted 1.5) at 32 samples a cell side,
+  the label's band, the count's, the mark's corner and a quick slot's plate left out, the cell tried at three sizes and
+  shifted a sample each way at one alignment for all; a slot's item fitted into its box, a grid item turned where the
+  cell stands the other way. Settled only when every candidate's image was at hand, the likeliest is like the cell at
+  all (`Least` 0.5), and where the images differ (12 grey levels, 24 samples) it is first and ahead of the next by
+  `Margin` 0.08 (a larger footprint kept as a candidate: 0.08 less like); else "one of N", the likeliest first. One art
+  for several items stays "one of N". A missing image is asked for through the art path (`GameSession.DeskIcons`: the
+  `GameArt` cache, its fetch never awaited); nothing of the screenshot is kept. The thresholds from the previous
+  session's measurement: 325 "one of N" cells of 29 kinds checked by eye, also brightened and blurred, a wrong
+  candidate first by 0.028 at the most (two Big Stick magazines of one look), the right ones by 0.108 at the least;
+  0.08 settles the same cells as anything from 0.03 to 0.10. The ledger: a settled cell has one id and takes no pick of
+  an earlier reading (`DeskLedger`). The CLI: `desk --no-icons` reads by the label alone, `--why` prints each
+  candidate's likeness and, after the slash, its likeness where the images differ; a truth may name an item by its full
+  name where items share the short name.
+- Measured (`shturmap-cli desk`, `--no-icons` → icons, back to back, cache only, after main's step 1b and step 2 were
+  merged in): named / one of N / unread per picture. The 2026-10-19 13-49 set: 42/11/4 → 48/5/4, 46/10/4 → 51/5/4,
+  45/10/4 → 50/5/4, 82/26/4 → 107/1/4, 75/26/1 → 98/3/1; its truth (34 items) 30 right, 2 one of N, 0 wrong, unchanged
+  (the two a Bandage and an armband half under a window); 2,178 → 2,205 ms a picture. The session set (18 pictures):
+  00 85/7/6 → 90/2/6, 01 45/9/7 → 51/3/7, 02 40/9/7 → 45/4/7, 03 16/6/3 → 21/1/3, 05 67/20/1 → 87/0/1, 06 20/4/5 →
+  23/1/5, 07 17/4/4 → 20/1/4, 09 23/5/3 → 26/2/3, 10 30/6/3 → 34/2/3, 11 23/10/2 → 30/3/2, 12 15/5/3 → 19/1/3, 13
+  93/8/3 → 97/4/3, 14 94/26/0 → 117/3/0, 15 100/28/0 → 125/3/0, 16 83/29/0 → 109/3/0, 17 39/10/2 → 47/2/2 (04 and 08
+  no desk); its five truths (338 items) 270 → 314 right, one of N 56 → 12, 0 wrong; 1,612 → 1,624 ms. The Keys set
+  (5): 63/8/10 → 70/1/10, 90/27/5 → 116/1/5, 80/10/5 → 87/3/5, 83/10/4 → 90/3/4, 68/18/1 → 83/3/1; its truth (72
+  items) 61 → 72 right, one of N 11 → 0, 0 wrong; 2,370 → 2,437 ms. The stash pages of 2026-10-11 (36 pictures):
+  1,446/405/188 → 1,745/106/188, their three truths (148 items) 129 → 142 right, one of N 16 → 3, 0 wrong (timed under
+  the test run's load, so not compared). Against the 329 "one of N" cells checked by eye on the first three sets: 248
+  settled, every one right, 65 left "one of N", 15 the tally didn't match to a cell (in windows, whose region names it
+  read otherwise).
+- Tests: `DeskIconsTests`, drawn (one model in two colourways on a 1440p cell): settled when one candidate is clearly
+  ahead; left "one of N" when the margin is short (a blend of both), while an image isn't at hand (the likeliest first,
+  the missing one last and asked for), when the art is like none of them (Least), and for items of one art; a cell of
+  one candidate or none, and `DeskIcons.None`, left as the label left it. `DeskLedgerTests`: a settled cell keeps its
+  one id and takes no earlier pick. `DeskRealPictureTests` read with the cache's grid images now, so a settled name
+  must be right on the real pictures too; their floors stay (25, 115, 260 named), as what settles depends on the art a
+  PC's cache holds.
+- Open: the "one of N" left are mostly no fault of the comparison: the USEC dog tags (27, several of one art, some
+  images not in the cache), the Gamma, the Weapon case and the Documents case (one candidate's image not in the cache:
+  the app asks for it at the next reading; the CLI runs cache-only), the Cabin keys and the Big Stick magazines (one
+  art), the STRIKE helmet's two colourways (0.97 against 0.96) and the CR MK2 (R). The desk's view is unchanged (a
+  settled cell is drawn as any named one), so no UI QA pass was due; the owner's eye on the dev build is the next
+  check.
+
 **Built (step 3, 2026-10-25: the trader's task view).** Binding: DESIGN.md §2 (the OPERATIONAL paragraph: which
 pictures, how much, what is kept, the player's say), §1, §3 (the fixtures), §4 (principle 7, principle 11's DAILIES AND
 WEEKLIES, *Operational tasks*: "As of" and the cue), §8 ("The operational tasks file", "Menu screenshots", the

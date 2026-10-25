@@ -1,6 +1,7 @@
 using Shturmap.Core.Desk;
 using Shturmap.Core.Logs;
 using Shturmap.Data.Http;
+using Shturmap.Data.Images;
 using Shturmap.Data.TarkovDev;
 using Shturmap.Game.Screenshots;
 using SkiaSharp;
@@ -33,7 +34,11 @@ public class DeskRealPictureTests
             var loader = new GameDataLoader(new CachedHttp(new HttpClient(new Offline()), cache));
             var data = await loader.LoadAsync(GameMode.Pve, "en", TestContext.Current.CancellationToken);
             var sources = await loader.LoadSourcesAsync(GameMode.Pve, "en", TestContext.Current.CancellationToken);
-            return (data, DeskData.Catalogue(data, sources));
+            // A "one of N" cell's picture against its candidates' grid images, those the download cache holds (step 1c,
+            // 2026-10-25): a name it settles must be as right as the label's.
+            var art = new GameArt(new HttpClient(new Offline()), Path.Combine(Path.GetDirectoryName(cache)!, "game-art"));
+            var icons = new DeskIcons(id => art.Cached(ArtKind.Grid, id) is { } png ? File.ReadAllBytes(png) : null);
+            return (data, new DeskCatalogue(DeskData.Candidates(data, sources), icons));
         }
         catch (Exception e) when (e is HttpRequestException or IOException or NotDataException or System.Text.Json.JsonException)
         {

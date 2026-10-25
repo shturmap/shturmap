@@ -4,10 +4,13 @@ using SkiaSharp;
 
 namespace Shturmap.Game.Screenshots;
 
-/// <summary>The catalogue the stash desk names cells from: every item with a short name, matched once per data load.</summary>
-public sealed class DeskCatalogue(IEnumerable<DeskCandidate> candidates)
+/// <summary>The catalogue the stash desk names cells from: every item with a short name, matched once per data load; and
+/// the candidates' grid images a "one of N" cell's picture is compared against (<see cref="DeskIcons"/>), when given.</summary>
+public sealed class DeskCatalogue(IEnumerable<DeskCandidate> candidates, DeskIcons? icons = null)
 {
     internal DeskMatch Match { get; } = new(candidates);
+
+    internal DeskIcons Icons { get; } = icons ?? DeskIcons.None;
 
     public int Count => Match.Count;
 }
@@ -18,7 +21,11 @@ public sealed record DeskReading(DeskScreen Screen, DeskPage? Page, long Ms);
 
 /// <summary>One cell as the reading saw it, for measuring (shturmap-cli desk): its region, where it stands in pixels, the
 /// cell made of it, the label read, how well it fit, and whether the footprint contradicted the label.</summary>
-internal sealed record DeskCellLook(string Region, SKRectI Pixels, DeskCell Cell, string? Label, double Fit, bool Contradicted, string? CountText);
+internal sealed record DeskCellLook(string Region, SKRectI Pixels, DeskCell Cell, string? Label, double Fit, bool Contradicted, string? CountText)
+{
+    /// <summary>For a cell whose label fit several items, each one's likeness to its picture (<see cref="DeskIcons"/>).</summary>
+    public IReadOnlyList<DeskIconScore> Icons { get; init; } = [];
+}
 
 /// <summary>Everything one look saw: the layout, the cells, the page, the odd shapes and the cells left covered.</summary>
 internal sealed record DeskLook(int Width, int Height, int Pitch, DeskLayoutFound Layout, IReadOnlyList<DeskCellLook> Cells, DeskPage? Page,
@@ -304,13 +311,15 @@ public sealed class DeskReader
         if (label is null || (fit < DeskMatch.Enough && label.Count(char.IsLetterOrDigit) < 3))
             return null;
         var ids = fit >= DeskMatch.Enough && best is not null ? best : [];
+        // A label several items of the slot share: the picture against their grid images (owner, 2026-10-25).
+        (ids, var icons) = catalogue.Icons.Settle(bitmap, box, pitch, ids, DeskIconPlace.Fitted);
         var (countText, print) = ids.Count > 0 ? await CountAsync(bitmap, box, pitch, ct) : (null, null);
         var cell = new DeskCell(0, 0, 1, 1, ids.Select(c => c.ItemId).Distinct(StringComparer.Ordinal).ToList())
         {
             Print = print,
             Holds = HoldsOf(ids),
         };
-        return new DeskCellLook("", box, cell, label, fit, false, countText);
+        return new DeskCellLook("", box, cell, label, fit, false, countText) { Icons = icons };
     }
 
     // A region's compartments: each a grid of its own, placed side by side in the region's units (gaps closed), its cells
@@ -616,6 +625,8 @@ public sealed class DeskReader
             }
             var pixels = Pixels(at.I, at.J, at.W, at.H);
             var contradicted = fitting.Count > 0 && sized.Count == 0;
+            // A label several items of the cell's footprint share: the picture against their grid images (owner, 2026-10-25).
+            (sized, var icons) = catalogue.Icons.Settle(bitmap, pixels, pitch, sized, footprints ? DeskIconPlace.Footprint : DeskIconPlace.Fitted, at.W, at.H);
             var ids = sized.Select(c => c.ItemId).Distinct(StringComparer.Ordinal).ToList();
             string? countText = null;
             DeskPrint? print = null;
@@ -634,7 +645,7 @@ public sealed class DeskReader
             if (ids.Count == 0)
                 unread += at.W * at.H;
             cells.Add(cell);
-            looks.Add(new DeskCellLook(region, pixels, cell, label, fit, contradicted, countText));
+            looks.Add(new DeskCellLook(region, pixels, cell, label, fit, contradicted, countText) { Icons = icons });
         }
         return (cells.OrderBy(c => c.J).ThenBy(c => c.I).ToList(), covered, odd, unread);
     }

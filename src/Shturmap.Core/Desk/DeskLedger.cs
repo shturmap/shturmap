@@ -206,7 +206,8 @@ public sealed class DeskLedger
             {
                 merged = merged with
                 {
-                    Cells = merged.Cells.Select(c => c.Pick is null && before.Cells.FirstOrDefault(o => o.Pick is { } pick && SamePlace(o, c) && c.Ids.Contains(pick)) is { } picked
+                    // A cell its picture settled has one id and no pick (owner, 2026-10-25: DeskIcons).
+                    Cells = merged.Cells.Select(c => c.Pick is null && c.Ids.Count > 1 && before.Cells.FirstOrDefault(o => o.Pick is { } pick && SamePlace(o, c) && c.Ids.Contains(pick)) is { } picked
                         ? c with { Pick = picked.Pick } : c).ToList(),
                 };
             }
