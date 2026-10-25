@@ -72,7 +72,84 @@ model); each merged into main and into the dev build before the next; the senior
 
 **Built (step 1).** _pending_
 
-**Built (step 3).** _pending_
+**Built (step 3, 2026-10-25: the trader's task view).** Binding: DESIGN.md §2 (the OPERATIONAL paragraph: which
+pictures, how much, what is kept, the player's say), §1, §3 (the fixtures), §4 (principle 7, principle 11's DAILIES AND
+WEEKLIES, *Operational tasks*: "As of" and the cue), §8 ("The operational tasks file", "Menu screenshots", the
+diagnostics) and §9.
+
+- The reading (`TaskTable.Trader`, `TaskTable.TakeHeader`, `TasksReader.ReadTraderAsync`): on a trader's tab, the
+  entries under the list's OPERATIONAL TASKS (a name at the list's left edge, its glyph aside, down to the next heading
+  in capitals), each with a countdown band at the list's right end (the edge from COMPLETE | REPLACE, 749 px at 1440p;
+  the band 14 units wide, so the game's version line under the list stays out of it); the header's task (right of its
+  glyph on REPLACE's line) when an entry has its name, else none (a story quest's tab); for that task alone the header
+  line's band from 0.665 of the width to the picture's edge, read once at its size: the location, then the status word
+  apart from it (a lone run is the location unless it reads "active"). Two entries of the header's name: the task
+  without a countdown. The objectives are not read (open, below).
+- A weekly's countdown is "6 day(s) 23:07:57" in the table too: the table's "hours as written" was an assumption
+  (UPDATES.md). `TaskTable.TimeLeft` reads days and a time of day under 24 h; and as the recognition read "6 day(s)" and
+  dropped the time after it in 13 of 14 ways on the selected list entry, `TasksReader.VoteCountdownAsync` votes on the
+  time again in a band of its own right of "day(s)" when most ways read only days (then 10 of 14), the days most ways
+  read in front; a value whose days they contradict (one way's "S day(s) 2307:57", five days) is not taken. The
+  table's bands go the same way.
+- The set (`OperationalLedger.ApplyTrader`, beside `ApplyTable`): the task added, or the kept one of its name and map
+  updated (another map: another task; two on one map: the one whose expiry agrees, else neither); its countdown checked
+  with the list's other entries as one screenshot's rows, then against the kept expiry as a table's row; the kept
+  objectives and progress stay (the tab reads none); its `readAt` the screenshot's. The list's other entries refresh
+  the one task kept by their name, whatever its map (two kept, or a name twice in the list: neither), through the same
+  checks, never adding one. **The set's `readAt` stays the last table's** (null while only trader's tabs brought
+  tasks; `operational.json` writes none then, and older files read as before): a trader's screenshot older than it is
+  left, a merge never holds a later table back (the table replaces the set, the merged task with it), and "As of" says
+  nothing until a table is read, each row its own time left.
+- The session (`GameSession.TakeTrader`): the location to a map as a table's row (none read, or no known map: left
+  out, counted); the same cue through `OperationalReadings` for a task the set didn't have, none for an update or a
+  refresh alone; the app log "Operational task read from a trader's screen: 1 new, 0 countdowns refreshed, 0 on no
+  known map, 0 countdowns not taken (… ms)", the study log `operational.trader` with counts, never names.
+- `shturmap-cli tasks` prints a trader's tab (the task, its map as read, status, its countdown with its votes and
+  expiry, each other entry with its countdown and expiry) and scores it against truths, whose format takes `task` and
+  `entry` lines; `--raw` prints every way's text beside the votes.
+- Texts (English and German, for the senior translator): the values of AppTexts `SettingsReadStashNote`, ViewTexts
+  `HelpPrivacy` and `OperationalGlyphTip` ("a trader's TASKS tab", „TASKS-Tab eines Traders“, never their text or
+  rewards); the English comments of ViewTexts `SettingsReadStash`, RuleTexts `OperationalAsOf`, `OperationalCueEyebrow`,
+  `OperationalCueTitle`, SessionTexts `OperationalRead`, AppTexts `ScavLootOperational`; the glossary's proposed term.
+  README, PRIVACY.md, UPDATES.md (the table's row, a row for a trader's tab, the location row, a ⚠ row for a task before
+  ACCEPT, the log). The tour's chapter 1 names no Tasks screen ("Your stash, gear and tasks in a menu screenshot"):
+  unchanged.
+- Measured (`shturmap-cli tasks`; the owner's five screenshots of that evening, renamed, in the ignored
+  `tests\fixtures\ocr\operational\trader` with hand-written truths, and the two trader's tabs of that morning in
+  `operational`, whose truths now name their task):
+  - Ragman's daily: "Exit the location", Shoreline, active, 23:54:15 from the page's words.
+  - Skier's weekly: Streets of Tarkov, active, "6 day(s) 23:07:57" by 10 of 14 ways with the days apart; its expiry
+    agrees with the three tables' within a second. The list's other daily, "Elimination" (orange "00:48:48"), read in
+    no way, nor in a band of the time alone.
+  - The other three of that minute aren't trader's tabs but the OPERATIONAL table, 18 to 24 s later, a row expanded in
+    each: names, locations and statuses 9 of 9, countdowns 8 of 9 (the weekly's days 3 of 3).
+  - The morning's: Therapist's "Exit the location", Shoreline, 08:33:03 by 4 votes; Peacekeeper's "Find and transfer",
+    Any location, 10:13:48 by 3 under the hand-over's icon. So "Any location" is seen in a trader's header.
+  - A trader's tab reads in 150 to 260 ms.
+- Tests: `TaskTableTests` (7 more: the header's task with its countdown, the entries' bands clear of the version line, a
+  story quest's tab, two entries of one name, the header band's words, the days' countdowns and the days alone, and the
+  real trader's screenshots; the real-picture test takes the trader's truths), `OperationalTasksTests` (8 more: added,
+  updated by name and map, objectives and progress, the checks, older than the table and a later table, a set a
+  trader's tab began and its file, the list's refreshes, a name kept twice or listed twice), `OperationalSessionTests`
+  (4 more: onto its map with the cue and the file, a refresh alone calls no cue and a story quest's tab adds nothing, no
+  known map, unticked).
+
+**Open (step 3).**
+
+- **For the owner: a trader's tab's objectives.** The decision reads its objectives with their counts, and of the right
+  third the header line's band alone; measured, both can't hold: the objectives stand centred in a bar across the
+  screen (776 to 2522 px at 1440p), a line runs over the left part's edge (the daily's "Survive on the location" from
+  1542 to 1820) and every count stands in the right third (1938 to 1980). So the tab reads no objectives, and the kept
+  ones stay (a table's expanded row brings them). Reading them takes one band per objective line through the right
+  third, between "Objective(s)" and "Rewards": the bar's words and count, no name, money, toast, text or reward.
+- A list entry's orange countdown (not the selected one's) reads in no way: a refresh works where it reads (the
+  selected entries' white ones did, 4 of 4).
+- The table's own faults these screenshots show: the weekly's "Ø/7" read as "øn" (an objective "Survive on the location
+  0n" without its count), a "0/3" unread, every lone "0%" unread.
+- Not seen: a task before ACCEPT on a trader's tab (UPDATES.md's ⚠ row), two entries of one name in a list, the German
+  game, other resolutions.
+- The UI QA pass on the settings note and help's privacy text (a clause longer), and the senior translator's review.
+- CLAUDE.md's "five things" a picture is read for doesn't name this sixth reading yet.
 
 **Built (step 2).** _pending_
 
