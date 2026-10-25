@@ -858,6 +858,6 @@
   </data>
   <data name="OperationalRead" xml:space="preserve">
     <value>{count, plural, one {Operational task read: #.} other {Operational tasks read: #.}}</value>
-    <comment>Notice in place of the cue for a menu screenshot of the game's Tasks screen (Character › TASKS › OPERATIONAL) that brought new daily or weekly tasks, while a replay plays or another cue of the player's screenshots or quests is up: the tasks now on the rail. {count}: how many tasks the cue would list. "Operational" is the game's name for the tab.</comment>
+    <comment>Notice in place of the cue for a menu screenshot of the game's Tasks screen (Character › TASKS › OPERATIONAL), or of a trader's TASKS tab (owner, 2026-10-25), that brought new daily or weekly tasks, while a replay plays or another cue of the player's screenshots or quests is up: the tasks now on the rail. {count}: how many tasks the cue would list. "Operational" is the game's name for the tab.</comment>
   </data>
 </root>

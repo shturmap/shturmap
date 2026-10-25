@@ -186,7 +186,7 @@
   </data>
   <data name="OperationalAsOf" xml:space="preserve">
     <value>As of {time}</value>
-    <comment>The right part of the OPERATIONAL eyebrow on a map's card in Plan: when the daily and weekly tasks were read from a screenshot of the game's Tasks screen. {time}: "14:02". Shown in capitals.</comment>
+    <comment>The right part of the OPERATIONAL eyebrow on a map's card in Plan: when the daily and weekly tasks were read from a screenshot of the game's Tasks screen (a trader's TASKS tab, which brings one task, doesn't move it; while only those brought tasks there is none; owner, 2026-10-25). {time}: "14:02". Shown in capitals.</comment>
   </data>
   <data name="OperationalAsOfDay" xml:space="preserve">
     <value>As of {date}, {time}</value>
@@ -250,7 +250,7 @@
   </data>
   <data name="OperationalCueEyebrow" xml:space="preserve">
     <value>FROM YOUR SCREENSHOT</value>
-    <comment>The eyebrow of the cue for a screenshot of the game's Tasks screen (its OPERATIONAL tab) that brought new daily or weekly tasks, over its title. Capitals.</comment>
+    <comment>The eyebrow of the cue for a screenshot of the game's Tasks screen (its OPERATIONAL tab), or of a trader's TASKS tab (owner, 2026-10-25), that brought new daily or weekly tasks, over its title. Capitals.</comment>
   </data>
   <data name="OperationalCueEnded" xml:space="preserve">
     <value>ended</value>
@@ -258,7 +258,7 @@
   </data>
   <data name="OperationalCueTitle" xml:space="preserve">
     <value>{count, plural, one {# DAILY OR WEEKLY} other {# DAILIES AND WEEKLIES}}</value>
-    <comment>The cue's title when a screenshot of the game's Tasks screen (its OPERATIONAL tab) brought new daily or weekly tasks; under it a row for each task read. {count}: how many tasks it lists, 1 to 5 as a rule. The reading doesn't tell a daily from a weekly, so the words never say which. In the 48 px title type: keep it short. Capitals.</comment>
+    <comment>The cue's title when a screenshot of the game's Tasks screen (its OPERATIONAL tab), or of a trader's TASKS tab (owner, 2026-10-25), brought new daily or weekly tasks; under it a row for each task read. {count}: how many tasks it lists, 1 to 5 as a rule. The reading doesn't tell a daily from a weekly, so the words never say which. In the 48 px title type: keep it short. Capitals.</comment>
   </data>
   <data name="DeskThousands" xml:space="preserve">
     <value>{amount}k</value>
