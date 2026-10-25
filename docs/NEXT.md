@@ -479,6 +479,39 @@ system" (*Motion*), §8 (`-Desk`: the layout check's screens); docs/QA.md; `tool
 - Open: F2 (the owner's eye on the entry); F4's other scrolling views; F5 at 150 %; the review of `DeskMoreBelow`; the
   owner's say on the scroll mark (the coordinator's rule).
 
+**Re-check of step 2's fixes (2026-10-25, on 2b375d9).** The UI QA re-check (its pictures outside the repository):
+F1, F3, F4 and F5 confirmed fixed (the desk's layout check in screens passed in en-US, de-DE and qps-ploc at 900×560
+and 1600×900); one nit, fixed; F2 unchanged, for the owner's eye on the dev build. With it the code review's 0×0
+region. Binding: DESIGN.md §4, *The stash desk* (*A region never read*, *A region not in the last screenshot*, *As
+built*, *The page*); `tools\qa\desk.md` (`first`, `kept`).
+
+- The nit: a head whose dated form takes two lines kept that room from the first reading with its name at the room's
+  top: on reading 1 at 1600×900 POCKETS and SPECIAL SLOTS (whose dated head wraps at 40 DIP; POCKETS levelled with it)
+  stood 23 px over their grids, where every other head stands 10 to 11 px over its own, and read as parted from them.
+  Fixed: the head as drawn stands at the foot of its room, right over its grid, the empty line above it
+  (`DeskBoard.HeadCell`); where the date wraps it, the name's line goes up into that line and the date's line stands
+  where the name stood, so the grid still never moves. Measured on the snapshots of readings 1 and 2 at 1600×900 in
+  English and German by the rows where the brightness steps: no row of a grid or a box moved between the readings, nor
+  from 2b375d9's reading 1 (the best shift 0, in the middle column and over the page); POCKETS' and SPECIAL SLOTS'
+  names 12 px lower than at 2b375d9, their ink ending 10 px over their grids; in German at 900×560 alike, by eye.
+  `DeskPageRulesTests`' room tests unchanged, passing.
+- The 0×0 region (the code review's): a POCKETS, SPECIAL SLOTS or STASH of no grid and no cell, as the layout gives one
+  on a first reading when the region's frames all lie under a window or under no heading, was drawn as a bare head over
+  nothing, POCKETS and SPECIAL SLOTS a DIP wide (by the code: their heads wrapping a letter a line; not pictured). Now
+  it stands, and is counted, as a region never read: the dashed frame, "NOT IN A SCREENSHOT YET"
+  (`DeskPageRules.HeadingAlone`, in `Blocks`); it counts nothing, having no cell. Not TACTICAL RIG, BACKPACK and
+  POUCH (the coordinator's call): one of no grid and no cell is also a slot seen empty, its grid gone with it
+  (DESIGN.md §4, *A region read in part keeps the page's rest*), which the game draws as the empty slot box and the
+  page as before, and the page can't tell the two apart. `DeskPageRulesTests`: one more (the two pages with those
+  three regions 0×0: their blocks, widths, shape and columns' heights those of the regions never read at the four
+  desks; a container's and LOADOUT's 0×0 read; the totals less theirs).
+- `docs/LANGUAGES.md`'s "Layout check" lists the `desk` view and its screens (`desk-2`, `desk-3` …), the step 2 pass's
+  note.
+- Open: a container's region made from its heading alone, no frame and no slot read, drawn on a first reading as its
+  empty slot box, so saying "empty" for "not read": the reading's to keep off the page (a region made from its heading
+  alone left off a page that has no version of it, the ledger's rule; DESIGN.md §4, *A region never read*); F2; the UI
+  QA pass of the two changes (the 0×0 placeholder has no picture: the made-up desk has no such region).
+
 **Code review of the day's merges (2026-10-25, 66fd15d..6f895a9, high).**
 
 - Fixed: a trader's list entry could take a kept task's expiry away. It refreshes the one task kept by its name whatever

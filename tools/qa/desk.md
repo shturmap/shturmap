@@ -104,13 +104,15 @@ $app.WaitForExit()
   and down the page's left margin past POUCH and STASH (`window` shows it). No grid under LOADOUT's boxes; at 1600×900
   LOADOUT and the middle column whole and the stash's ten columns whole beside them, the page scrolling for the windows
   under the stash; at 2560×1440 unscrolled. Keys and meds at a full print ("4/4", "100/100") without "~". No red or
-  green anywhere on the page. POCKETS' and SPECIAL SLOTS' heads over a line left empty for the date a later reading
-  gives them (UI QA pass of step 2, F1), their grids level. The names over LOADOUT's boxes of a row on one baseline;
-  in German "GESICHTSBEDECKUNG" at its row's size without the spacing, within its box (F5). At 900×560 and 1600×900
-  the scroll mark at the desk's foot, over the page: "MORE BELOW ▾" muted in the eyebrows' small spaced capitals at
-  the page's left margin (German „MEHR DARUNTER ▾“), on the desk's ground with a short fade of the page above it (at
-  900×560 over ON BACK's and SHEATH's boxes, at 1600×900 over the WZ window); none at 2560×1440, where the page fits
-  (F3; DESIGN.md §4, *Its place*).
+  green anywhere on the page. POCKETS' and SPECIAL SLOTS' heads right over their grids, as near as every other head
+  stands to its own, under a line left empty for the date a later reading gives them (UI QA pass of step 2, F1; the UI
+  QA re-check of 2026-10-25: until then the heads stood at the top of that room, 23 px over their grids), their grids
+  level. The names over LOADOUT's boxes of a row on one baseline; in German "GESICHTSBEDECKUNG" at its row's size
+  without the spacing, within its box (F5). At 900×560 and 1600×900 the scroll mark at the desk's foot, over the
+  page: "MORE BELOW ▾" muted in the eyebrows' small spaced capitals at the page's left margin (German
+  „MEHR DARUNTER ▾“), on the desk's ground with a short fade of the page above it (at 900×560 over ON BACK's and
+  SHEATH's boxes, at 1600×900 over the WZ window); none at 2560×1440, where the page fits (F3; DESIGN.md §4, *Its
+  place*).
 - **end** (the WZ window's cell, the page's last, pointed at): the page scrolled to its end, the WZ window's grid whole
   at the foot and the scroll mark gone; the rail shows the roubles' card ("NOT ON THE FLEA"). At 2560×1440 the page
   doesn't scroll and nothing moves.
@@ -162,10 +164,11 @@ $app.WaitForExit()
   `first`, nothing moved; the backpack has the LEDX at 3,4 with its notch, its head undated and at full strength; every
   other region read (LOADOUT, TACTICAL RIG, POCKETS, SPECIAL SLOTS, STASH, the ZHUK and WZ windows) whole but a step
   dimmer, its head ending in its date and time, "· 1 JAN 14:02" in UTC (in German "· 1. JAN., 14:02"); SPECIAL SLOTS' head
-  wrapped before its "·", the date whole on its second line, in the line left for it in `first`, POCKETS' grid level
-  with SPECIAL SLOTS'. Nothing under a head moved from `first`: every grid, box and head at the same y, scrolled alike
-  (UI QA pass of step 2, F1: at 121e0f2 everything under POCKETS and SPECIAL SLOTS stood 13 px lower than in `first`;
-  compare the rows where the brightness steps, which the dimming leaves in place, not the pixels). POUCH's frame as
+  wrapped before its "·", its name gone up into the line left empty in `first` and the date whole on the second line,
+  where the name stood; POCKETS' head on that line, its grid level with SPECIAL SLOTS'. Nothing under a head moved
+  from `first`: every grid, box and head at the same y but SPECIAL SLOTS' name, a line up, scrolled alike (UI QA pass
+  of step 2, F1: at 121e0f2 everything under POCKETS and SPECIAL SLOTS stood 13 px lower than in `first`; compare the
+  rows where the brightness steps, which the dimming leaves in place, not the pixels). POUCH's frame as
   in `first`, not dimmed. The head line's totals the new ones ("ON YOU 4.60 M+ ₽ · … · KEEP 3 · 6 · 3"). The selected
   violet keycard's pick kept.
 - **same**: as kept: a reading that changed nothing changed nothing, and dimmed nothing anew.

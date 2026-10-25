@@ -160,6 +160,57 @@ public class DeskPageRulesTests
         Assert.Empty(DeskExample.Page(1).Regions.Where(r => DeskPageRules.Kept(r, DeskExample.Page(1))));
     }
 
+    // A region a reading made from its heading alone, no grid and no cell (code review of 2026-10-25: a POCKETS, SPECIAL
+    // SLOTS or STASH of 0×0, as the layout gives one on a first reading when the region's frames are all under a window,
+    // was drawn as a bare head, POCKETS and SPECIAL SLOTS a DIP wide): it stands as a region never read, the placeholder,
+    // and the page takes the shape it takes with those regions never read; it counts nothing. A container's 0×0 region is
+    // its slot seen empty, its grid gone with it (docs/DESIGN.md §4): read, its empty slot box with no grid.
+    [Fact]
+    public void A_region_read_from_its_heading_alone_stands_as_never_read()
+    {
+        static bool Bare(DeskRegionKind kind) => kind is DeskRegionKind.Pockets or DeskRegionKind.SpecialSlots or DeskRegionKind.Stash;
+        foreach (var page in new[] { OwnersPage(), Made() })
+        {
+            var headed = page.Select(r => Bare(r.Kind) ? r with { Cols = 0, Rows = 0, Cells = [], Parts = [] } : r).ToList();
+            var never = page.Where(r => !Bare(r.Kind)).ToList();
+            var blocks = DeskPageRules.Blocks(headed);
+            Assert.Equal(DeskPageRules.Blocks(never).Select(b => (b.Key, b.Placeholder)), blocks.Select(b => (b.Key, b.Placeholder)));
+            Assert.All(blocks.Where(b => Bare(b.Kind)), b => Assert.True(b.Placeholder, b.Key));
+            // Counted as the placeholder: POCKETS four cells wide, SPECIAL SLOTS three, the stash ten; the page's shape and
+            // its columns' heights as with those regions never read, at every desk.
+            Assert.Equal((4 * 40 + 1, 3 * 40 + 1, 10 * 40 + 1),
+                (DeskPageRules.BlockWidth(blocks[2], 40), DeskPageRules.BlockWidth(blocks[3], 40), DeskPageRules.BlockWidth(blocks[6], 40)));
+            foreach (var (w, h) in Desks)
+            {
+                var drawn = DeskPageRules.Layout(headed, w, h);
+                var placeheld = DeskPageRules.Layout(never, w, h);
+                Assert.Equal(placeheld.Shape, drawn.Shape);
+                Assert.Equal(placeheld.ColumnHeights, drawn.ColumnHeights);
+            }
+        }
+        // Only where it has neither grid nor cell: a POCKETS read empty, or one with a cell and no grid, stays read.
+        Assert.False(DeskPageRules.HeadingAlone(new DeskRegion("pockets", DeskRegionKind.Pockets, 4, 2, [])));
+        Assert.False(DeskPageRules.HeadingAlone(new DeskRegion("pockets", DeskRegionKind.Pockets, 0, 0, [new DeskCell(0, 0, 1, 1, ["x"])])));
+        // A backpack whose slot was seen empty: read, its empty slot box beside no grid; LOADOUT, which has no grid, read too.
+        var emptied = OwnersPage().Select(r => r.Kind == DeskRegionKind.Backpack ? r with { Cols = 0, Rows = 0, Cells = [] } : r).ToList();
+        Assert.False(DeskPageRules.Blocks(emptied).Single(b => b.Kind == DeskRegionKind.Backpack).Placeholder);
+        Assert.False(DeskPageRules.Blocks([new DeskRegion("loadout", DeskRegionKind.Loadout, 0, 0, [])]).Single(b => b.Kind == DeskRegionKind.Loadout).Placeholder);
+
+        // It counts nothing: the made-up desk with its POCKETS and SPECIAL SLOTS made from their headings alone counts ON YOU
+        // what it counts with them read, less theirs, and the stash as before.
+        var facts = DeskExample.View(1, GameMode.Pve, 1, null, DateTimeOffset.UnixEpoch).FactsOf;
+        static bool Paired(DeskRegionKind kind) => kind is DeskRegionKind.Pockets or DeskRegionKind.SpecialSlots;
+        var made = DeskExample.Page(1);
+        var full = DeskSheet.Of(made, facts, DeskFleaRules.Default);
+        var bare = DeskSheet.Of(made with { Regions = made.Regions.Select(r => Paired(r.Kind) ? r with { Cols = 0, Rows = 0, Cells = [], Parts = [] } : r).ToList() },
+            facts, DeskFleaRules.Default);
+        var theirs = full.Regions.Where(r => Paired(r.Region.Kind)).Sum(r => r.Total);
+        Assert.True(theirs > 0);
+        Assert.All(bare.Regions.Where(r => Paired(r.Region.Kind)), r => Assert.Equal((0, 0.0), (r.Cells.Count, r.Total)));
+        Assert.Equal(full.Totals.OnYou - theirs, bare.Totals.OnYou, 3);
+        Assert.Equal(full.Totals.Stash, bare.Totals.Stash);
+    }
+
     // The windows stand in a fourth column right of the stash where the width allows, else under the stash; the three
     // fixed columns never move for a window.
     [Fact]
