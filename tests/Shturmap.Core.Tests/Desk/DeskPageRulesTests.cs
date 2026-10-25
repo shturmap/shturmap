@@ -209,19 +209,35 @@ public class DeskPageRulesTests
         Assert.True(DeskPageRules.LoadoutHeight(40, 1.5) > DeskPageRules.LoadoutHeight(40));
     }
 
-    // A slot's name over its box fits the box's width: letter-spaced where it fits, without the spacing, then smaller, never
-    // drawn under 8 px (the German FACE COVER over a box of 80 DIP).
+    // A slot's name over its box fits the box's width: letter-spaced where it fits, without the spacing, then as large as
+    // the box takes it, never drawn under 8 px (the German FACE COVER over a box of 80 DIP). The fit is made at the size the
+    // text is drawn, so a larger text size grows a long name as far as its box allows (UI QA pass of step 2, F5: in half
+    // pixels as written it stopped short of the box).
     [Fact]
     public void A_slots_name_fits_its_box()
     {
+        const string facecover = "GESICHTSBEDECKUNG";
+        static double Wide(double drawn) => facecover.Length * drawn * 0.53;
         Assert.Equal((9.0, 100), DeskPageRules.SlotHead("HEADWEAR", 80, 40));
         Assert.Equal((9.0, 100), DeskPageRules.SlotHead("KOPFBEDECKUNG", 80, 40));
-        Assert.Equal((8.5, 0), DeskPageRules.SlotHead("GESICHTSBEDECKUNG", 80, 40));
-        Assert.Equal((10.0, 100), DeskPageRules.SlotHead("GESICHTSBEDECKUNG", 112, 56));
-        // At 150 % text it is drawn larger and set smaller as written, never drawn under 8.
-        var (size, spacing) = DeskPageRules.SlotHead("GESICHTSBEDECKUNG", 80, 40, s => s * 1.5);
+        Assert.Equal((8.875, 0), DeskPageRules.SlotHead(facecover, 80, 40));
+        Assert.Equal((10.0, 100), DeskPageRules.SlotHead(facecover, 112, 56));
+        // Measured as drawn (Bahnschrift's capitals about 0.51 em), it takes its row's 9 px without the spacing.
+        Assert.Equal((9.0, 0), DeskPageRules.SlotHead(facecover, 80, 40, wide: (at, ems) => facecover.Length * at * (0.51 + ems)));
+        // At 125 % text it is set smaller as written and drawn as large as the box takes it, to a 64th of a pixel as written:
+        // larger than at 100 %, never under 8.
+        static double Drawn(double s) => TextSize.Scaled(s, 1.25);
+        var (size, spacing) = DeskPageRules.SlotHead(facecover, 80, 40, Drawn);
         Assert.Equal(0, spacing);
-        Assert.True(size * 1.5 >= DeskCells.LeastFigure);
+        Assert.True(Wide(Drawn(size)) <= 80, $"{size}");
+        Assert.True(Wide(Drawn(size + 1.0 / 64)) > 80, $"{size} stops short of the box");
+        Assert.True(Drawn(size) > 8.5, $"drawn {Drawn(size)}, under its size at 100 %");
+        // A name too long for its box even at 8 px stands at 8 px.
+        var (least, _) = DeskPageRules.SlotHead(facecover, 40, 40, Drawn);
+        Assert.InRange(Drawn(least), DeskCells.LeastFigure, DeskCells.LeastFigure + 0.05);
+        // At 150 % WinUI's curve draws no text of 4 px or more under 11 px: the name stands at the least it can, as written
+        // 4 px, drawn 11.1, wider than its box (the text grows, the box doesn't; DESIGN.md §4, *Text size*).
+        Assert.Equal((4.0, 0), DeskPageRules.SlotHead(facecover, 80, 40, s => TextSize.Scaled(s, 1.5)));
     }
 
     // A region the last screenshot didn't show (owner, 2026-10-25): older than the page in hand, its head says since when,
@@ -249,6 +265,103 @@ public class DeskPageRulesTests
         // A window's head with its date.
         var keys = new DeskRegion("window:keys", DeskRegionKind.ContainerWindow, 11, 7, []) { Title = "Keys", AttachedTo = new DeskAnchor("stash", 7, 9), ReadAt = backpack.ReadAt };
         Assert.Equal("KEYS · IN THE STASH · 23:08", DeskPageRules.HeadOf(keys, page with { Regions = [backpack, stash, keys] }, now));
+    }
+
+    // A head takes the room of its dated form from the first reading (UI QA pass of step 2, F1: after reading 2 at 40 DIP
+    // SPECIAL SLOTS' head, dated, wrapped to a second line and everything under POCKETS and SPECIAL SLOTS moved 13 px down):
+    // its lines are those of its name with the longest date the language writes, however it is dated, so a date comes into
+    // room kept for it and nothing under a head moves.
+    [Fact]
+    public void A_dated_head_wraps_into_room_kept_for_it()
+    {
+        // SPECIAL SLOTS, three cells wide at 40: its name on one line, its dated form on two, and its room two from the first
+        // reading on.
+        var special = DeskPageRules.BlockWidth(new DeskBlock("special", DeskRegionKind.SpecialSlots, null), 40);
+        Assert.Equal(1, DeskPageRules.HeadLines("SPECIAL SLOTS", 40, special));
+        Assert.Equal(2, DeskPageRules.HeadLines("SPECIAL SLOTS · 1 JAN 14:02", 40, special));
+        Assert.Equal(2, DeskPageRules.HeadRoomLines("SPECIAL SLOTS", 40, special));
+        var widest = DeskPageRules.WidestSince();
+        Assert.Equal("SPECIAL SLOTS · " + widest, DeskPageRules.Reserved("SPECIAL SLOTS"));
+        Assert.Matches("^28 [A-Z]{3,4}\\.? 23:58$", widest);
+        HeadsKeepTheirRoom();
+
+        // The page's columns as tall at reading 2 (every region but the backpack kept and dated) as at reading 1, at every
+        // desk and text size: no block moves when the dates come.
+        foreach (var scale in new[] { 1, 1.25, 1.5 })
+        {
+            foreach (var (w, h) in Desks)
+            {
+                var first = DeskExample.View(1, GameMode.Pve, 1, null, DateTimeOffset.UnixEpoch).Sheet.Page;
+                var second = DeskExample.View(2, GameMode.Pve, 2, null, DateTimeOffset.UnixEpoch).Sheet.Page;
+                var before = DeskPageRules.Layout(first.Regions, w, h, scale, r => DeskPageRules.Head(r, first));
+                var after = DeskPageRules.Layout(second.Regions, w, h, scale, r => DeskPageRules.Head(r, second));
+                Assert.Equal(before.Shape, after.Shape);
+                Assert.Equal(before.ColumnHeights, after.ColumnHeights);
+            }
+        }
+    }
+
+    // Every head of the page keeps the room of any date its language writes: each fixed region's at every cell size in its
+    // block's width and at the three text sizes, each month at a day of one and of two figures (the English here, the
+    // German below).
+    internal static void HeadsKeepTheirRoom()
+    {
+        var dates = Enumerable.Range(1, 12).SelectMany(m => new[] { 1, 9, 10, 28, 31 }.Where(d => d <= DateTime.DaysInMonth(2026, m))
+            .Select(d => new DateTime(2026, m, d, 23, 58, 0, DateTimeKind.Unspecified))).ToList();
+        foreach (var size in DeskPageRules.Sizes)
+        {
+            foreach (var kind in DeskPageRules.Fixed)
+            {
+                var width = DeskPageRules.BlockWidth(new DeskBlock(DeskRegion.KeyOf(kind), kind, null), size);
+                var name = DeskPageRules.Name(kind);
+                foreach (var scale in new[] { 1, 1.25, 1.5 })
+                {
+                    var room = DeskPageRules.HeadRoomLines(name, size, width, scale);
+                    Assert.All(dates, at =>
+                    {
+                        var since = new DateTimeOffset(at, TimeZoneInfo.Local.GetUtcOffset(at));
+                        var dated = RuleTexts.DeskHeadSince(head: name, time: DeskPageRules.Since(since, since.AddDays(3)));
+                        Assert.True(DeskPageRules.HeadLines(dated, size, width, scale) <= room, $"{dated} at {size}, ×{scale}");
+                    });
+                }
+            }
+        }
+    }
+
+    // The scroll mark (UI QA pass of step 2, F3; the coordinator's rule): "MORE BELOW ▾" at the desk's foot while the page
+    // runs on past it, the room under the page not counted; gone at its end and where the page fits.
+    [Fact]
+    public void The_scroll_mark_says_the_page_runs_on()
+    {
+        Assert.True(DeskPageRules.MoreBelow(2000, 440, 0));
+        Assert.True(DeskPageRules.MoreBelow(2000, 440, 1500));
+        Assert.False(DeskPageRules.MoreBelow(2000, 440, 1560), "scrolled to the end");
+        // The room under the page alone below the foot: nothing more to see.
+        Assert.False(DeskPageRules.MoreBelow(440 + DeskPageRules.PageBottom, 440, 0));
+        Assert.False(DeskPageRules.MoreBelow(300, 440, 0));
+
+        // The made-up desk at 900×560 (one column) and at 1600×900 (its windows under the stash) runs past the desk; at a
+        // 2560 monitor's desk it doesn't.
+        foreach (var (w, h, more) in new[] { (516.0, 440.0, true), (1216.0, 760.0, true), (2176.0, 1330.0, false) })
+        {
+            var page = DeskPageRules.Layout(Made(), w, h);
+            Assert.Equal(more, DeskPageRules.MoreBelow(page.Height, h, 0));
+        }
+    }
+
+    // The page in screens for the layout check (UI QA pass of step 2, F4): from its top, each the desk's room less the scroll
+    // mark's band further down, so what the mark covers at one screen's foot stands in the next, the last at the page's end.
+    [Fact]
+    public void The_page_is_checked_in_screens()
+    {
+        Assert.Equal([0, 404, 808, 1212, 1560], DeskPageRules.ScreenOffsets(2000, 440, 36));
+        Assert.Equal([0], DeskPageRules.ScreenOffsets(400, 440, 36));
+        Assert.Equal([0], DeskPageRules.ScreenOffsets(440 + DeskPageRules.PageBottom, 440, 36));
+        // Every DIP of the page under some screen's foot less the band, but for the last, which shows the page's end.
+        var offsets = DeskPageRules.ScreenOffsets(2000, 440, 36);
+        for (var k = 1; k < offsets.Count; k++)
+            Assert.True(offsets[k] <= offsets[k - 1] + 440 - 36);
+        Assert.False(DeskPageRules.MoreBelow(2000, 440, offsets[^1]));
     }
 
     // A reading's page comes in cell by cell (*Fun*): what it changed, every region on the mode's first; nothing for a
@@ -396,6 +509,10 @@ public class DeskPageRulesInGermanTests
             var readAt = new DateTimeOffset(at, TimeZoneInfo.Local.GetUtcOffset(at));
             Assert.Equal("31. DEZ., 23:08", DeskPageRules.Since(readAt, readAt.AddDays(2)));
             Assert.Equal("23:08", DeskPageRules.Since(readAt, readAt.AddMinutes(5)));
+            // Every German head keeps the room of its longest date, "28. SEPT., 23:58" (UI QA pass of step 2, F1: at 125 %
+            // TASCHEN's dated head wrapped and moved what was under it).
+            Assert.Equal("28. SEPT., 23:58", DeskPageRules.WidestSince());
+            DeskPageRulesTests.HeadsKeepTheirRoom();
         }
         finally
         {

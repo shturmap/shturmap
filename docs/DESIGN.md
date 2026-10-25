@@ -1084,7 +1084,11 @@ region the reading didn't show takes its dimming and date at once, without motio
 showing) over 0.9 s, eased out; and a `--snapshot` run stands the page at once, as the effects off do. The copy's flash
 is built too (step C, 2026-10-19; `DeskBoard.Flash`): the clicked cell's frame, a 2 DIP amber border, in over 0.08 s and
 out over 0.6 s, eased in; its figure decodes over 0.6 s as a cue's title does; with the effects off, and in a snapshot
-run, neither moves, and the notice says it all the same.
+run, neither moves, and the notice says it all the same. The scroll mark at the desk's foot ("MORE BELOW ▾", *Its
+place*; UI QA pass of step 2, F3) shows and goes at once, without motion. A still (`RenderTargetBitmap`: `--snapshot`, a
+developer script's `snapshot`) draws the entering cells whole: the storyboard's opacity runs on the compositor, which
+that render doesn't take, though the window's thread reads it as it goes (measured 2026-10-25, UI QA pass of step 2,
+F2), so the cells' entry is checked by eye on the dev build, not headless.
 **The linked set breathes** (owner, 2026-10-17: the linked highlight "really helps pre-attentively highlight elements …
 However, the pre-attentiveness goes away directly after the highlight was done … the highlights are a bit too faint").
 While the pointer lights a linked set (a trader's portrait, a boss's name or marker, an item; "Visual language", the
@@ -1418,7 +1422,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   four-figure price beside the notch of a 1×1 cell at 40 DIP (the keycard's "352k") and a five-digit count ("50000") move
   to the card too (open: the owner's call whether a cell's price may leave it at 150 %, or the cell grow); the desk's
   slot names over LOADOUT's boxes (2026-10-25) are fitted to their box at the size they are drawn, without their
-  spacing and then smaller, never drawn under 8 px, and the rows of boxes stand apart by the names' drawn height.
+  spacing and then as large as the box takes them, measured as drawn, never drawn under 8 px, each row's names on one
+  baseline (UI QA pass of step 2, F5: at 125 % the German FACE COVER 9.4 px, its row 12), and the rows of boxes stand
+  apart by the names' drawn height; at 150 % WinUI's curve draws no text written at 4 px or more under 11 px, so
+  "GESICHTSBEDECKUNG" stands at that, 11 px, on its row's baseline, about 14 DIP past its box's right edge into the
+  gap right of LOADOUT (at 1600×900, 11 DIP short of TACTICAL RIG's slot box; open: the owner's call whether that name
+  may stand so); the desk's heads keep their dated form's room at the size they are drawn (F1).
   200 % is accepted as degraded, not laid out for: Plan's rows squeeze the map's name, the clock's MIN LEFT trims, long German words break,
   the roll call's two-line names touch the next, a heading in help and LICENCES in settings run out of their panel;
   nothing crashes. In the raid card's quest lines long German words break at 150 % (open). Developer builds picture all of it without touching
@@ -2063,7 +2072,18 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     Where LOADOUT or the middle column is taller than the desk at that size, the page scrolls, as the game scrolls the
     middle column, rather than the cells shrinking below what the stash needs; where no size fits the stash's column,
     40, scrolling; where even 40 doesn't fit the three columns' width (900×560's desk, 516 DIP), the same blocks in one
-    column in the same order at 40, scrolling: one shape for that window size too. Measured on the layout rule
+    column in the same order at 40, scrolling: one shape for that window size too. **Where the page runs past the desk's
+    foot, a mark says so** (UI QA pass of step 2, F3, 2026-10-25: at 900×560 the first screen showed LOADOUT alone, its
+    last boxes flush with the window's foot, at 1600×900 the windows ran past it, and no bar or mark said the page
+    scrolls; the coordinator's rule, the owner's to overrule; `DeskPageRules.MoreBelow`, `DeskBoard`): at the desk's foot,
+    over the page, a muted line in the eyebrows' style, "MORE BELOW ▾" (the in-raid glance's words for the same thing,
+    its "MORE BELOW +", with an arrow down; a text, „MEHR DARUNTER ▾“), at the page's left margin, standing on the
+    desk's ground with a 16 DIP fade of the page under it, the scroll bar's lane at the right left free; shown while
+    more than a DIP of what the page holds lies under the desk's foot (the room under the page not counted), gone once
+    the page is scrolled to its end, and on a page that fits. It takes no pointer (the cells under the fade are pointed
+    at through it) and shows and goes at once, without motion ("Design system", *Motion*). The wheel and PgUp and PgDn
+    scroll the page, as before. Measured on the made-up desk: at 900×560 and 1600×900 it stands at the page's top, at
+    a 2560 monitor's desk the page fits and it doesn't. Measured on the layout rule
     (`DeskPageRulesTests`) and the snapshots of 2026-10-25: the owner's page of 2026-10-19 (the rig 5 × 4, the pockets
     4 × 2, the special slots 3 × 2, the backpack 5 × 6, the pouch 3 × 3, the stash 10 × 13, the Keys window 11 × 7) at
     56 on a 2560 monitor's desk (2176 × 1330 DIP), the Keys window in a fourth column (at 64 it would stand under the
@@ -2108,9 +2128,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       columns and the cell between, as the game's span them): eight cells wide, four rows of a name and a box high
       (404 DIP at 40). Each box under its slot's name, a small muted eyebrow as the game prints it over the box (the
       card's slot names; two pixels under the regions' heads, 9 px at 40, spaced 0.1 em; a name wider than its box is
-      set without the spacing, then smaller, never drawn under 8 px: the German FACE COVER, "GESICHTSBEDECKUNG", at
-      8.5 px over its 80 DIP). A box draws its item as a cell does (the art, the figure top right, the "?" plate, the
-      keep notch, the condition, the count; *The cell*) at the box's size and the page's type sizes, its art the item's
+      set without the spacing, then as large as the box takes it, never drawn under 8 px, measured as drawn: the German
+      FACE COVER, "GESICHTSBEDECKUNG", at its row's 9 px without the spacing over its 80 DIP, at 9.4 px where the
+      text size is 125 % (its row's 12); until the UI QA pass of step 2, F5, by an estimate of its width in half pixels,
+      8.5 px and 8.8). The names of a row stand on one baseline whatever their size (F5: the German FACE COVER stood a
+      pixel lower than its row at 100 % and two higher at 125 %; WinUI lays a text of no letter spacing out with its
+      baseline a pixel lower, so a name without its spacing keeps a thousandth of an em). A box draws its item as a cell
+      does (the art, the figure top right, the "?" plate, the keep notch, the condition, the count; *The cell*) at the
+      box's size and the page's type sizes, its art the item's
       grid image at the box's top, so the figure's band covers the short name it prints (a weapon's wide); an empty slot
       is an empty box, the cell's ground in its frame. No grid under the boxes. Until 2026-10-25 a strip of slot cells
       (80×40 DIP a slot, 164×40 a weapon) one per filled slot, without names (the card named the slot), the empty ones
@@ -2128,7 +2153,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       "BACKPACK · 23:08" for a screenshot of the day, "BACKPACK · 19 OCT 23:08" for another day (the language's day,
       month and time, as the operational rail's "As of" writes them), a window's "KEYS · IN THE STASH · 23:08". A no-break
       space after the "·" and within the date: where a head wraps (SPECIAL SLOTS, three cells wide) the "·" goes to the
-      next line with its date, and POCKETS' grid stands level with SPECIAL SLOTS' however their heads wrap. The dimming
+      next line with its date, and POCKETS' grid stands level with SPECIAL SLOTS' however their heads wrap. **Every head
+      keeps the room of its date from the first reading** (UI QA pass of step 2, F1, 2026-10-25: after reading 2 at 40 DIP
+      SPECIAL SLOTS' dated head wrapped to a second line and everything under the POCKETS and SPECIAL SLOTS row moved
+      13 px down, and at 125 % the German TASCHEN's too; the coordinator's rule; `DeskPageRules.HeadRoomLines`,
+      `Reserved`): a head takes the lines of its name with the longest date the language writes ("28 SEP 23:58", German
+      „28. SEPT., 23:58“) whether it is dated or not, the layout counting them and the page holding them with an unseen
+      copy of that dated head under it, so the date comes into room kept for it and nothing under a head moves; on the
+      first reading SPECIAL SLOTS and POCKETS stand over a line left empty for it. The dimming
       and the date are the only marks: its cells keep their look, their cards and clicks. A region of a file written
       before the reading's time was kept is the page's.
     - **A container in a grid** (a bag in a bag, a Zhuk rig in the backpack) is a cell with its own price, its figure
@@ -2381,7 +2413,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       56, each framed in `LineStrong`, a cell in one standing in by half the gap where it runs along its edge (F3: the
       Zhuk's ten pockets of one by two read as twenty equal cells). A block's height is laid out by an estimate of its
       heads' and lines' text at the size it is drawn (a line 1.4 of its size, a head's capitals 0.67 em a letter with
-      their spacing, a note's half an em), a little over, so a page said to fit doesn't scroll. Until 2026-10-25: one
+      their spacing, a note's half an em), a little over, so a page said to fit doesn't scroll; a head counts as its
+      dated form at its widest, as the page draws its room (*A region not in the last screenshot*, F1 of step 2's UI QA
+      pass). The scroll mark at the desk's foot (*Its place*; F3): a 16 DIP fade from the desk's ground at none to whole,
+      then on the ground the line, `EyebrowText` muted, 18 DIP in from the left as the page and 10 over the desk's foot,
+      16 DIP left free at the right for the scroll bar; it lies over the page and the layout check takes it as a layer
+      over what it covers (`DeskBoard.MoreBelowName`). Until 2026-10-25: one
       column, or columns flowed to fill the desk, fold lines where the folded regions stood ("UNCHANGED · POUCH ▸ · STASH
       ▸", amber links, each "·" with the name after it: F8), the slots of a region in a strip over its grid.
     - *The cell*: the art of a grid cell is its grid image (its footprint; turned a quarter where the cell stands the
@@ -4233,7 +4270,12 @@ Rules:
   quests and hideout stations for the keep lines, and a made-up price history for every item, so the card's band shows
   without a request, `DeskExample.History`), `-DeskReading 2` a reading seven minutes later that showed and changed the
   backpack alone, so the rest is kept, a step dimmer and dated (until 2026-10-25 folded), `3` the same screenshot again,
-  which changed nothing (step B, 2026-10-19); the layout check's `desk` view is reading 1; `-Glance <n>`
+  which changed nothing (step B, 2026-10-19); the layout check's `desk` view is reading 1, taken in screens where its
+  page runs past the desk (in a developer build's `--snapshot` with the desk up, the page scrolled down by the desk's
+  room less the scroll mark's band at a time, `DeskPageRules.ScreenOffsets`, and the window pictured and checked at
+  each, `screen-2\window.png` and on beside `window.png`, until the page's end shows, then back to its top; the layout
+  check's views `desk-2`, `desk-3` …; UI QA pass of step 2, F4: at 900×560 the desk's check had passed with 95 texts
+  below the first screen in no picture); `-Glance <n>`
   (the app's `--glance <n>`, with a fake game; not with `-PlanOnly`) puts up the made-up in-raid glance's reading n once
   the raid is on, as a raid screenshot of an inventory screen brings it (`Rules.GlanceExample`: 1, a drawer with three
   items; 2, a body with its slots, an UNSEARCHED rig, pockets being searched and a searched backpack), the snapshot
@@ -4242,7 +4284,8 @@ Rules:
   `-MoreArgs` passes more of the app's flags on. In developer builds every picture a snapshot saves of the window or a
   popup also gets its texts, its layout problems (a text missing that the picture always shows, one that overflows or
   is trimmed, text over text, and in the pseudo-language one untranslated; a layer that lies over the window on
-  purpose, a cue's halo or a glowing line's gold copy over its words, `Glow.CopyName`, isn't text over text) and a copy
+  purpose, a cue's halo or a glowing line's gold copy over its words, `Glow.CopyName`, or the desk's scroll mark over
+  its page, `DeskBoard.MoreBelowName`, isn't text over text) and a copy
   with them boxed beside it (`<picture>.texts.txt`, `.layout.json`, `.problems.png`: the layout check,
   `Dev/LayoutCheck.cs`), `--whats-new`
   shows the newest What's New card for one, and `--show-update` the update band, the next patch of the running version

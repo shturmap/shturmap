@@ -18,7 +18,9 @@ rail's foot, always in sight, three at most, and the pointed card scrolls in the
 cell size for the desk: LOADOUT as the game's slot grid, each box under its slot's name; TACTICAL RIG, POCKETS beside
 SPECIAL SLOTS, BACKPACK and POUCH, a container's slot box beside its grid; STASH; the windows right of the stash or under
 it; a region never read a dashed frame ("NOT IN A SCREENSHOT YET"), one the last screenshot didn't show a step dimmer
-with its head dated; the fold gone.
+with its head dated; the fold gone. Its UI QA pass (2026-10-25) added the scroll mark, "MORE BELOW ▾" at the desk's
+foot while the page runs past it, the heads' room for their dates from the first reading, and the slot names of a row
+on one baseline.
 
 `desk.devscript` replays it without a screenshot: its `desk <n>` hands the window the made-up desk's reading n
 (`Rules.DeskExample`, built through the model as a reading's page is: real items of the catalogue, so their art and
@@ -47,8 +49,8 @@ $app = Start-Process -FilePath $exe -PassThru -ArgumentList "--dev-view --verbos
 $app.WaitForExit()
 ```
 
-- The stills go to `%TEMP%\shturmap-qa\desk\entry`, `first`, `window`, `card`, `copy`, `rule`, `pinned`, `pinshown`,
-  `pinmore`, `trader`, `noflea`, `pick`, `picked`, `kept`, `same`, `plan`, `show`, `raid`, `after` and `back` (until
+- The stills go to `%TEMP%\shturmap-qa\desk\entry`, `first`, `end`, `window`, `card`, `copy`, `rule`, `pinned`,
+  `pinshown`, `pinmore`, `trader`, `noflea`, `pick`, `picked`, `kept`, `same`, `plan`, `show`, `raid`, `after` and `back` (until
   2026-10-25 `fold` and `unfold` stood where `kept` does, and `kept` was today's `back`); then `--culture de-DE`,
   `--window 900x560` (40 DIP cells, one column in the same order, LOADOUT first, scrolling) and `--window 1600x900` (40
   DIP, three columns: LOADOUT, the middle column and the stash with the two windows under it, whose column runs past
@@ -68,7 +70,9 @@ $app.WaitForExit()
   muted (owner, 2026-10-19: the switch a primary control); the rail under the MAP list and the trader strip
   says "Point at an item for its card." and nothing of Plan's (no NEXT RAID, no ANY MAP). The head line in muted
   capitals counting up ("ON YOU … ₽ · STASH … ₽ · KEEP n · n · n"); the first cells of LOADOUT in, the rest still
-  coming, 50 ms apart.
+  coming, 50 ms apart. The cells' coming in can't be seen in a still: a still draws a storyboard's opacity whole (the
+  compositor runs it, the still's render doesn't look there; measured 2026-10-25, UI QA pass of step 2, F2), so every
+  cell stands whole here while the totals count up; the owner's eye on the dev build checks the entry.
 - **first**: the game's GEAR tab's shape, every region under its own head, none dated or dimmed: left LOADOUT; in the
   middle TACTICAL RIG, POCKETS beside SPECIAL SLOTS (their grids level), BACKPACK, POUCH; right STASH, ten cells wide;
   the windows ZHUK · IN THE BACKPACK and WZ, with the muted "Not attached: WZ ×2 on the page, on you and in the stash;
@@ -100,7 +104,16 @@ $app.WaitForExit()
   and down the page's left margin past POUCH and STASH (`window` shows it). No grid under LOADOUT's boxes; at 1600×900
   LOADOUT and the middle column whole and the stash's ten columns whole beside them, the page scrolling for the windows
   under the stash; at 2560×1440 unscrolled. Keys and meds at a full print ("4/4", "100/100") without "~". No red or
-  green anywhere on the page.
+  green anywhere on the page. POCKETS' and SPECIAL SLOTS' heads over a line left empty for the date a later reading
+  gives them (UI QA pass of step 2, F1), their grids level. The names over LOADOUT's boxes of a row on one baseline;
+  in German "GESICHTSBEDECKUNG" at its row's size without the spacing, within its box (F5). At 900×560 and 1600×900
+  the scroll mark at the desk's foot, over the page: "MORE BELOW ▾" muted in the eyebrows' small spaced capitals at
+  the page's left margin (German „MEHR DARUNTER ▾“), on the desk's ground with a short fade of the page above it (at
+  900×560 over ON BACK's and SHEATH's boxes, at 1600×900 over the WZ window); none at 2560×1440, where the page fits
+  (F3; DESIGN.md §4, *Its place*).
+- **end** (the WZ window's cell, the page's last, pointed at): the page scrolled to its end, the WZ window's grid whole
+  at the foot and the scroll mark gone; the rail shows the roubles' card ("NOT ON THE FLEA"). At 2560×1440 the page
+  doesn't scroll and nothing moves.
 - **window**: the Zhuk's cell gold-tinted with an amber frame, its window's head on gold, the stem in amber; the rail
   says "One of 2 items".
 - **card**: the LEDX's desk card first in the rail, under the MAP list and the trader strip, 351 DIP: its icon, name,
@@ -149,7 +162,10 @@ $app.WaitForExit()
   `first`, nothing moved; the backpack has the LEDX at 3,4 with its notch, its head undated and at full strength; every
   other region read (LOADOUT, TACTICAL RIG, POCKETS, SPECIAL SLOTS, STASH, the ZHUK and WZ windows) whole but a step
   dimmer, its head ending in its date and time, "· 1 JAN 14:02" in UTC (in German "· 1. JAN., 14:02"); SPECIAL SLOTS' head
-  wrapped before its "·", the date whole on its second line, POCKETS' grid level with SPECIAL SLOTS'. POUCH's frame as
+  wrapped before its "·", the date whole on its second line, in the line left for it in `first`, POCKETS' grid level
+  with SPECIAL SLOTS'. Nothing under a head moved from `first`: every grid, box and head at the same y, scrolled alike
+  (UI QA pass of step 2, F1: at 121e0f2 everything under POCKETS and SPECIAL SLOTS stood 13 px lower than in `first`;
+  compare the rows where the brightness steps, which the dimming leaves in place, not the pixels). POUCH's frame as
   in `first`, not dimmed. The head line's totals the new ones ("ON YOU 4.60 M+ ₽ · … · KEEP 3 · 6 · 3"). The selected
   violet keycard's pick kept.
 - **same**: as kept: a reading that changed nothing changed nothing, and dimmed nothing anew.

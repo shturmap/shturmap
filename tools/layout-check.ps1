@@ -49,7 +49,9 @@ $views = [ordered]@{
   whatsnew = @{ PlanOnly = $true; AppArgs = @('--whats-new') }
   # A quest's card and its first need's item card (card.png, card-2.png).
   quest    = @{ PlanOnly = $true; ShowQuest = 'Dandies' }
-  # The stash desk in the map's place, the made-up page's first reading (toolsake-raid.ps1 -Desk).
+  # The stash desk in the map's place, the made-up page's first reading (tools\fake-raid.ps1 -Desk). Where its page runs
+  # past the desk's foot the app pictures it screen by screen (screen-2\window.png and on); each screen is a view of its
+  # own here, desk-2, desk-3 and on (UI QA pass of step 2, F4).
   desk     = @{ PlanOnly = $true; AppArgs = @('--desk', '1') }
   # The in-raid glance's plate over the map, the made-up body (tools\fake-raid.ps1 -Glance 2: a Scav raid, no roll call to
   # end the plate; UI QA pass of 2026-10-19, F6).
@@ -65,6 +67,21 @@ $chosen = @(if ($States) { $views.Keys | Where-Object { $States -contains $_ } }
 New-Item -ItemType Directory -Force $Out | Out-Null
 $Out = (Resolve-Path $Out).Path
 $switchTo = @(if ($SwitchCheck) { $Languages | Where-Object { $_ -notlike 'en*' } })
+
+# The screens of a view whose page scrolls (the desk's: desk-2, desk-3 ...), beside its folder, in their order.
+function Screens([string]$folder) {
+  $name = Split-Path $folder -Leaf
+  @(Get-ChildItem (Split-Path $folder -Parent) -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -match ('^' + [regex]::Escape($name) + '-(\d+)$') } |
+    Sort-Object { [int]($_.Name -replace '^.*-', '') })
+}
+# The views checked in a language and size: each chosen view, then its screens.
+function Views-In([string]$base) {
+  foreach ($view in $chosen) {
+    $view
+    foreach ($screen in Screens (Join-Path $base $view)) { $screen.Name }
+  }
+}
 
 if (-not $SummaryOnly) {
   # The developer build.
@@ -133,6 +150,7 @@ public static class LayoutCheckMonitors
   $fakeRaid = Join-Path $PSScriptRoot 'fake-raid.ps1'
   function Run-View([string]$culture, [string]$size, [string]$view, [string]$folder, [string[]]$more) {
     if (Test-Path $folder) { Remove-Item $folder -Recurse -Force }
+    Screens $folder | ForEach-Object { Remove-Item $_.FullName -Recurse -Force }
     New-Item -ItemType Directory -Force $folder | Out-Null
     $spec = $views[$view]
     $arguments = @{ Exe = $Exe; Out = $folder; Culture = $culture; Window = $pixelSizes[$size]; SnapshotAfter = $SnapshotAfter }
@@ -143,6 +161,10 @@ public static class LayoutCheckMonitors
     $appArgs = @($spec.AppArgs) + @($more) + @($MoreArgs) | Where-Object { $_ }
     if ($appArgs) { $arguments.MoreArgs = $appArgs }
     & $fakeRaid @arguments | Out-Null
+    # A page pictured in screens: screen n of the view is the view "<view>-<n>" beside it.
+    foreach ($screen in @(Get-ChildItem $folder -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^screen-(\d+)$' })) {
+      Move-Item $screen.FullName ('{0}-{1}' -f $folder, ($screen.Name -replace '^screen-', ''))
+    }
   }
 
   $total = $Languages.Count * $Sizes.Count * $chosen.Count + $switchTo.Count * $Sizes.Count * $chosen.Count
@@ -191,7 +213,12 @@ foreach ($culture in $Languages) {
     $groups = [ordered]@{}
     $sizeUntranslated = @{}
     $windowNote = $null
-    foreach ($view in $chosen) {
+    # A view whose page runs past the window is checked in screens (desk, desk-2 ...): how many, said in its section.
+    $screenNotes = @(foreach ($view in $chosen) {
+        $more = @(Screens (Join-Path $Out "$culture\$size\$view")).Count
+        if ($more -eq 1) { "$view in 2 screens ($view and $view-2)" } elseif ($more -gt 1) { "$view in $($more + 1) screens ($view, $view-2 to $view-$($more + 1))" }
+      })
+    foreach ($view in @(Views-In (Join-Path $Out "$culture\$size"))) {
       $folder = Join-Path $Out "$culture\$size\$view"
       $files = @(Get-ChildItem $folder -Filter '*.layout.json' -ErrorAction SilentlyContinue)
       if (-not $files -or -not (Test-Path (Join-Path $folder 'window.layout.json'))) {
@@ -240,6 +267,7 @@ foreach ($culture in $Languages) {
     $sections.Add("## $culture $dot $size$(if ($isPseudo) { ' (pseudo-language: warnings, but for a missing text)' })") | Out-Null
     $sections.Add('') | Out-Null
     if ($windowNote) { $sections.Add("Window: $windowNote.") | Out-Null; $sections.Add('') | Out-Null }
+    if ($screenNotes) { $sections.Add("Pages in screens: $($screenNotes -join '; ').") | Out-Null; $sections.Add('') | Out-Null }
     if ($groups.Count -eq 0) { $sections.Add("No missing, overflowing, trimmed or overlapping texts.") | Out-Null; $sections.Add('') | Out-Null }
     foreach ($kind in $kinds) {
       $ofKind = @($groups.Values | Where-Object { $_.Problem.kind -eq $kind })
@@ -263,7 +291,7 @@ foreach ($culture in $Languages) {
     $sections.Add('') | Out-Null
     foreach ($u in $untranslated.Values) {
       $p = $u.Problem
-      $views = if ($u.Views.Count -eq $chosen.Count) { 'every view' } elseif ($u.Views.Count -gt 4) { "$($u.Views.Count) views" } else { $u.Views -join ', ' }
+      $views = if (@($u.Views | ForEach-Object { $_ -replace '-\d+$', '' } | Select-Object -Unique).Count -eq $chosen.Count) { 'every view' } elseif ($u.Views.Count -gt 4) { "$($u.Views.Count) views" } else { $u.Views -join ', ' }
       $sections.Add(('- "{0}": {1}; {2}; {3}' -f (Short $p.text 120), (Cell $p.detail), ($u.Pictures -join ', '), $views)) | Out-Null
     }
   }
@@ -274,7 +302,7 @@ $switchRows = New-Object System.Collections.Generic.List[string]
 $switchChecked = 0
 foreach ($culture in $switchTo) {
   foreach ($size in $Sizes) {
-    foreach ($view in $chosen) {
+    foreach ($view in @(Views-In (Join-Path $Out "$culture\$size"))) {
       $switched = Join-Path $Out "switch\$culture\$size\$view"
       $fresh = Join-Path $Out "$culture\$size\$view"
       if (-not (Test-Path (Join-Path $switched 'window.layout.json')) -or -not (Test-Path (Join-Path $fresh 'window.layout.json'))) {

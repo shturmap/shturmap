@@ -368,6 +368,10 @@
     <value>{head} · {time}</value>
     <comment>The stash desk: the head of a part the last screenshot didn't show, drawn a step dimmer: its head and when the screenshot that last showed it was taken ("BACKPACK · 23:08", "KEYS · IN THE STASH · 19 OCT 23:08"). {head}: the part's head (DeskBackpack, DeskWindowInStash…); {time}: "23:08", or on an earlier day the date and time as the language writes them ("19 OCT 23:08"), its spaces no-break. A no-break space after the "·", so a head that wraps (SPECIAL SLOTS, three cells wide) takes the "·" with the time to its next line. Capitals.</comment>
   </data>
+  <data name="DeskMoreBelow" xml:space="preserve">
+    <value>MORE BELOW ▾</value>
+    <comment>The stash desk: a muted line in small spaced capitals at the foot of the desk, over the page, where the page runs on below the window's foot and scrolls (the mouse wheel, PgDn); gone once the page is scrolled to its end. The in-raid glance's words for the same thing (GlanceMoreBelow), with a small arrow pointing down. Capitals.</comment>
+  </data>
   <data name="DeskSlotEarpiece" xml:space="preserve">
     <value>EARPIECE</value>
     <comment>The stash desk: a loadout slot as the GEAR tab heads it, the small muted eyebrow over its box on the desk's LOADOUT (a box two cells wide: about 80 DIP at the smallest; a longer name is set smaller, never under 8 px), and on the card over the item's name ("HEADWEAR" over "BAC Bastion"). The game's own word where the game has one. Capitals.</comment>
