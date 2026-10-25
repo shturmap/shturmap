@@ -644,7 +644,11 @@ made from its heading alone and the rail's "0%" have no picture yet, and German 
   - Not done: `Filled` and the covered branch. One path isn't the same rule: their slots differ (`Filled` keeps the
     page's slot where none or an unread one was read, the covered branch only a covered one), and a `Filled` that adds
     nothing falls through to the covered branch; and it sits a few lines over step 1c's change in `DeskLedger.MergeAll`.
-    After step 1c's merge, with a test of each case first.
+    After step 1c's merge, with a test of each case first. Done after e3c685b: each case held by a drawn test
+    (`DeskLedgerTests`, five more), and the two left two, as one rule would change three: read whole, only what a window
+    covered stays and a slot read unread stands; read in part, the slot also where none was read, the cells outside the
+    compartments read and their size; a slot read as another container falls back to the first, keeping the page's
+    covered cells though its grid was the other one's (the owner's to judge, unchanged).
   - Not done: the count's vote replacing `MisreadCount`. Not a cleanup: the vote runs after the line's words are taken
     (`TasksReader.VoteObjectiveCountsAsync`), and on a line it reads no count for, the misread word would stand in the
     objective's text again; it wants the owner's tables measured.

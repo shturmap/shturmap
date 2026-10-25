@@ -423,6 +423,143 @@ public sealed class DeskLedgerTests : IDisposable
         Assert.Equal((5, 6), (backpack.Cols, backpack.Rows));
     }
 
+    // ---- the two ways a page's cells stay: a region read in part (Filled) and the cells a window covered ----
+    // (code review, 2026-10-25: each case held by a test before the two are made one, or left two.)
+
+    // A region read in part keeps the page's slot where the reading read none, under a window or not (its grid in view, its
+    // slot scrolled away); a region read whole keeps it only where a window covered it (the next test).
+    [Fact]
+    public void A_region_read_in_part_keeps_the_pages_slot_where_none_was_read_under_a_window_or_not()
+    {
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, FullBackpack()));
+        var grid = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 4, [Cell(0, 0, 1, 2, Water)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 4)],
+            Partial = true,
+        };
+        var change = ledger.Apply(GameMode.Pve, Page(1, grid));
+        Assert.Equal(["backpack"], change.Kept);
+        var backpack = change.Page.Region("backpack")!;
+        Assert.Equal(Zhuk, backpack.Cells.Single(c => c.IsSlot).ItemId);
+        Assert.Equal([Water, Salewa], backpack.Cells.Where(c => !c.IsSlot).Select(c => c.ItemId));
+    }
+
+    // A region read whole (its frames and slot in view): the page's slot stays where a window covered it, and a slot read
+    // with its label unread stands as read, the page's named one gone (read in part, the page's named one stays:
+    // A_containers_slot_read_alone_keeps_the_pages_grid). The page's cells nothing covered go.
+    [Fact]
+    public void A_region_read_whole_keeps_the_pages_slot_only_under_a_window()
+    {
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, FullBackpack()));
+        var covered = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 6, [Cell(0, 0, 1, 2, Water)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 6)],
+            CoveredSlots = ["backpack"],
+        };
+        var change = ledger.Apply(GameMode.Pve, Page(1, covered));
+        Assert.Empty(change.Kept);
+        var backpack = change.Page.Region("backpack")!;
+        Assert.Equal(Zhuk, backpack.Cells.Single(c => c.IsSlot).ItemId);
+        Assert.Equal([Water], backpack.Cells.Where(c => !c.IsSlot).Select(c => c.ItemId));
+
+        var unread = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 6, [Slot("backpack"), Cell(0, 0, 1, 2, Water)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 6)],
+        };
+        backpack = ledger.Apply(GameMode.Pve, Page(2, unread)).Page.Region("backpack")!;
+        Assert.Empty(backpack.Cells.Single(c => c.IsSlot).Ids);
+    }
+
+    // A region read in part whose slot reads another container: the page's grid isn't that one's, so nothing of it is kept
+    // as the region's rest (none kept, the size as read); the page's cells a window covered stay all the same, as in a
+    // region read whole.
+    [Fact]
+    public void A_slot_read_as_another_container_still_keeps_the_pages_cells_a_window_covered()
+    {
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, FullBackpack()));
+        var other = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 4, [Slot("backpack", Wallet)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 4)],
+            Covered = [new DeskRect(0, 0, 1, 1)],
+            Partial = true,
+        };
+        var change = ledger.Apply(GameMode.Pve, Page(1, other));
+        Assert.Empty(change.Kept);
+        var backpack = change.Page.Region("backpack")!;
+        Assert.Equal([Wallet, Water], backpack.Cells.Select(c => c.ItemId));
+        Assert.Equal((5, 4), (backpack.Cols, backpack.Rows));
+        Assert.Equal([new DeskRect(0, 0, 5, 4)], backpack.Parts);
+    }
+
+    // Step 1c (DeskIcons) on both paths: a "?" cell read again settled by its picture takes no earlier pick, and that pick
+    // is gone for good (read as "one of N" once more, it has none); a page's "?" cell kept, below the column's foot or
+    // under a window, keeps its own pick.
+    [Fact]
+    public void A_kept_cell_keeps_its_pick_and_a_settled_one_takes_none()
+    {
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 6,
+            [Slot("backpack", Zhuk), Cell(0, 0, 1, 1, Water, Salewa), Cell(2, 5, 1, 1, Water, Salewa)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 6)],
+        }));
+        Assert.True(ledger.Pick(GameMode.Pve, "backpack", null, 0, 0, Salewa));
+        Assert.True(ledger.Pick(GameMode.Pve, "backpack", null, 2, 5, Water));
+        // Cut at the column's foot, the cell in view settled as the other item.
+        var cut = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 4, [Slot("backpack", Zhuk), Cell(0, 0, 1, 1, Water)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 4)],
+            Partial = true,
+        };
+        var cells = ledger.Apply(GameMode.Pve, Page(1, cut)).Page.Region("backpack")!.Cells;
+        var settled = cells.Single(c => !c.IsSlot && c.J == 0);
+        Assert.Equal([Water], settled.Ids);
+        Assert.Null(settled.Pick);
+        Assert.Equal(Water, cells.Single(c => !c.IsSlot && c.J == 5).Pick);
+        // Read whole, the cell below under a window and the one above "one of N" again.
+        var whole = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 6, [Slot("backpack", Zhuk), Cell(0, 0, 1, 1, Water, Salewa)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 6)],
+            Covered = [new DeskRect(2, 5, 1, 1)],
+        };
+        cells = ledger.Apply(GameMode.Pve, Page(2, whole)).Page.Region("backpack")!.Cells;
+        Assert.Null(cells.Single(c => !c.IsSlot && c.J == 0).Pick);
+        Assert.Equal(Water, cells.Single(c => !c.IsSlot && c.J == 5).Pick);
+    }
+
+    // A page's cell the compartments read overlap, under a window there: read in part, it stays (beside
+    // A_pages_cell_the_rows_read_overlap_gives_way_to_them); a cell read over it takes its place, read in part or whole.
+    [Fact]
+    public void A_pages_cell_the_rows_read_overlap_stays_under_a_window_unless_a_cell_is_read_over_it()
+    {
+        var ledger = new DeskLedger();
+        var beta = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 6, [Slot("backpack", Zhuk), Cell(0, 0, 5, 5, Wallet), Cell(2, 5, 1, 1, Salewa)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 6)],
+        };
+        ledger.Apply(GameMode.Pve, Page(0, beta));
+        var under = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 4, [Slot("backpack", Zhuk)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 4)],
+            Covered = [new DeskRect(0, 0, 2, 2)],
+            Partial = true,
+        };
+        var backpack = ledger.Apply(GameMode.Pve, Page(1, under)).Page.Region("backpack")!;
+        Assert.Equal([Wallet, Salewa], backpack.Cells.Where(c => !c.IsSlot).Select(c => c.ItemId));
+
+        var over = under with { Cells = [Slot("backpack", Zhuk), Cell(3, 3, 1, 1, Water)] };
+        backpack = ledger.Apply(GameMode.Pve, Page(2, over)).Page.Region("backpack")!;
+        Assert.Equal([Water, Salewa], backpack.Cells.Where(c => !c.IsSlot).Select(c => c.ItemId));
+
+        ledger.Apply(GameMode.Pve, Page(3, beta));
+        var whole = beta with { Cells = [Slot("backpack", Zhuk), Cell(3, 3, 1, 1, Water)], Covered = [new DeskRect(0, 0, 2, 2), new DeskRect(2, 5, 1, 1)] };
+        backpack = ledger.Apply(GameMode.Pve, Page(4, whole)).Page.Region("backpack")!;
+        Assert.Equal([Water, Salewa], backpack.Cells.Where(c => !c.IsSlot).Select(c => c.ItemId));
+    }
+
     // ---- what leaves the page (owner, 2026-10-25) ----
 
     // The owner's page of 2026-10-19 kept four windows made of misread headings and the POUCH's grid, which no reading
