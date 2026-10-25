@@ -560,8 +560,9 @@ made from its heading alone and the rail's "0%" have no picture yet, and German 
   The layout check of `desk` passed in en-US and de-DE at the three sizes.
 - F2: made-up reading 4 (`fake-raid.ps1 -Desk -DeskReading 4`, the script's `desk 4`): another first, its POCKETS,
   SPECIAL SLOTS and STASH from their headings alone. At 1600×900 in English the three stand as the dashed frame, "NOT IN
-  A SCREENSHOT YET", POCKETS four cells by two and SPECIAL SLOTS three, their heads level; the totals "ON YOU 3.20 M+ ₽ ·
-  STASH 0 ₽". The hand-written `desk.json` wasn't the desk's: a run with a fake game (`--fake-game`, which `--dev-view`
+  A SCREENSHOT YET", POCKETS four cells by two and SPECIAL SLOTS three, their heads and frames level (rows 239/319); the
+  totals "ON YOU 3.20 M+ ₽ · STASH 0 ₽". In German at 900×560 alike („NOCH IN KEINEM / SCREENSHOT“), its layout file no
+  problem. The hand-written `desk.json` wasn't the desk's: a run with a fake game (`--fake-game`, which `--dev-view`
   and `fake-raid.ps1` make) keeps its database and files in the fake game's own `app` folder (`App.CreateSession`), and
   `--data` then holds the app log alone; a hand-written page goes in `<fake game>\app\desk.json`.
 - F3: a ninth made-up task (`-Operational 9`, the script's `tasks 9`), a kill on Ground Zero at 0 % with two counted
