@@ -7,7 +7,8 @@ namespace Shturmap.App.Rules;
 /// <summary>One block of the desk's page in its place (owner, 2026-10-25: the GEAR tab mirrored and fixed): a fixed
 /// region (LOADOUT, TACTICAL RIG, POCKETS, SPECIAL SLOTS, BACKPACK, POUCH, STASH) or a container's window, with its
 /// region as the page in hand has it; <see cref="Region"/> null for a fixed region no reading of the mode has shown (its
-/// head over a dashed frame, "NOT IN A SCREENSHOT YET").</summary>
+/// head over a dashed frame, "NOT IN A SCREENSHOT YET"), or one a reading made from its heading alone
+/// (<see cref="DeskPageRules.HeadingAlone"/>).</summary>
 public sealed record DeskBlock(string Key, DeskRegionKind Kind, DeskRegion? Region)
 {
     /// <summary>A fixed region never read: its head and a dashed frame stand in its place.</summary>
@@ -98,16 +99,30 @@ public static class DeskPageRules
     public static bool HasBox(DeskRegionKind kind) => kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch;
 
     /// <summary>The page's blocks in their places: the seven fixed regions in the game's order, each as the page in hand has
-    /// it or a placeholder where no reading showed it, then the windows in reading order (each after the region its
-    /// container is in, those attached to none at the end; <see cref="DeskPage.InReadingOrder"/>).</summary>
+    /// it or a placeholder where no reading showed it (or one made from its heading alone, <see cref="HeadingAlone"/>), then
+    /// the windows in reading order (each after the region its container is in, those attached to none at the end;
+    /// <see cref="DeskPage.InReadingOrder"/>).</summary>
     public static IReadOnlyList<DeskBlock> Blocks(IReadOnlyList<DeskRegion> regions)
     {
-        var blocks = Fixed.Select(kind => regions.FirstOrDefault(r => r.Kind == kind) is { } region
+        var blocks = Fixed.Select(kind => regions.FirstOrDefault(r => r.Kind == kind) is { } region && !HeadingAlone(region)
             ? new DeskBlock(region.Key, kind, region)
             : new DeskBlock(DeskRegion.KeyOf(kind), kind, null)).ToList();
         blocks.AddRange(regions.Where(r => r.Kind == DeskRegionKind.ContainerWindow).Select(r => new DeskBlock(r.Key, r.Kind, r)));
         return blocks;
     }
+
+    /// <summary>
+    /// Whether a region on the page is one a reading made from its heading alone, no grid and no cell in it: POCKETS,
+    /// SPECIAL SLOTS or STASH of no columns or no rows, as the layout gives one on a first reading when the region's frames
+    /// are all under a window or under no heading (code review of 2026-10-25: drawn as a bare head over nothing, POCKETS and
+    /// SPECIAL SLOTS a DIP wide, their heads wrapping a letter a line). It stands as a region never read: the placeholder,
+    /// counted as one in the layout; it counts nothing in the totals, having no cell. Not TACTICAL RIG, BACKPACK or POUCH,
+    /// whose grid goes with a slot seen empty (docs/DESIGN.md §4, *A region read in part keeps the page's rest*): such a
+    /// region is its empty slot box with no grid, as the game shows it. Not LOADOUT, which has no grid of its own.
+    /// </summary>
+    public static bool HeadingAlone(DeskRegion region) =>
+        region.Kind is DeskRegionKind.Pockets or DeskRegionKind.SpecialSlots or DeskRegionKind.Stash && region.Cells.Count == 0 &&
+        Grid(region) is not (> 0, > 0);
 
     /// <summary>
     /// The page laid out at a cell size: its blocks (<see cref="Blocks"/>) and the column each stands in, each column's

@@ -2150,7 +2150,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       as wide as the game sets theirs (step 2's narrowing of the decision's five: five each took their row to ten cells
       and a gap, the middle column's widest by three cells, so a page of the stash alone stood in one column at 1600×900,
       1232 DIP for 1216, and the size changed again once the pockets were read; the owner's to overrule). It counts
-      nothing, and the layout counts it as read.
+      nothing, and the layout counts it as read. A region a reading made from its heading alone, no grid and no cell in
+      it, stands as one never read (code review of 2026-10-25; `DeskPageRules.HeadingAlone`): a POCKETS, SPECIAL SLOTS or
+      STASH of 0×0, as the layout gives one on a first reading when the region's frames all lie under a window or under
+      no heading, was drawn as a bare head over nothing, POCKETS and SPECIAL SLOTS a DIP wide. A container's region of no
+      grid and no cell is its slot seen empty, the grid gone with it (*A region read in part keeps the page's rest*,
+      below): its empty slot box with no grid, as the game shows it. One the layout made from its heading alone, with no
+      frame and no slot read, would be drawn so too: it is the reading's to keep off the page (a region made from its
+      heading alone is left off a page that has no version of it, the ledger's rule; open, 2026-10-25).
     - **A region not in the last screenshot** (its reading older than the page in hand's; owner, 2026-10-25;
       `DeskRegion.ReadAt`, `DeskPageRules.Kept`): drawn whole but a step dimmer (its block at 70 %), its head dated,
       "BACKPACK · 23:08" for a screenshot of the day, "BACKPACK · 19 OCT 23:08" for another day (the language's day,
