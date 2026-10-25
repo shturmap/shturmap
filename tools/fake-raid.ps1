@@ -15,10 +15,11 @@ param(
   [string] $ShowQuest,
   # A trader's name (Ragman): their focus held in the strip under the MAP list, as a click on the portrait holds it.
   [string] $TraderFocus,
-  # Made-up operational tasks (1 to 8), as a screenshot of the Tasks screen would give them once the data is there: a
+  # Made-up operational tasks (1 to 9), as a screenshot of the Tasks screen would give them once the data is there: a
   # survival on Streets ending in 25 min, a kill on Customs, a weekly's hand-overs on any map, a kill without a countdown
   # on Shoreline, a line of no known kind on Woods, then a survival on Interchange, a kill on Lighthouse and a weekly's
-  # kill on Reserve (7 or 8: the cue's last place says "+N"; docs/DESIGN.md §4, *Operational tasks*). The file isn't written.
+  # kill on Reserve (7 to 9: the cue's last place says "+N"; docs/DESIGN.md §4, *Operational tasks*), and a kill on Ground
+  # Zero at 0 % with two counts, so no single one: the rail's "0%". The file isn't written.
   [int] $Operational,
   # With -Operational: one more task that runs out at once, for the "1 ended at …" line.
   [switch] $OperationalEnded,
@@ -28,8 +29,9 @@ param(
   # takes the window back.
   [switch] $Desk,
   # With -Desk: the made-up desk's reading (1 the first; 2 one that showed and changed the backpack alone, the rest kept,
-  # dimmed and dated; 3 the same again, which changed nothing).
-  [ValidateRange(1, 3)] [int] $DeskReading = 1,
+  # dimmed and dated; 3 the same again, which changed nothing; 4 another first, whose POCKETS, SPECIAL SLOTS and STASH came from
+  # their headings alone, each the dashed frame of a region never read).
+  [ValidateRange(1, 4)] [int] $DeskReading = 1,
   # The made-up in-raid glance (docs/DESIGN.md §4, *The in-raid glance*), up as a raid screenshot of an inventory screen
   # brings it once the raid is on: 1, a drawer with three items; 2, a body with its slots, an UNSEARCHED rig, pockets being
   # searched and a searched backpack (src\Shturmap.App\Rules\GlanceExample.cs). The raid is a Scav's: its start shows

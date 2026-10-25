@@ -268,7 +268,8 @@ public sealed partial class GameSession
     /// of: a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two
     /// hand-overs on any map, a kill on Shoreline whose countdown went unread, a line of no known kind on Woods, and,
     /// repeating kinds on other maps so the cue's last place says "+N" (QA pass of 2026-10-19, F3), a survival on
-    /// Interchange, a kill on Lighthouse and a weekly's kill on Reserve. With <paramref name="ended"/>, one more on Woods
+    /// Interchange, a kill on Lighthouse and a weekly's kill on Reserve, and a kill on Ground Zero at the game's 0 % with
+    /// two counted objectives, so no single count: the rail's "0%" (UI QA re-check of 94591a5, F3). With <paramref name="ended"/>, one more on Woods
     /// that runs out three seconds later ("1 ended at …"). Says why not when nothing is read: no data, or reading menu
     /// screenshots turned off.
     /// </summary>
@@ -306,6 +307,8 @@ public sealed partial class GameSession
                     [new OperationalObjective("Survive and extract from the location", 0, 2)]),
                 new("Elimination", Map("lighthouse"), Left(new TimeSpan(20, 5, 0)), 4, 0, [new OperationalObjective("Eliminate Scavs", 0, 8)]),
                 new("Elimination", Map("reserve"), Left(new TimeSpan(3, 20, 0, 0)), 3, 0, [new OperationalObjective("Eliminate PMC operatives", 0, 10)]),
+                new("Elimination", Map("ground-zero"), Left(new TimeSpan(1, 6, 0, 0)), 3, 0,
+                    [new OperationalObjective("Eliminate Scavs", 0, 5), new OperationalObjective("Eliminate PMC operatives", 0, 2)]),
             ];
             rows = rows.Take(Math.Clamp(count, 0, rows.Count)).ToList();
             if (ended)

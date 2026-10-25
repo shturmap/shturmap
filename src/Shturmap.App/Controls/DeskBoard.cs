@@ -481,9 +481,12 @@ public sealed partial class DeskBoard : Grid
             .Select(cell => (Cell: cell, Texts: Texts(cell).ToList())).Where(h => h.Texts.Count > 0).ToList();
         if (heads.Count < 2)
             return;
+        // As tall as the taller cell would be by itself: its texts' room as the layout rounds it (their desired sizes), not
+        // their ActualHeight, which can be a fraction under the rounded room, so the cell made level stood a pixel short of
+        // the other and SPECIAL SLOTS' grid a pixel under POCKETS' at 40 DIP (UI QA re-check of 94591a5, F1).
         void Even()
         {
-            var tallest = heads.Max(h => h.Texts.Max(t => t.ActualHeight));
+            var tallest = heads.Max(h => h.Cell.Children.Max(c => c.DesiredSize.Height));
             foreach (var (cell, _) in heads)
                 cell.MinHeight = tallest;
         }

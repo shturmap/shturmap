@@ -27,7 +27,8 @@ on one baseline.
 cards are there, with made-up prices, counts, conditions, needs and price histories, and a cell in each of the copy's
 states; no reading shows its POUCH, so its place is the dashed frame). Reading 1 is the mode's first; reading 2, seven
 minutes later, showed and changed the backpack alone (a LEDX more), so the rest is kept from reading 1, dimmed and
-dated; reading 3 is the same screenshot again and changed nothing. The made-up readings are dated 2026-01-01, so the
+dated; reading 3 is the same screenshot again and changed nothing; reading 4 is another first, whose POCKETS, SPECIAL
+SLOTS and STASH came from their headings alone, each the dashed frame of a region never read. The made-up readings are dated 2026-01-01, so the
 dated heads show the day and month before the time, 14:02 UTC in the PC's own time zone ("· 1 JAN 14:02" in UTC). The
 rules are held by `DeskSwitchTests`, `DeskCellsTests`, `DeskNumbersTests`, `DeskPageRulesTests`,
 `DeskExampleTests`, `DeskCardTests`, `DeskCopyTests`, `DeskPinsTests`, `DeskHistoryTests` and `DeskStemTests`; the
