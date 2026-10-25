@@ -626,6 +626,48 @@ made from its heading alone and the rail's "0%" have no picture yet, and German 
 - Open: "STASH 0 ₽" where the stash was never read (reading 4) reads as a stash worth nothing; the placeholder's words
   wrap in POCKETS' and SPECIAL SLOTS' frames ("NOT IN A SCREENSHOT / YET"); a UI QA pass of these pictures.
 
+**UI QA pass of 5410c4d (2026-10-26).** A targeted pass of the re-check's fixes, on the developer build of 5410c4d (its
+pictures outside the repository): FAIL (0 blocks, 2 should, 1 nit). The re-check's F1, F3 and F4 hold; reading 4's
+placeholders stand as the design draws them; its head line's "STASH 0 ₽" is the owner's to decide.
+
+- The re-check's F1 fixed: POCKETS' and SPECIAL SLOTS' frames on the same rows, and their heads' last line of ink, on
+  reading 1 (the layout check) and reading 2 (`fake-raid.ps1 -Desk -DeskReading 2`), in English and German: 240/278 at
+  1600×900, 276/314 at 900×560, 278/338 at 2560×1440 (German 292/352: SPEZIAL-SLOTS keeps a line for its longest date,
+  both heads at the foot of their room); the heads' ink 221–228, 257–264 and 256–264 (German 270–278). Nothing else
+  moved: at 1600×900 the rig 106/145/184, BACKPACK's box 320/399, POUCH's 561/640, STASH 105, ZHUK 587/666/745,
+  LOADOUT's boxes 120/200, in both readings and languages, the rows the re-check recorded. The layout check of `desk`
+  passed in en-US and de-DE at the three sizes.
+- Confirmed reading 4 (`-DeskReading 4`): POCKETS (four cells by two), SPECIAL SLOTS (three) and STASH (five) the dashed
+  frame with "NOT IN A SCREENSHOT YET" / „NOCH IN KEINEM SCREENSHOT“ as the texts files have them; POCKETS' and SPECIAL
+  SLOTS' frames 239–319 and heads' ink 221–228 at 1600×900 in both languages, 275–355 and 257–264 in German at 900×560,
+  their words on the same two rows; STASH's frame 105–185, beside the rig's 106 as a read stash's. The totals leave them
+  out: "ON YOU 3.20 M+ ₽" against reading 1's 3.70 M+, about the pockets' three cells less.
+- F1 (should, the owner's): "ON YOU 3.20 M+ ₽ · STASH 0 ₽ · KEEP 0 · 2 · 1" (German „STASH 0 ₽“) while no stash page was
+  ever read, beside a STASH that says so. It keeps the letter of "a total counts only the cells read", but it says the
+  stash is worth nothing where the design marks the unseen: "A dashed frame stays "not seen"", and "A total with an
+  unseen container in it ends in "+"". DESIGN.md has no words for a part never read. Expected: the head line without its
+  STASH part until a stash page is read ("ON YOU 3.20 M+ ₽ · KEEP 0 · 2 · 1"), or "STASH —". Repro: `tools\fake-raid.ps1
+  -Exe artifacts\layout-check\app\Shturmap.exe -Out <folder> -PlanOnly -Desk -DeskReading 4 -Window 1600x900` →
+  `window.png`.
+- F2 (nit): in English the two neighbours break the placeholder's words differently, POCKETS "NOT IN A SCREENSHOT / YET"
+  with "YET" alone, SPECIAL SLOTS "NOT IN A / SCREENSHOT YET"; German breaks both „NOCH IN KEINEM / SCREENSHOT“. Not
+  against the design, which sets the frames' widths (four and three cells) and the words, not their break: acceptable.
+  If tidied, a no-break space before "YET", so both break as SPECIAL SLOTS'. Same repro.
+- Note, not of this change: the two frames are two cells high where the pockets' and special slots' grids are one, so on
+  reading 4 everything under that row stands 40 px lower than on reading 1 (BACKPACK's box 360 for 320), and the reading
+  that first shows the pockets moves it up again. The design's words ("five cells wide and two high", narrowed in width
+  only); the owner's.
+- The re-check's F3 confirmed: Ground Zero's card (a developer script of `map ground-zero look` and `tasks 9`) at
+  1600×900, "0% · 29 H LEFT" / „0 % · NOCH 29 H“ left at x 57, its ink 20 px under its title's top (802 for 782), as
+  Streets' "4 OF 7 · 24 MIN LEFT" in `-Operational 9` (812 for 792, x 57), in both languages. At 900×560 the card stands
+  under the rail's foot in the picture, so not seen there.
+- The re-check's F4 fixed: every settings.png and help.png drawn in all 20 runs (help 207 or 235 KB, settings 98 to 111
+  KB), 14 of `fake-raid.ps1` and the layout check's 6: in German `-Desk -DeskReading 2` at 1600×900 three times and at
+  900×560 and 2560×1440, reading 4 twice, `-Operational 9` and `-Operational 5` once each. One retry in the app logs:
+  German `-Operational 9` at 1600×900, "settings.png drawn empty, taken again (1 of 5), drawn".
+- F3 (should, not run): the replay pictures of `tools\qa\desk.md` (no time in the pass's half hour); nor qps-ploc,
+  reading 3, or reading 4 in English at 900×560 and 2560×1440.
+
 **Code review of the day's merges (2026-10-25, 66fd15d..6f895a9, high).**
 
 - Fixed: a trader's list entry could take a kept task's expiry away. It refreshes the one task kept by its name whatever
