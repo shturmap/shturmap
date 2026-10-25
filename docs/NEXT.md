@@ -296,6 +296,50 @@ language" (*The stash desk's marks*, a region's place), *Text size*, §8 (`-Desk
   leaves the lower half of its box empty; the replay's `entry` still shows every cell already in while the totals
   count up (not compared with the build before); the UI QA pass and the senior translator's review.
 
+**Built (the readings log, 2026-10-25).** The owner, after testing the dev build: "Can't you write out logs of what was
+detected and link it to the screenshot so we can troubleshoot it afterwards?"; the coordinator's answer: a readings log,
+one text file per menu screenshot read, named after the screenshot, in the data folder. Binding: DESIGN.md §8, "Data
+folders" (*The readings log*) and "Developer aids" (*Readings log*), §2's three "What is kept".
+
+- The writer (`Shturmap.Game.Screenshots.ReadingLog`, `ReadingLogEntry`, `OperationalTaken`): `readings\<screenshot's
+  file name>.txt`, plain lines in the order the reading went (the head; the Tasks screen with its rows or a trader's
+  header, entries and objectives, each band's votes, what the set did and the set after it; What You Have's items; the
+  desk's screen, layout in pixels, each cell's place, label as read, fit and match, and what the page in hand did),
+  written as a temporary file and one move, the last 50 kept by their time written. A picture that couldn't be opened, or
+  that showed none of the screens, gets a short file.
+- What reaches it: the menus' reader hands what it saw on the way (`MenuReading.Seen`, `MenuSeen`: the picture's size,
+  the Tasks screen told, the bands' votes from `TasksReader.ReadPageAsync`'s note, the desk's look); for that
+  `MenuScreenshotReader` calls `DeskReader.LookAsync` and makes the `DeskReading` from it as `DeskReader.ReadAsync` does
+  (the readers' logic unchanged). The session (`GameSession.TakeMenu`, `ReadingLogOf`, `WriteReadingLog`) adds the head
+  (the build kind from the app, `GameSession.BuildKind`) and what it did (`TakeDesk`'s `DeskChange`, `TakeTasks`' and
+  `TakeTrader`'s `OperationalTaken`, the marks changed), and writes the file after the gate. A file that can't be written
+  is a WARN line.
+- Kept out: pixels; the quoted words of the layout's notes other than the game's headings and the page's window titles
+  (a word refused as a title is written "a word of 8 characters"), so nothing of the player's name or money could slip in
+  by a note; the screenshot's folder (its file name only). Never in a report or the diagnostics.
+- Texts (English and German in the same commit, for the senior translator): AppTexts `SettingsReadStashNote` (", a log
+  of the last 50 screenshots read" in its parenthesis; „, ein Log der letzten 50 gelesenen Screenshots“; its comment
+  says what the log is) and ViewTexts `HelpPrivacy` ("which items, how many and where are kept, with a log of the last
+  50 screenshots read" for "only which items, how many and where are kept"; „gespeichert wird, welche Items, wie viele
+  und wo, dazu ein Log der letzten 50 gelesenen Screenshots“); PRIVACY.md's "What stays on your PC" and the README's
+  "It never" list name the folder.
+- Tests: `ReadingLogTests` (a drawn GEAR reading cell by cell, the layout's lines, a refused word said by its length;
+  a table's rows, bands and set; a trader's tab; a screenshot that gave nothing; the 50 kept and one read again written
+  over; nothing the log is given can hold a picture), `ReadingLogSessionTests` (a desk reading's file named after its
+  screenshot, which deleting the screenshot leaves, nothing of it in the diagnostics; a table's rows and set; the tick
+  off: no file), `SafetyTests.Nothing_that_makes_a_report_or_the_diagnostics_reads_the_readings_log`.
+- Tried on four of the owner's pictures (outside the session, the readers as the app has them; the layout round's test
+  set and the trader folder): two GEAR tabs with the Keys window, 98 and 103 cells, 20 and 22 KB (the headings' note
+  shows ARMBAND read "ÄRMBANI" under the window's edge); a trader's tab with its daily, 1 KB; an OPERATIONAL table of
+  three rows, 1.3 KB. Fifty GEAR pages are about a megabyte.
+- Not as the ask wrote it: the log is in every build, the release's too (the ask's data folder, and the player's texts
+  say it); the study log stays the developer builds' alone. The owner's to overrule.
+- Open: `shturmap-cli desk --why` and `tasks --bands` print the same facts in their own words, not the writer's lines
+  (a later change); What You Have's reading lists the items it matched, not the labels it read (the stash reader's
+  looks don't leave it); raid screenshots (the extract list, the in-raid glance) have no readings log; if the desk's
+  `ReadAsync` changes, `MenuScreenshotReader` makes its reading the same way and must follow; the UI QA pass on the
+  settings note and help's privacy text (en and de, 900×560 and 1600×900) and the senior translator's review.
+
 ## 2026-10-19: text size: Windows' own, honoured everywhere
 
 **The ask** (beta feedback, relayed by the owner 2026-10-18): "on some setups the text can be hard to read. We should
