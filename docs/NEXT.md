@@ -205,7 +205,10 @@ diagnostics) and §9.
   0n" without its count), a "0/3" unread, every lone "0%" unread.
 - Not seen: a task before ACCEPT on a trader's tab (UPDATES.md's ⚠ row), two entries of one name in a list, the German
   game, other resolutions.
-- The UI QA pass on the settings note and help's privacy text (a clause longer), and the senior translator's review.
+- Done the same evening: the senior translator's review (one fix, a task's text as „Beschreibung“, 1ae2b36) and the UI QA
+  pass on the settings note, help's privacy text and the glyph's tip (on e3b0ebc, en and de at 900×560 and 1600×900, the
+  layout check of Plan with and without operational tasks: PASS, no findings; the tip judged by its texts, 105 and 98
+  characters, within the other tips' range).
 - CLAUDE.md's "five things" a picture is read for doesn't name this sixth reading yet.
 
 **Built (step 2).** _pending_
