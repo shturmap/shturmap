@@ -342,7 +342,8 @@ day, for the in-raid glance: "Which pictures", below):
   container's own slot the first under BACKPACK, TACTICAL RIG and POUCH; a compartment the column's scrolling cuts is
   left out (the page keeps what it had; read as far as it shows since 2026-10-25, *The layout round* below); a window by
   its title bar (the magnifier before the title, sort and close after it, or the title's size: 15 px at 1440p, a label
-  11 to 14; narrowed on 2026-10-25, below) over compartments of its own, or by its grid's two-pixel lines when no title
+  11 to 14; narrowed on 2026-10-25, below; since the owner's second test of 2026-10-25 by its panel first, its outline
+  round the bar and the grid, below) over compartments of its own, or by its grid's two-pixel lines when no title
   is read (its search field open: "ITEM SEARCH"); a window's lattice moved onto the lines
   between its cells, within a sixth of a cell, and the frame found a few pixels off it taken as the same compartment,
   never a second (the owner's test of 2026-10-19: the Keys window's lattice stood on the window's outline 6 px left of
@@ -425,6 +426,64 @@ day, for the in-raid glance: "Which pictures", below):
   evening the page in hand ends as the GEAR tab has it: LOADOUT, TACTICAL RIG, POCKETS, SPECIAL SLOTS, BACKPACK five by
   six (its grid emptied after the raid), POUCH three by three, STASH and the Keys window; until then a BACKPACK of no
   cell, no POUCH and two invented windows. About 1.3 s a picture, as before.
+  **After the owner's second test** (owner's second test, 2026-10-25: four GEAR screenshots of that evening, the test
+  set's pictures 14 to 17 below: the Beta 2 backpack's window over the backpack's grid with the game's tooltip over its
+  rig, the CR MK2 (R) rig's window over it and then over the stash pane, and the column scrolled to the rig;
+  docs/NEXT.md, step 1b; `DeskLayout`, `DeskFrames`, `DeskReader`, `DeskMatch`, `DeskLedger`). Fixed, each on those
+  pictures:
+  - **A window is its panel**: the game draws a window as a thin light outline (one pixel, grey, gold on the active
+    window) with four pixels of black inside it and its bar at the top (25 grey), the title in the bar. Where that panel
+    is found round a title, it is the window's evidence and its area, and its compartments are found anew inside it: no
+    frame outside it is its own (the POUCH's grid under the Beta 2 window's lower edge was three more of its rows, 5×8 for
+    5×6), none running along its outline (its left side, six pixels off its grid, made the whole window one shape that
+    no label fit), and a compartment is moved onto its grid's line, never onto the outline. A window whose bar stands
+    inside another's outline lies over it: what it covers of that one is covered, and nothing of it is. A window the
+    panel isn't found round is found as before.
+  - **A title has two letters that are no digit's lookalike** (Ø, O and o, l and I, S and s, B: a pistol's rounds "0/17"
+    in the stash, read "Ø/17", made a window), and a digit right after it is its own ("Beta 2", read as "Beta" and a
+    glyph, named no container).
+  - **The game's tooltip** (the pointer over an item: its full name in a black box with a grey border) is covered as a
+    toast is: what lies under it isn't read, and its words are neither a label nor a title.
+  - **A grid a window lies over is found by what of it shows**: its corner showing both its lines beside the window, its
+    sides counting as shown where the window hides them, but no side running on past its corner (the backpack's grid,
+    five by six, its left side beside the Beta 2 window, not five by eight down the POUCH grid's line under it); placed
+    under its heading unless the window hides a heading's room (a quarter of a cell) between them; a lattice inside such
+    a frame is that frame's rows in view.
+  - **What runs on under a window or a tooltip, and a shape of several items, is read by the labels in it**: each cell
+    whose band shows a label, right to left and top row first (a label stands at its item's top right), names its
+    item, which takes its footprint from there over the shape's cells, the cells read as empty no rectangle took (dark
+    art) and the cells the window hides; never a cell whose band a window covers in part (its label may run on under
+    it); a hidden cell whose band shows above the window is read so too; an item's count and mark aren't read where a
+    window covers them. So the Beta 2 backpack, its top row over its window, is read five by five from its label, and
+    its window attaches to it; the CR MK2 (R) under the tooltip, and the Water and the GPU the pointer's highlight
+    joined to it. A shape is read so where its bounding box's label names no item of its size, and a rectangle whose
+    label names only items smaller than it (a Bloodset over a Bandage, the line between them unseen); until then only an
+    odd shape whose label fit nothing, and only items of one cell. A cell whose band shows a label's ink is no empty
+    cell, whatever its art (the Beta 2's plain purple top right).
+  - **A label is read up to its ink**, three pixels past its last light pixel (the game's labels near white, 214 grey,
+    dimmed to 100–149 in a window behind another; its lines, outlines and highlights 69 to 97 at their least channel):
+    the 6L31 magazine's orange highlight read as a "1" after it ("6L311"); a slot's label up to six pixels past its frame,
+    which may come out short (the Zhuk rig's slot cut its "k": "Zhi-o").
+  - **A label with a digit read as its lookalike letter** (6 and G, 5 and S, 8 and B, 2 and Z; the fold already makes O, Q
+    and D a 0, l and I a 1) is matched once more with one of them swapped, where it fits nothing as read.
+  - **A label cut at the cell's edge before its name's digits is the name's beginning** ("Marksma", the Marksman 3x30 on a
+    cell one wide): its digits are compared with the beginning it covers, and one of seven folded letters or more may
+    differ in its last letter (cut at the edge, it reads as anything) at a fit of 0.95, under a name it begins whole. A
+    label with digits must still have all the name's ("Dorm 10" is no beginning of "Dorm 104").
+  - **In the stash's first row, an item with no line along its top runs on under the stash pane's head**: covered (an
+    armour plate "45/45" and the Blueprints in picture 17, their top rows and labels under the head, read as a "?" two by
+    one each). A cell whose only print is a condition stays "?" where its label shows nothing.
+  Measured with `shturmap-cli desk` on the four, renamed into the test set (`14-gear-beta-window-tooltip.png` …
+  `17-gear-rig-top.png`, with regions each and the items of two): their regions 18 → 29 of 29 of their size (missing 4
+  → 0, made up 6 → 0: "window:beta" for the Beta 2 window and "window:ø17" on three; of another size 7 → 0: the backpack
+  and the POUCH "not in view" or cut, the CR MK2 (R) window a column short); their cells 366 → 411, named 267 → 316,
+  one of N 83 → 93, said nothing 16 → 2; the two truths' 180 items 116 → 139 named right, no cell read 25 → 1 (the CR
+  MK2 (R) under its window, its dimmed label read "cp MK2"), 0 wrong. The whole set (18 pictures, 95 regions): 82 → 93
+  of their size, the step's first 14 pictures as before (64 of 66) or better in their cells; the five truths 243 → 270
+  of 338 named, 0 wrong; the GEAR truth of 2026-10-19 and the Keys page's unchanged (30 and 61); the 22 raid screenshots
+  read the same regions but one more (a POCKETS the old window reckoning covered), more of their cells named on eight.
+  About 8 % slower than before, measured back to back. Open: the PS and F-1 in the rig's pockets in picture 17, labels of two and three glyphs
+  Windows' recognition reads in none of its nine ways; the CR MK2 (R) behind its window in 15.
 - **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
   the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
   cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until
@@ -2171,8 +2230,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       Then the window's grid stands under a head of its own, "<NAME> · IN THE <REGION>" ("ZHUK · IN THE BACKPACK"),
       in the windows' place (right of the stash, else under it; until 2026-10-25 right after its region), in reading
       order, a stem from it to its cell; pointing at either lights the other (the linked highlight,
-      "Visual language"). The "+" drops, the cell's figure stays the container's own, and the contents count in the
-      total of the part the region is in (ON YOU for a rig in the backpack). The cells the window covered on the
+      "Visual language"). The cell may lie under its own window: it is read from its label where that shows, with its
+      footprint (owner's second test, 2026-10-25: the Beta 2 backpack in the backpack's grid, its top row over its
+      window; §2, *The layout round*). The "+" drops, the cell's figure stays the container's own, and the contents
+      count in the total of the part the region is in (ON YOU for a rig in the backpack). The cells the window covered
+      on the
       screenshot keep their last reading, unmarked; a first reading under a window leaves them empty. **Several
       containers of one name** (three wallets): the window's grid stands under its name after the region that holds
       them all, attached to none, with a muted line saying so ("Not attached: 3 wallets on the page"), and counts in
@@ -2197,15 +2259,21 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     as the page had it, the grid's size, and its slot where none was read (or one whose label wasn't), with the cells read
     in their place: the rows in view of an emptied backpack read empty, the rows below the foot keep their last reading.
     Not when the slot reads another container than the page's (its grid was the other one's), and a container's slot seen
-    empty, its frame in view with no label in it, takes the grid away with it. The app log says what it kept and why ("cut
-    at the column's foot", "under a window", "not in view"). (The decision said a grid cut at the foot keeps the page's
+    empty, its frame in view with no label in it, takes the grid away with it. A page's cell the compartments read
+    overlap gives way to what was read there, unless a window covered it there (owner's second test, 2026-10-25: the Beta
+    2 backpack, five by five, read in the backpack in the test set's 14-gear-beta-window-tooltip.png and taken to the
+    stash, stood on in the backpack's four rows in view, read empty in 17-gear-rig-top.png, as it reached below the
+    foot; until then only a cell wholly in them gave way). The app log says what it kept and why ("cut at the column's
+    foot", "under a window", "not in view"). (The decision said a grid cut at the foot keeps the page's
     version; whole, the pouch at the foot after a raid, or the backpack emptied there, would then never be read anew, so
     the rows in view are taken: step 1's reading of it, the owner's to overrule.)
     **What leaves the page** (owner, 2026-10-25; the owner's page of 2026-10-19 kept four windows made of misread headings
     and of the POUCH's grid, which no reading would ever take away): a window attached to nothing (no container of its
-    name on the page) that three readings in a row didn't show is dropped; a window with no cell and no title is never
-    kept, read or loaded. A window attached to its container stays however long it goes unseen. Each region keeps when the
-    screenshot that last showed it was taken and how many readings have missed it since (§8, "The desk file"; for the
+    name on the page) that three readings in a row didn't show is dropped; a window with no cell read (no item, no "one of
+    N") whose title names no container of the catalogue, or that has none, is never kept, read or loaded (owner's second
+    test, 2026-10-25: a pistol's rounds "0/17" in the stash, read "Ø/17", made a window of one cell of nothing; until then
+    only a window of no cell and no title). A window attached to its container stays however long it goes unseen. Each
+    region keeps when the screenshot that last showed it was taken and how many readings have missed it since (§8, "The desk file"; for the
     head's "BACKPACK · 23:08", above).
   - **The head line** (the addendum, B1; until 2026-10-25 *The head line and the fold*). Over the page, in muted capitals, "ON YOU 1.01 M ₽ · STASH
     6.84 M ₽ · KEEP 3 · 2 · 4": what is on the player against what is in the stash (after a raid, what came back
@@ -2269,7 +2337,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       level). "Zhuk" names two rigs of one size (Black and SURPAT, 4×3), so its cell is a "?", and its window's grid
       attaches to it either way. The player's pick among the candidates (*The click*) stays with the cell until its
       label changes: while the item picked is still among the candidates a newer reading gives the same slot, or the
-      grid's cell at the same place (owner, 2026-10-25).
+      grid's cell at the same place (owner, 2026-10-25). The game prints no more of a name than its short name, so an
+      ammo's "FMJ" on a cell one by one stays "one of 26" (owner's second test, 2026-10-25: 93 of the 411 cells of its
+      four GEAR pictures are "one of N", 33 of them a Bandage of two, 18 a RIP of six, 6 an SP BT of two); a label cut at
+      the cell's edge names the item it begins ("Marksma", the Marksman 3x30), and a cell whose only print is a
+      condition (an armour plate's "45/45") stays a "?" where nothing names it.
     - **Behind the art**, ink at 5, 10 or 16 % from 20k, 100k or 300k ₽ per slot, by what the better sale brings (the
       flea's net or the trader's), not the listing price.
     - **A count past what the item stacks to** (tarkov.dev's `stackMaxSize`) is a misread: one, at least (the owner's
@@ -4555,7 +4627,8 @@ for unread), a slot's `slot`, `count` when more than one, `print` ("46/50"), `fi
 "?" cell's `pick` (a candidate clicked on its card, step C, 2026-10-19; carried over every reading in which the item
 picked is still among the cell's candidates, gone with one in which it isn't; until 2026-10-25 only over one that showed
 the cell as it was). Item ids and the containers' names only: no pixel, no path, no other word. Read back, a window with
-no cell and no title, and one attached to nothing that `missed` three readings, are left out (§4, *What it mirrors*); a
+no cell read whose title names no container (or that has none; until the owner's second test of 2026-10-25 only one of
+no cell and no title), and one attached to nothing that `missed` three readings, are left out (§4, *What it mirrors*); a
 file written before 2026-10-25 has neither `readAt` nor `missed` on its regions: they take the page's `readAt`, and its
 windows attached to nothing, unseen for how long it can't say, are left out (the owner's file of 2026-10-19 lost
 "*ACE COVER", "ÄRMBANI" and two windows of no name so, and kept its Keys and Junk windows, attached to their cases).
@@ -4875,11 +4948,15 @@ table goes nowhere; any other picture goes to the stash reader (`StashReader`), 
 and the marks' glow; and, once the item file is in, to the stash desk's reader as well (`DeskReader`, step B part 1),
 on the same picture with a recognition of its own words: the whole picture's words once at its size (about 150 ms: the
 headings, a window's title, a toast), the screen and its regions from them and the compartments' frames (`DeskLayout`,
-`DeskFrames`, `StashGrids` for the stash), then each cell's label enlarged as the stash reader reads it, matched to the
-whole catalogue at 0.9 (`DeskMatch`, `DeskData.Catalogue`), about 2 s a 1440p picture in all. The page goes to the desk's
+`DeskFrames`, `StashGrids` for the stash; a window by its panel round its title, its compartments found inside it, and
+the game's tooltip by its black box, since the owner's second test of 2026-10-25), then each cell's label enlarged as
+the stash reader reads it, up to its ink, matched to the whole catalogue at 0.9 (`DeskMatch`, `DeskData.Catalogue`;
+what runs on under a window or a tooltip, and a shape of several items, by the labels in its cells), about 2 s a
+1440p picture in all. The page goes to the desk's
 ledger (`GameSession.Desk`: `DeskLedger.Apply`, `desk.json`, the window's attachment; a region read too blank keeps the
 page's, one read in part keeps the page's rest, cut at the column's foot, under a window or not in view, and a window
-attached to nothing that three readings didn't show leaves the page, and the app log says each; 2026-10-25), and a reading over ten minutes after the item file was fetched asks for it again
+attached to nothing that three readings didn't show leaves the page, and the app log says each; 2026-10-25; a window
+with no cell read whose title names no container is never kept, the owner's second test of 2026-10-25), and a reading over ten minutes after the item file was fetched asks for it again
 (`RefreshDeskPrices`; an hour until 2026-10-19). Then, outside the gate, the readings log's file (`ReadingLog`;
 "Developer aids", *Readings log*; 2026-10-25). A snapshot carries the mode's page with its values
 (`SessionSnapshot.Desk`: `DeskSheet.Of` over the item file's facts, `DeskData.Flea`, the keep levels `DeskData.Keep`

@@ -362,8 +362,9 @@ internal static class StashGrids
     }
 
     // The lattice's top left, moved onto the middle of the light line it stands near: the lines are found with a
-    // tolerance that can put the lattice a pixel or two off, and a cell cut two pixels early reads worse.
-    internal static (int X0, int Y0) Snap(StashGray gray, int x0, int y0, int cols, int rows, int pitch)
+    // tolerance that can put the lattice a pixel or two off, and a cell cut two pixels early reads worse. Never left of
+    // minX or above minY (a window's compartment stays inside its outline, which is brighter than its grid's line).
+    internal static (int X0, int Y0) Snap(StashGray gray, int x0, int y0, int cols, int rows, int pitch, int minX = int.MinValue, int minY = int.MinValue)
     {
         const int reach = 4, side = 3;
         int y1 = Math.Min(gray.H, y0 + rows * pitch), x1 = Math.Min(gray.W, x0 + cols * pitch);
@@ -389,16 +390,19 @@ internal static class StashGrids
                 sum += gray[x, y];
             rowsProfile[dy + reach + side] = sum / Math.Max(1, x1 - x0 - 8);
         }
-        return (x0 + Thinnest(columns, reach, side) - reach, y0 + Thinnest(rowsProfile, reach, side) - reach);
+        var leastX = minX == int.MinValue ? 0 : Math.Max(0, minX - (x0 - reach));
+        var leastY = minY == int.MinValue ? 0 : Math.Max(0, minY - (y0 - reach));
+        return (x0 + Thinnest(columns, reach, side, leastX) - reach, y0 + Thinnest(rowsProfile, reach, side, leastY) - reach);
     }
 
     // The offset within reach where the profile stands out most against both sides a few pixels off: a thin line,
-    // not a row of labels (bright over ten pixels) or an item's edge (bright on one side only).
-    private static int Thinnest(double[] profile, int reach, int side)
+    // not a row of labels (bright over ten pixels) or an item's edge (bright on one side only); from the least offset
+    // allowed.
+    private static int Thinnest(double[] profile, int reach, int side, int least = 0)
     {
-        var best = reach;
+        var best = Math.Clamp(reach, least, 2 * reach);
         var bestScore = double.MinValue;
-        for (var d = 0; d <= 2 * reach; d++)
+        for (var d = Math.Min(least, 2 * reach); d <= 2 * reach; d++)
         {
             var i = d + side;
             var score = profile[i] - Math.Max(profile[i - side], profile[i + side]);

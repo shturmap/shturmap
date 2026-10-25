@@ -24,6 +24,9 @@ internal sealed class DeskMatch
     // The least letters a label cut by a quick slot's number must keep for its end to name anything.
     private const int LeastEnd = 4;
 
+    // The fit of a name a label cut at the cell's edge begins but for its last letter: enough, below a name it begins whole.
+    private const double CutLetterFit = 0.95;
+
     private sealed record Entry(DeskCandidate Candidate, string Folded, string Digits, bool HasDigits, string FoldedName);
 
     private readonly List<Entry> _entries;
@@ -62,6 +65,41 @@ internal sealed class DeskMatch
         var a = ExitList.Fold(label);
         if (a.Length == 0)
             return (0, []);
+        var (top, best) = Folded(a, cells, kind, cut is not null);
+        if (top >= Enough)
+            return (top, best);
+        // A digit and a letter that look alike, one swapped (owner's second test, 2026-10-25: the recognition reads the
+        // game's 6 as a G now and then, "GL31" for the 6L31 magazine; the fold already makes O, Q and D a 0, l and I a 1):
+        // only where the label as read fits nothing, and the swapped label must fit as well as any label must.
+        for (var n = 0; n < a.Length; n++)
+        {
+            if (Lookalike(a[n]) is not { } other)
+                continue;
+            var (swapFit, swapBest) = Folded(string.Concat(a.AsSpan(0, n), [other], a.AsSpan(n + 1)), cells, kind, cut is not null);
+            if (swapFit >= Enough && swapFit > top + 1e-9)
+                (top, best) = (swapFit, swapBest);
+        }
+        return (top, best);
+    }
+
+    // The digit a letter looks like, or the letter a digit does, in folded labels (lower case): 6 and g, 5 and s, 8 and
+    // b, 2 and z.
+    private static char? Lookalike(char c) => c switch
+    {
+        'g' => '6',
+        '6' => 'g',
+        's' => '5',
+        '5' => 's',
+        'b' => '8',
+        '8' => 'b',
+        'z' => '2',
+        '2' => 'z',
+        _ => null,
+    };
+
+    // The best names for a folded label (Match).
+    private (double Fit, List<DeskCandidate> Best) Folded(string a, int cells, DeskSlotKind kind, bool cut)
+    {
         var digits = new string(a.Where(char.IsDigit).ToArray());
         // A cell holds about seven folded letters a cell of its width at the label's size: shorter labels aren't cut.
         var mayBeCut = a.Length >= Math.Max(6, 6 * cells);
@@ -73,10 +111,23 @@ internal sealed class DeskMatch
                 continue;
             var b = e.Folded;
             double fit;
-            if (cut is not null && a.Length >= LeastEnd && b.Length > a.Length && b.EndsWith(a, StringComparison.Ordinal))
+            // How much of the name's beginning a label cut at the cell's right edge covers (0: not taken so).
+            var prefix = 0;
+            if (cut && a.Length >= LeastEnd && b.Length > a.Length && b.EndsWith(a, StringComparison.Ordinal))
                 fit = 1;
             else if (mayBeCut && b.Length > a.Length && b.StartsWith(a, StringComparison.Ordinal))
+            {
                 fit = 1;
+                prefix = a.Length;
+            }
+            // The game cuts a long label at the cell's right edge, and its last letter there may read as another (owner's
+            // second test, 2026-10-25: "Marksme" for "Marksman 3x30", a cell one wide): seven folded letters or more
+            // whose all but the last start a longer name; a name the label begins whole outranks it.
+            else if (mayBeCut && a.Length >= 7 && b.Length > a.Length && b.StartsWith(a[..^1], StringComparison.Ordinal))
+            {
+                fit = CutLetterFit;
+                prefix = a.Length - 1;
+            }
             else
             {
                 // Levenshtein can't do better than the lengths' difference allows: skip what can't reach the best so far.
@@ -93,7 +144,11 @@ internal sealed class DeskMatch
                         fit = Math.Max(fit, (double)same / a.Length);
                 }
             }
-            if (e.HasDigits && digits != e.Digits)
+            // A name with digits must agree in them; a label cut before the name's digits has none of them to agree in
+            // (owner's second test, 2026-10-25), but one with digits must have them all, as before ("Dorm 10" is no
+            // beginning of "Dorm 104").
+            var cutBeforeDigits = prefix > 0 && digits.Length == 0 && !b.AsSpan(0, prefix).ContainsAny("0123456789");
+            if (e.HasDigits && digits != e.Digits && !cutBeforeDigits)
                 fit = Math.Min(fit, 0.5);
             if (fit > top + 1e-9)
             {

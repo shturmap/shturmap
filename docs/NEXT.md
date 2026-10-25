@@ -125,6 +125,66 @@ screenshots", "The desk file".)
   a raid the player's regions the foot cuts are still left out (they could be read in part with a "+", as the LOOT
   pane's are: the glance's to decide).
 
+**Built (step 1b, 2026-10-25, after the owner's second test).** (Binding: DESIGN.md §2, "For the stash desk", *The layout
+round*, its paragraph *After the owner's second test*; §4, *What it mirrors* ("A container in a grid", "A region read in
+part keeps the page's rest", "What leaves the page"), *The cell* ("A cell that fits several items"); §8, "Menu
+screenshots", "The desk file".) The owner's second test that evening left four GEAR screenshots the reading got wrong:
+the Beta 2 backpack's window over the backpack's grid with the game's tooltip over its CR MK2 (R) rig (14), the CR MK2
+(R) window opened over the Beta 2 window (15: not the same without the tooltip, as the brief had it), that window
+dragged over the stash pane (16), and the column scrolled to its top with the Zhuk rig (17), renamed so into the
+git-ignored test set (`14-gear-beta-window-tooltip.png`, `15-gear-beta-window.png`, `16-gear-beta-rig-windows.png`,
+`17-gear-rig-top.png`), with `regions-*.txt` each and `truth-*.txt` for 15 and 17 (129 and 51 items).
+
+- What was found, measured (`shturmap-cli desk --why`, the pictures' pixels): the rows "swallowed" under the Beta 2
+  window's lower edge were the POUCH's grid (Gamma, three by three: Grizzly, OScope, Director's), not the backpack's,
+  taken because the window grew by frames a third of a cell from its own; the backpack's grid (the Tri-Zip's, five by
+  six) showed its top row above the window and its left side beside it, the Beta 2 a five-by-five cell in it; "Ø/17" was
+  an M9A3's rounds "0/17" in the stash; the window in 14 was one shape because its compartment was framed on its
+  outline, six pixels off its grid's line, not because of the tooltip; the pointer's highlight (a light grey over the
+  hovered rig) hides the lines round it, so the Water and the GPU joined the rig; the tooltip is a black box with a grey
+  border; the Zhuk slot's frame came out five pixels short of its label's "k" ("Zhi-o"); the magazine read "6L311", its
+  orange highlight a "1" (not "GL31"); "Marksma" was read "Marksme" and lost to the digits rule; the stash's first row in
+  17 holds the lower halves of an armour plate and the Blueprints, their labels under the pane's head; the Beta 2
+  window's labels in 15 are dimmed behind the CR MK2 (R) window (100 to 149 grey).
+- The reading (`DeskLayout.Panel`, `Tooltips`, `TitleLetters`, the windows found by their panels and their compartments
+  inside them, a window over another; `DeskFrames.Find` under windows, a corner showing both its lines and no side running
+  on past its corner; `DeskReader` reading by the labels in a shape's cells, `LabelRect`, `LabelInk`, the stash's first
+  row; `DeskMatch` one lookalike swapped, a label cut before the name's digits; `StashGrids.Snap` bounded): DESIGN.md §2
+  lists each rule. The page (`DeskLedger.Junk`, `Filled`): a window with no cell read whose title names no container is
+  never kept, read or loaded; a page's cell the rows read overlap gives way to them. The CLI's `--why` prints what each
+  region's reading covered.
+- Measured (`shturmap-cli desk`, before → after): the four pictures' regions 18 → 29 of 29 of their size (missing 4 → 0,
+  made up 6 → 0, of another size 7 → 0); their cells named / one of N / unread: 14 77/24/4 → 94/26/0, 15 82/24/3 →
+  100/28/0, 16 71/26/2 → 83/29/0, 17 37/9/7 → 39/10/2 (366 → 411 cells; one odd shape left on each of the first three,
+  the fourth pocket's "Tatu03", which the catalogue doesn't hold); the two truths 116 → 139 of 180 named right, one of N
+  33 → 38, no cell read 25 → 1, 0 wrong. The Beta 2 window attaches to its cell in the backpack in 14 to 16 and to the
+  stash's in 17; the CR MK2 (R) window to its rig in the Beta 2 window in 16, and in 17 "2 of its name" (the rig in the
+  stash, and in the Beta 2 window's page, unseen since). The whole session folder (18 pictures, 95 regions): 82 → 93 of
+  their size, missing 4 → 0, made up 6 → 0, of another size 9 → 2 (step 1's two); its five truths 243 → 270 of 338
+  named, one of N 51 → 56, unread 16 → 10, no cell 28 → 2, 0 wrong; the first 14 pictures' regions as before and their
+  cells better or the same (`00-gear-armband.png` 85/6/7 → 85/7/6). The Keys page's truth and the GEAR truth of
+  2026-10-19 unchanged (61 and 30 right, 0 wrong). The 22 raid screenshots: the same regions, one more POCKETS (on one,
+  which the old window reckoning covered), cells named up on eight. About 8 % slower, back to back (4.3 → 4.65 s a
+  picture under that evening's load).
+- The "one of N" on the four pictures, for the coordinator's proposal to the owner (the cell's picture against the
+  candidates' catalogue icons): 93 cells, 33 Bandage (of 2), 18 RIP (of 6), 6 SP BT (of 2), 4 each of the armband (of
+  11), the dog tag USEC (of 27), the Trooper (of 2) and the Tri-Zip (of 2) slots, 3 each of Cabin (of 2), M856 (of 3),
+  the Gamma (of 5), CR MK2 (R) (of 2), M9A3 (of 2) and SpecterDR (of 2), one FMJ (of 26; the game prints "FMJ" alone on
+  the cell) and one Zhuk (of 2).
+- Tests: drawn, beside the class's, each failing on the reading of before (the four on new methods aside): a window's
+  compartments stop at its panel and the POUCH's grid under its edge is the POUCH's; a grid under a window found as tall
+  as its sides run; an item running under a window or a tooltip read by its label and footprint, the window attached,
+  its count unread; a rectangle whose label names smaller items read by its cells' labels; the tooltip's box covered and
+  its words no title; a title's letters; a lookalike swap; a label read up to its ink; a cut label's beginning; the
+  bounded snap; in `DeskLedgerTests`, the junk window read and loaded and a page's cell giving way to the rows read.
+  `DeskRealPictureTests` reads the four with the rest (floors 91 of 95 regions, 260 named).
+- Open: the PS and F-1 in the rig in 17 (labels of two and three glyphs, crisp; Windows' recognition reads neither in
+  any of the nine ways, tiled three times or binarized; once "PS" at six times the zoom, tiled), so the "?" stays; the CR
+  MK2 (R) behind its window in 15 (its dimmed label over the CR MK2 (R) window's gold edge reads "cp MK2"); the plate
+  and the Blueprints at the stash's top in 17 are now said nothing (the page keeps its last reading) rather than a "?"
+  two by one, and can't be named (their labels under the pane's head); the "one of N" above, the coordinator's to
+  propose; the reading's time.
+
 **Built (step 3, 2026-10-25: the trader's task view).** Binding: DESIGN.md §2 (the OPERATIONAL paragraph: which
 pictures, how much, what is kept, the player's say), §1, §3 (the fixtures), §4 (principle 7, principle 11's DAILIES AND
 WEEKLIES, *Operational tasks*: "As of" and the cue), §8 ("The operational tasks file", "Menu screenshots", the

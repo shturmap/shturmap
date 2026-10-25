@@ -347,7 +347,8 @@ internal static class DeskCommand
             var head = r.Kind == DeskRegionKind.ContainerWindow ? $"{r.Title?.ToUpperInvariant()} (window" + (r.AttachedTo is { } a ? $" in {a.Region})" : ", attached to none)")
                 : r.IsLoot ? $"{r.Title} {r.Key.ToUpperInvariant()}" + (r.Search != DeskSearch.Searched ? $" ({r.Search.ToString().ToUpperInvariant()})" : "") + (r.Cut ? " (cut)" : "")
                 : r.Key.ToUpperInvariant();
-            Console.WriteLine($"   {head}: {r.Cols}×{r.Rows}, {r.Parts.Count} parts, {r.Cells.Count} cells, {region.Part}, total {Money(region.Total)}{(region.Plus ? "+" : "")}");
+            Console.WriteLine($"   {head}: {r.Cols}×{r.Rows}, {r.Parts.Count} parts, {r.Cells.Count} cells, {region.Part}, total {Money(region.Total)}{(region.Plus ? "+" : "")}" +
+                              (Why && r.Covered.Count > 0 ? $"; covered {string.Join(" ", r.Covered.Select(c => $"{c.I},{c.J}{(c.W * c.H > 1 ? $" {c.W}x{c.H}" : "")}"))}" : ""));
             foreach (var c in region.Cells)
             {
                 var cell = c.Cell;
