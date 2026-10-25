@@ -64,6 +64,15 @@ screenshotted from the traders quest accept view, it is not added to shturmap."
    Not now: the quest marks' stash reader through the desk's lattice (the open point of 2026-10-19); another pass at the
    unread labels.
 4. **Go now** ("We still have a lot of quota and we can spend it, go for it.").
+5. **The second test, the same evening** (owner, 21:00, on the dev build with step 1: "It's still quite buggy in the
+   latest build"; the four GEAR screenshots of 20:46 to 20:50 measured: a window swallowing the grid under its edge, a
+   tooltip over a window, a rounds count as a window title, a grid under a window "not in view", lookalike digits in a
+   label, cut labels, and 83 of 366 cells "one of N" by a shared short name and footprint): step 1b (the faults), and
+   **a cell's picture against its candidates' icons** to settle "one of N" (step 1c; the coordinator's proposal, the
+   owner: "We can use all of the remaining quota we have, go ham"). **A readings log** (owner: "Can't you write out logs
+   of what was detected and link it to the screenshot so we can troubleshoot it afterwards?"): one text file per menu
+   screenshot read, named after it, in the data folder's `readings`, the last 50 kept, never in a report. The desk's UI
+   QA pass of step 2 (FAIL, 0 blocks, 5 should, 1 nit) is fixed in step 2b.
 
 **The plan:** step 1 (the reading's fixes, the test set, the slot's pick) and step 3 (the trader's task view) in parallel
 in worktrees of their own (separate files), step 2 (the layout, A) after step 1 (it needs a region's reading time in the
