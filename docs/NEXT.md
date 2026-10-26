@@ -44,6 +44,52 @@ next: (1) decisions 2 and 4 (the reading and the ledger, each with tests and mea
 decision 5 (the view; the senior translator for any text; the UI QA pass), (3) decision 1 (the fallback, bundled, the
 docs it changes, a measured check, the release build scanned for the user name).
 
+**Built (2026-10-26: decisions 2 and 4).** (Binding: DESIGN.md §4, *What it mirrors* ("A container in a grid", "A region
+read in part keeps the page's rest") and the page in hand's paragraph; §2, "For the stash desk", "A weapon preset's name
+on its cell".) Decision 3 was left out of this step by the owner's later call; nothing of it was built.
+
+- Decision 2 (`DeskLedger.AnotherContainer`): a container's region (rig, backpack, pouch) whose slot reads a container
+  that shares no id with the page's slot keeps nothing of the page's version: not the rest of a region read in part (as
+  before), and now not the cells a window covered, read in part or whole, nor a "?" cell's pick at a place the new grid
+  reads (a pick of the other grid; the decision didn't say, the builder's call). A slot whose label wasn't read, or under
+  a window, still says nothing of the container. `DeskLedgerTests`: the in-part case changed to the rule
+  (`A_slot_read_as_another_container_keeps_none_of_the_pages_cells_covered_or_not`), the read-whole case added (it had no
+  test), the other keeping tests unchanged. Measured: the four test sets through one page each (64 menu pictures), no
+  page-in-hand line changed; none of them shows a slot reading another container, so the drawn tests alone hold it.
+- Decision 4 (`DeskMatch.Preset`, asked by `DeskReader` for a slot's or a grid's label only after every reading of it fit
+  nothing): measured with `shturmap-cli desk --why`, main's 925c68a against this, cache only, the figures left out of
+  the comparison (the shared cache's prices were refreshed between the two runs). Named / one of N / nothing said: the
+  GEAR set of 2026-10-19 (5 pictures) 354/19/17, unchanged, its truth 30 right; the session set (18) 941/35/49 →
+  944/35/46 (the holster's "USP .45 Expert" on 09, 10 and 11), its five truths 314 → 315 right, nothing said 10 → 9,
+  regions 93 of 95 as before; the Keys set (5) 446/11/25 → 447/11/24 (a "DVL-10 Urbana" six by two in the stash), its
+  truth 72 right; the stash pages of 2026-10-11 (36) 1,745/106/188 → 1,777/106/156 (the "DVL-10 Urbana" on the back on
+  31 pictures, and one in the stash read "DVL-IØ U"), their truths 142/3/3 unchanged; the 22 raid screenshots
+  228/17/47 → 233/17/42 (an "AK-74 Plum" on a body's sling three times, an "M4A1 USASOC-II" on the back twice). 41
+  cells named that said nothing, each a preset of the gun it names (tarkov.dev's presets of those names have those guns
+  as their base; 09's truth has the USP .45); no other cell changed: 0 wrong, nothing that was right unread or named
+  otherwise. 12-gear.png's USP in the stash (its truth's "stash 0,12") stays as it was: that stash reading is refused as
+  too blank, the pistol split in two.
+- Not as the decision wrote it: the near-miss guard (`DeskMatch.NearMiss`, 0.75). In tarkov.dev's data, 411 items that
+  aren't guns have short names beginning with a gun's and going on (weapon parts, "AK-308 DC", "MXLR 24""; the "TT SK"
+  and "TT MKIII" rigs begin with the TT pistol's "TT"); one of those labels misread a letter off fits nothing and would
+  have been named the gun wherever its cell holds the bare gun's footprint ("TT SX" on a three-by-three rig: the TT
+  pistol). Such a label stays unread. Cost, on tarkov.dev's 400 presets whose names begin with a gun's: 5 stay unread so
+  ("G36 K", "SA58 X-FAL", "AK-308 RMR", "UZI SD", "M16A1 T-1"); 351 name their gun, 37 are "one of N" (two guns of one
+  short name: HK 416A5, MDR, Mk 16 …). The owner's to overrule: it is one condition in `Preset`. Also checked and left: a
+  "longest name decides" rule (a label beginning with a part's longer name is the part's) would have kept the two armour
+  presets "TT SK Default" and "TT MKIII Default" off the TT pistol, but also "MP5 SD Spec" and "MPX Gen.2 PDW" off their
+  guns, and the game prints an armour's own name on its cell ("Trooper"), not these.
+- Tests: `DeskReaderTests`, made-up names: the rule (a word boundary, more words after, only guns, a slot's kind, not
+  under a quick slot's number), the longest gun's name and "one of 2", the near miss; a drawn stash with a gun cell
+  labelled with its preset's name (named, its mods unseen) and an item's label that begins with no gun's name (unread).
+  Each fails on main's code.
+- Noticed, left alone: a container whose slot reads another one but whose reading is too blank (`DeskLedger.Blank`)
+  still keeps the page's whole version, its old slot with it (the blank rule comes first, as before); a gun's cell prints
+  its magazine's rounds where a condition stands ("10/10" on the DVL-10) and it is read as one (a full one changes
+  nothing, "5/10" would halve the figure); a preset whose name is a part's short name whole ("MP5 SD", "SA58 SPR") is
+  named that part, as before; `ocr-compare --fallback` (`OcrFallback`, decision 1's measuring) matches labels without the
+  preset rule.
+
 ## 2026-10-25: the layout round: a steady desk, the reading's faults, the trader's task view
 
 **The ask** (owner, 2026-10-25, after the test of 2026-10-19): "From the last testing session it is clear that we have to

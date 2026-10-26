@@ -172,8 +172,8 @@ public sealed record DeskRegion(string Key, DeskRegionKind Kind, int Cols, int R
     /// <summary>The grid's compartments in its units (a rig's pockets, the pockets, the special slots), for the mirror.</summary>
     public IReadOnlyList<DeskRect> Parts { get; init; } = [];
 
-    /// <summary>What a window covered of this region in the reading (grid units): its cells keep their last reading.
-    /// Only on a reading, never kept.</summary>
+    /// <summary>What a window covered of this region in the reading (grid units): its cells keep their last reading, unless
+    /// the region's slot reads another container (<see cref="DeskLedger"/>). Only on a reading, never kept.</summary>
     public IReadOnlyList<DeskRect> Covered { get; init; } = [];
 
     /// <summary>The slots a window covered in the reading: they keep their last reading. Only on a reading.</summary>

@@ -306,8 +306,8 @@ public sealed class DeskReader
     // bottom right; no footprint. Null for an empty slot (no label read).
     private async Task<DeskCellLook?> SlotAsync(SKBitmap bitmap, SKRectI box, int pitch, DeskCatalogue catalogue, DeskSlotKind kind, CancellationToken ct)
     {
-        var (label, fit, best) = await _labels.ReadLabelAsync(bitmap, LabelRect(bitmap, box, pitch, reach: 6), pitch,
-            text => catalogue.Match.Match(text, (int)Math.Round(box.Width / (double)pitch), kind), DeskMatch.Enough, ct);
+        var (label, fit, best) = OrPreset(await _labels.ReadLabelAsync(bitmap, LabelRect(bitmap, box, pitch, reach: 6), pitch,
+            text => catalogue.Match.Match(text, (int)Math.Round(box.Width / (double)pitch), kind), DeskMatch.Enough, ct), catalogue, kind);
         if (label is null || (fit < DeskMatch.Enough && label.Count(char.IsLetterOrDigit) < 3))
             return null;
         var ids = fit >= DeskMatch.Enough && best is not null ? best : [];
@@ -433,8 +433,8 @@ public sealed class DeskReader
                 return known;
             var at = Pixels(r.I0, r.J0, r.W, r.H);
             var cutAtStart = quickSlots && QuickSlotNumber(bitmap, at, pitch);
-            var read = await _labels.ReadLabelAsync(bitmap, LabelRect(bitmap, at, pitch), pitch, text => catalogue.Match.Match(text, r.W, kind, cutAtStart),
-                DeskMatch.Enough, ct, Confirm);
+            var read = OrPreset(await _labels.ReadLabelAsync(bitmap, LabelRect(bitmap, at, pitch), pitch, text => catalogue.Match.Match(text, r.W, kind, cutAtStart),
+                DeskMatch.Enough, ct, Confirm), catalogue, kind, cutAtStart);
             labels[(r.I0, r.J0, r.W, r.H)] = read;
             return read;
         }
@@ -467,8 +467,8 @@ public sealed class DeskReader
                 if (!LabelInk(bitmap, one, pitch))
                     continue;
                 var cut = quickSlots && QuickSlotNumber(bitmap, one, pitch);
-                var (l1, f1, b1) = await _labels.ReadLabelAsync(bitmap, LabelRect(bitmap, one, pitch), pitch, text => catalogue.Match.Match(text, 1, kind, cut),
-                    DeskMatch.Enough, ct, Confirm);
+                var (l1, f1, b1) = OrPreset(await _labels.ReadLabelAsync(bitmap, LabelRect(bitmap, one, pitch), pitch, text => catalogue.Match.Match(text, 1, kind, cut),
+                    DeskMatch.Enough, ct, Confirm), catalogue, kind, cut);
                 if (f1 < DeskMatch.Enough || b1 is not { Count: > 0 })
                     continue;
                 // The largest footprint the label's items take from here (the shape's cells joined: one item rather than
@@ -727,6 +727,15 @@ public sealed class DeskReader
 
     // A label of three letters or fewer ("TG" read for "TG arm.") is read once more: a longer reading that fits wins.
     private static bool Confirm(string label) => Core.Screenshots.ExitList.Fold(label).Length <= 3;
+
+    // A label that fit no name in any of its readings but begins with a gun's short name and goes on (a weapon preset's
+    // name, "USP .45 Expert"; owner, 2026-10-26): the gun (DeskMatch.Preset), at the least fit that names. Only after every
+    // reading failed, so a cell a reading names stays as it was.
+    private static (string? Label, double Fit, List<DeskCandidate>? Best) OrPreset((string? Label, double Fit, List<DeskCandidate>? Best) read,
+        DeskCatalogue catalogue, DeskSlotKind kind, bool cutAtStart = false) =>
+        read.Label is { } label && read.Fit < DeskMatch.Enough && catalogue.Match.Preset(label, kind, cutAtStart) is { Count: > 0 } guns
+            ? (label, DeskMatch.Enough, guns)
+            : read;
 
     private static bool Fits(DeskCandidate c, int w, int h) => (c.W == w && c.H == h) || (c.W == h && c.H == w);
 

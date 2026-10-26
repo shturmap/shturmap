@@ -512,6 +512,27 @@ day, for the in-raid glance: "Which pictures", below):
   `shturmap-cli desk` (`--no-icons` as before; docs/NEXT.md, step 1c): the cells named / "one of N" of the four test
   sets 2,910 / 747 → 3,486 / 171, the unread unchanged; their truths' 592 items 490 → 558 named right, "one of N" 85 →
   17, 0 wrong; of the 329 "one of N" cells checked by eye, 248 settled, none wrongly; about 1 to 3 % slower a picture.
+
+  **A weapon preset's name on its cell** (owner, 2026-10-26, decision 4 of the overnight run's page; docs/NEXT.md;
+  `DeskMatch.Preset`): the game prints a preset's name on a gun bought or built as one ("USP .45 Expert" in the
+  holster, "DVL-10 Urbana" on the back), and the catalogue leaves presets out (a preset is its gun with mods), so such a
+  label fit nothing. A label that fits no name in any of its readings but begins with a gun's whole short name, on a
+  word boundary, and goes on with more words names that gun ("USP .45"), its figure the bare gun's with the "+" for its
+  mods unseen, as a gun's cell has (§4, *The cell*). Only guns, the items that hold mods: "RIP ammo pack" stays what it
+  is. Where several guns' short names begin the label, the longest's; several guns of that one name are "one of N" (the
+  cell's picture may settle them). Never where a reading names anything, so a cell named before is named as before;
+  never under a quick slot's number (the label's start may be gone), nor where the slot takes no gun. A label one folded
+  letter in four off (0.75, its digits the same) the name of an item that isn't a gun and begins with the gun's ("AK-308
+  DG" for the AK-308 DC muzzle brake, "TT SX" for the TT SK rig) is that item misread as much as a preset's name, and
+  stays unread (the builder's guard, not the decision's: 411 such names, weapon parts mostly, and a misread one would
+  have been named the gun where its cell holds the bare gun's footprint). Checked on tarkov.dev's presets of 2026-10-26:
+  of the 400 whose names begin with a gun's, 351 name their gun, 37 the guns of one short name ("one of N": HK 416A5,
+  MDR, Mk 16 …), 5 stay unread by the guard ("UZI SD" near the "UZI SW" part, "G36 K" near "G36 KV"), 5 are another
+  item's short name whole ("MP5 SD", "SA58 SPR") and read as that item, as before, and 2 armour presets ("TT SK
+  Default") would name the TT pistol, but the game prints an armour's own name on its cell ("Trooper").
+  B (the presets as candidates of their own) and C (left unread) were not taken. Measured with `shturmap-cli desk` on
+  the four test sets and the 22 raid screenshots (docs/NEXT.md): 41 cells named that said nothing, each a preset of the
+  gun it names; no other cell changed, 0 wrong.
 - **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
   the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
   cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until
@@ -2277,10 +2298,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       window; §2, *The layout round*). The "+" drops, the cell's figure stays the container's own, and the contents
       count in the total of the part the region is in (ON YOU for a rig in the backpack). The cells the window covered
       on the
-      screenshot keep their last reading, unmarked; a first reading under a window leaves them empty. **Several
-      containers of one name** (three wallets): the window's grid stands under its name after the region that holds
-      them all, attached to none, with a muted line saying so ("Not attached: 3 wallets on the page"), and counts in
-      that region's total; split between ON YOU and the stash, counted in neither, and its line says so. The windows
+      screenshot keep their last reading, unmarked; a first reading under a window leaves them empty, and so does a
+      container whose slot reads another container than the page's (*A region read in part keeps the page's rest*,
+      below). **Several containers of one name** (three wallets): the window's grid stands under its name after the
+      region that holds them all, attached to none, with a muted line saying so ("Not attached: 3 wallets on the
+      page"), and counts in that region's total; split between ON YOU and the stash, counted in neither, and its line
+      says so. The windows
       attached to none stand last among the windows. **A weapon's mods** are unseen the same way: its figure is the bare gun's, with the "+".
     The desk never guesses contents, and a total counts only the cells read. The mirror is drawn from catalogue art
     (tarkov.dev's grid images, §3) at the positions and footprints read; no pixel of the screenshot is kept.
@@ -2300,8 +2323,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     compartments read alone. The page keeps its cells and compartments outside them, a compartment the foot cut as tall
     as the page had it, the grid's size, and its slot where none was read (or one whose label wasn't), with the cells read
     in their place: the rows in view of an emptied backpack read empty, the rows below the foot keep their last reading.
-    Not when the slot reads another container than the page's (its grid was the other one's), and a container's slot seen
-    empty, its frame in view with no label in it, takes the grid away with it. A page's cell the compartments read
+    Not when the slot reads another container than the page's (its grid was the other one's): then nothing of the page's
+    version stays, read in part or whole, under a window or not, nor a "?" cell's pick, and the new grid's cells under a
+    window stay unread until a reading shows them (owner, 2026-10-26; until then the cells a window covered stayed); a
+    slot whose label wasn't read says nothing of the container. A container's slot seen empty, its frame in view with no
+    label in it, takes the grid away with it. A page's cell the compartments read
     overlap gives way to what was read there, unless a window covered it there (owner's second test, 2026-10-25: the Beta
     2 backpack, five by five, read in the backpack in the test set's 14-gear-beta-window-tooltip.png and taken to the
     stash, stood on in the backpack's four rows in view, read empty in 17-gear-rig-top.png, as it reached below the
@@ -2601,7 +2627,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     order. A reading is taken into the page in hand (`DeskLedger`): the regions it shows replace the old, the
     others stay, the cells a window covered keep their last reading; a region read too blank keeps the page's (*What it
     mirrors*, 2026-10-19); a region read in part keeps the page's rest, a window attached to nothing leaves after three
-    readings that didn't show it, and one with no cell and no title is never kept (*What it mirrors*, 2026-10-25). A file
+    readings that didn't show it, and one with no cell and no title is never kept (*What it mirrors*, 2026-10-25); a
+    container whose slot reads another container keeps nothing of the page's version (2026-10-26). A file
     written before 2026-10-19 with a cell read twice (a window's compartment found twice)
     takes each place once when read back. What the rules decided where the panels left it
     open, for the owner to overrule:
