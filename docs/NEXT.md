@@ -50,9 +50,9 @@ keypad level, on at the first start, none of the spec's extras, and the player's
 - Not taken: A (the spec as written), B (the quiet grid: lines, letters top and numbers left only; (2) hard), C (crosses
   instead of lines), D (no grid); the extras (NATO words, a hover line, copy, metres, a second keypad level).
 
-Open for the build, the owner's to confirm: the fixed reference drawn in sand (DESIGN.md gives sand to the player alone;
-this is the player's position); the room the four strips take from the window's foot (the scale bar, the credit, the
-buttons and the floor list move inward); whether the sheet's 10 m grid gives way to it.
+Confirmed the same day (owner, in the chat): the fixed reference drawn in sand (it is the player's position, as the
+marker); the map's own controls (the scale bar, the credit, the buttons, the floor list, the edge badge) step inside the
+four strips, so no label is under a control; the sheet's 10 m grid gives way to the squad grid, one grid in the app.
 
 ## 2026-10-26: the overnight run's five decisions
 
