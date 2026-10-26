@@ -472,11 +472,11 @@ public sealed class DeskLedgerTests : IDisposable
         Assert.Empty(backpack.Cells.Single(c => c.IsSlot).Ids);
     }
 
-    // A region read in part whose slot reads another container: the page's grid isn't that one's, so nothing of it is kept
-    // as the region's rest (none kept, the size as read); the page's cells a window covered stay all the same, as in a
-    // region read whole.
+    // A region read in part whose slot reads another container (owner, 2026-10-26; until then the page's cells a window
+    // covered stayed): the page's grid was the other one's, so nothing of it is kept, covered or not (none kept, the size
+    // as read); the new grid's cells under the window stay unread until a reading shows them.
     [Fact]
-    public void A_slot_read_as_another_container_still_keeps_the_pages_cells_a_window_covered()
+    public void A_slot_read_as_another_container_keeps_none_of_the_pages_cells_covered_or_not()
     {
         var ledger = new DeskLedger();
         ledger.Apply(GameMode.Pve, Page(0, FullBackpack()));
@@ -489,9 +489,40 @@ public sealed class DeskLedgerTests : IDisposable
         var change = ledger.Apply(GameMode.Pve, Page(1, other));
         Assert.Empty(change.Kept);
         var backpack = change.Page.Region("backpack")!;
-        Assert.Equal([Wallet, Water], backpack.Cells.Select(c => c.ItemId));
+        Assert.Equal([Wallet], backpack.Cells.Select(c => c.ItemId));
         Assert.Equal((5, 4), (backpack.Cols, backpack.Rows));
         Assert.Equal([new DeskRect(0, 0, 5, 4)], backpack.Parts);
+    }
+
+    // The same, read whole (its slot and grid in view, a window over its top left; owner, 2026-10-26): the page's cells under
+    // the window and a "?" cell's pick at a place the new grid reads were the other container's, and go. A slot whose label
+    // wasn't read says nothing of the container: the page's cells under the window stay, its pick with its cell.
+    [Fact]
+    public void A_region_read_whole_whose_slot_reads_another_container_keeps_none_of_the_pages_cells_or_picks()
+    {
+        DeskLedger Picked()
+        {
+            var ledger = new DeskLedger();
+            ledger.Apply(GameMode.Pve, Page(0, new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 6,
+                [Slot("backpack", Zhuk), Cell(0, 0, 1, 2, Water), Cell(2, 5, 1, 1, Water, Salewa)])
+            {
+                Parts = [new DeskRect(0, 0, 5, 6)],
+            }));
+            Assert.True(ledger.Pick(GameMode.Pve, "backpack", null, 2, 5, Salewa));
+            return ledger;
+        }
+        DeskRegion Reading(DeskCell slot) => new("backpack", DeskRegionKind.Backpack, 5, 6, [slot, Cell(2, 5, 1, 1, Water, Salewa)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 6)],
+            Covered = [new DeskRect(0, 0, 1, 2)],
+        };
+
+        var backpack = Picked().Apply(GameMode.Pve, Page(1, Reading(Slot("backpack", Wallet)))).Page.Region("backpack")!;
+        Assert.Equal(Wallet, backpack.Cells.Single(c => c.IsSlot).ItemId);
+        Assert.Null(Assert.Single(backpack.Cells, c => !c.IsSlot).Pick);
+
+        backpack = Picked().Apply(GameMode.Pve, Page(1, Reading(Slot("backpack")))).Page.Region("backpack")!;
+        Assert.Equal([Water, Salewa], backpack.Cells.Where(c => !c.IsSlot).Select(c => c.ItemId));
     }
 
     // Step 1c (DeskIcons) on both paths: a "?" cell read again settled by its picture takes no earlier pick, and that pick

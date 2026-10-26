@@ -2277,10 +2277,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       window; §2, *The layout round*). The "+" drops, the cell's figure stays the container's own, and the contents
       count in the total of the part the region is in (ON YOU for a rig in the backpack). The cells the window covered
       on the
-      screenshot keep their last reading, unmarked; a first reading under a window leaves them empty. **Several
-      containers of one name** (three wallets): the window's grid stands under its name after the region that holds
-      them all, attached to none, with a muted line saying so ("Not attached: 3 wallets on the page"), and counts in
-      that region's total; split between ON YOU and the stash, counted in neither, and its line says so. The windows
+      screenshot keep their last reading, unmarked; a first reading under a window leaves them empty, and so does a
+      container whose slot reads another container than the page's (*A region read in part keeps the page's rest*,
+      below). **Several containers of one name** (three wallets): the window's grid stands under its name after the
+      region that holds them all, attached to none, with a muted line saying so ("Not attached: 3 wallets on the
+      page"), and counts in that region's total; split between ON YOU and the stash, counted in neither, and its line
+      says so. The windows
       attached to none stand last among the windows. **A weapon's mods** are unseen the same way: its figure is the bare gun's, with the "+".
     The desk never guesses contents, and a total counts only the cells read. The mirror is drawn from catalogue art
     (tarkov.dev's grid images, §3) at the positions and footprints read; no pixel of the screenshot is kept.
@@ -2300,8 +2302,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     compartments read alone. The page keeps its cells and compartments outside them, a compartment the foot cut as tall
     as the page had it, the grid's size, and its slot where none was read (or one whose label wasn't), with the cells read
     in their place: the rows in view of an emptied backpack read empty, the rows below the foot keep their last reading.
-    Not when the slot reads another container than the page's (its grid was the other one's), and a container's slot seen
-    empty, its frame in view with no label in it, takes the grid away with it. A page's cell the compartments read
+    Not when the slot reads another container than the page's (its grid was the other one's): then nothing of the page's
+    version stays, read in part or whole, under a window or not, nor a "?" cell's pick, and the new grid's cells under a
+    window stay unread until a reading shows them (owner, 2026-10-26; until then the cells a window covered stayed); a
+    slot whose label wasn't read says nothing of the container. A container's slot seen empty, its frame in view with no
+    label in it, takes the grid away with it. A page's cell the compartments read
     overlap gives way to what was read there, unless a window covered it there (owner's second test, 2026-10-25: the Beta
     2 backpack, five by five, read in the backpack in the test set's 14-gear-beta-window-tooltip.png and taken to the
     stash, stood on in the backpack's four rows in view, read empty in 17-gear-rig-top.png, as it reached below the
@@ -2601,7 +2606,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     order. A reading is taken into the page in hand (`DeskLedger`): the regions it shows replace the old, the
     others stay, the cells a window covered keep their last reading; a region read too blank keeps the page's (*What it
     mirrors*, 2026-10-19); a region read in part keeps the page's rest, a window attached to nothing leaves after three
-    readings that didn't show it, and one with no cell and no title is never kept (*What it mirrors*, 2026-10-25). A file
+    readings that didn't show it, and one with no cell and no title is never kept (*What it mirrors*, 2026-10-25); a
+    container whose slot reads another container keeps nothing of the page's version (2026-10-26). A file
     written before 2026-10-19 with a cell read twice (a window's compartment found twice)
     takes each place once when read back. What the rules decided where the panels left it
     open, for the owner to overrule:

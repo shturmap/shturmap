@@ -67,8 +67,9 @@ public sealed class DeskLedger
 
     /// <summary>
     /// The page after a reading, and the regions that changed: each region the reading shows replaces the old one, the
-    /// cells a window covered (and the covered slots) taken from the old one where they don't meet a cell read; the
-    /// others stay. A region changed when it is new, or its cells, title or attachment differ from the old one's.
+    /// cells a window covered (and the covered slots) taken from the old one where they don't meet a cell read, unless
+    /// its slot reads another container; the others stay. A region changed when it is new, or its cells, title or
+    /// attachment differ from the old one's.
     /// </summary>
     public static (DeskPage Page, IReadOnlySet<string> Changed) Merge(DeskPage? old, DeskPage reading)
     {
@@ -99,19 +100,29 @@ public sealed class DeskLedger
         region.Kind == DeskRegionKind.ContainerWindow && region.AttachedTo is null && region.SameName == 0 && region.Missed >= MissedToDrop;
 
     /// <summary>
+    /// Whether a container's region reads another container in its slot than the page's version holds (owner,
+    /// 2026-10-26: the page's grid was the other one's): nothing of the page's version stays, read in part or whole,
+    /// covered by a window or not, and the cells a window covers of the new grid stay unread until a reading shows them. A
+    /// slot read as nothing (its label unread, or under a window) says nothing of the container.
+    /// </summary>
+    private static bool AnotherContainer(DeskRegion before, DeskRegion region)
+    {
+        if (!DeskRegion.IsContainer(region.Kind))
+            return false;
+        var slotRead = region.Cells.FirstOrDefault(c => c.IsSlot && c.Ids.Count > 0);
+        var slotKept = before.Cells.FirstOrDefault(c => c.IsSlot && c.Ids.Count > 0);
+        return slotRead is not null && slotKept is not null && !slotRead.Ids.Intersect(slotKept.Ids).Any();
+    }
+
+    /// <summary>
     /// A region read in part (<see cref="DeskRegion.Partial"/>) filled from the page's version (owner, 2026-10-25): the
     /// cells read stand; the page's cells outside the compartments read (below the column's foot, or all of them when none
     /// was in view) and under a window stay, as does its slot where none was read; a compartment the foot cut stands as
-    /// tall as the page had it. Not when the slot reads another container than the page's: its grid isn't that one. Null
-    /// when the page's version adds nothing to the reading (the region whole after all).
+    /// tall as the page had it. Never when the slot reads another container than the page's (<see cref="AnotherContainer"/>).
+    /// Null when the page's version adds nothing to the reading (the region whole after all).
     /// </summary>
     private static DeskRegion? Filled(DeskRegion before, DeskRegion region)
     {
-        // A slot read as nothing (its label unread) says nothing of the container.
-        var slotRead = region.Cells.FirstOrDefault(c => c.IsSlot && c.Ids.Count > 0);
-        var slotKept = before.Cells.FirstOrDefault(c => c.IsSlot && c.Ids.Count > 0);
-        if (slotRead is not null && slotKept is not null && !slotRead.Ids.Intersect(slotKept.Ids).Any())
-            return null;
         var view = region.Parts;
         // The page's slot stays where the reading has none, or one whose label it couldn't read.
         var pageSlot = before.Cells.FirstOrDefault(c => c.IsSlot);
@@ -178,14 +189,16 @@ public sealed class DeskLedger
             if (before is null && HeadingAlone(region))
                 continue;
             var merged = region;
-            if (before is not null && region.Partial && Filled(before, region) is { } filled)
+            // Another container in the slot (owner, 2026-10-26): the page's cells were the other one's, none of them stays.
+            var mine = before is not null && !AnotherContainer(before, region) ? before : null;
+            if (mine is not null && region.Partial && Filled(mine, region) is { } filled)
             {
                 merged = filled;
                 keptFrom.Add(region.Key);
             }
-            else if (before is not null && (region.Covered.Count > 0 || region.CoveredSlots.Count > 0))
+            else if (mine is not null && (region.Covered.Count > 0 || region.CoveredSlots.Count > 0))
             {
-                var kept = before.Cells.Where(c =>
+                var kept = mine.Cells.Where(c =>
                     c.IsSlot
                         ? region.CoveredSlots.Contains(c.Slot!) && !region.Cells.Any(n => n.Slot == c.Slot)
                         : region.Covered.Any(r => r.Overlaps(c.Rect)) && !region.Cells.Any(n => !n.IsSlot && n.Rect.Overlaps(c.Rect)));
@@ -201,13 +214,14 @@ public sealed class DeskLedger
                 continue;
             }
             // A "?" cell keeps its pick while the item picked is still among its candidates (owner, 2026-10-25: "until its
-            // label changes"; until then only while it read exactly as it was): a slot by its key, a grid's cell by its place.
-            if (before is not null && before.Cells.Any(c => c.Pick is not null))
+            // label changes"; until then only while it read exactly as it was): a slot by its key, a grid's cell by its place;
+            // not in another container's grid.
+            if (mine is not null && mine.Cells.Any(c => c.Pick is not null))
             {
                 merged = merged with
                 {
                     // A cell its picture settled has one id and no pick (owner, 2026-10-25: DeskIcons).
-                    Cells = merged.Cells.Select(c => c.Pick is null && c.Ids.Count > 1 && before.Cells.FirstOrDefault(o => o.Pick is { } pick && SamePlace(o, c) && c.Ids.Contains(pick)) is { } picked
+                    Cells = merged.Cells.Select(c => c.Pick is null && c.Ids.Count > 1 && mine.Cells.FirstOrDefault(o => o.Pick is { } pick && SamePlace(o, c) && c.Ids.Contains(pick)) is { } picked
                         ? c with { Pick = picked.Pick } : c).ToList(),
                 };
             }
