@@ -6,6 +6,21 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-26: the 0.7.0 release check
+
+**Decided** (owner, 2026-10-26, on the release check page; the page stays outside the repository), each the coordinator's
+recommendation:
+
+1. **The desk's POCKETS and SPECIAL SLOTS never read stay two cells high**, with the long words: on the owner's own
+   screenshots both grids are two cells high, so one-cell frames would move the column. Decision 5's one-cell frames
+   (c95bcd2, on a branch) are not taken; the branch is deleted.
+2. **The preset rule keeps its near-miss guard** (an empty cell over a wrong name; five of tarkov.dev's 400 presets stay
+   unread: G36 K, UZI SD, SA58 X-FAL, AK-308 RMR, M16A1 T-1).
+3. **What's New's foot says what the card's lines do** (the prepared change merged once checked): the grid pass's F9.
+4. **A sheet with "Grid on the map" unticked keeps its 10 m lines**, as built.
+5. **The release:** main pushed, the Release workflow run with `test_only=true` first (its build fetches PaddleOCR's
+   model on GitHub's runner for the first time), then with `draft=true` for the owner to review and publish.
+
 ## 2026-10-26: a grid on the map, for squads
 
 **The ask** (owner, 2026-10-26): a spec for a "tactical map grid" (100 m squares lettered A to Z without I and O, rows
