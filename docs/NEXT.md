@@ -46,6 +46,37 @@ after, each cell's art judged drawn or flat; `DeskBoard.PicturesDrawnAsync`): wi
 the first frame after new prices and after a reading that changed nothing; with them 52 of 52 each time, and after a
 reading that changed the backpack 43 of 43 with its 9 cells coming in.
 
+**Fixed (2026-10-26: the glance on a weapon box).** The owner, the same day: "it did not show a preview of the value in
+the crate I was just checking". Two raid screenshots of the inventory screen looting a WEAPON BOX (build 1.2.5.0.48146,
+PvE, 2560×1440) put up no plate, and the app log said nothing of them. The cause: the LOOT pane stands where the menus'
+stash pane would, and the box's 6×6 grid showed column lines enough for the stash's finding from its lines to take it as
+a stash ten wide (and to drop the box's own lattice inside it); a stash on the GEAR tab is the menus', so the screen was
+told as the GEAR tab, which the glance never reads, and `ReadRaidInventoryAsync` returned without a word. Fixed
+(DESIGN.md §2, "In a raid"): the loadout's headings, no menus' bar and the LOOT pane's head ("LOOT" over the right third)
+are the raid's inventory, and there the stash isn't looked for: the grids are the framed cells' alone, the box's grid
+the container's (`DeskLayout.Find`, `StashGrids.Find(stashPane: false)`). The menus' GEAR tab has its bar and stays the
+GEAR tab. Two more on the same pictures: the box's grid came out 4×6 (its rifles hid the lines of its first rows, its
+empty cells framed a lattice four wide, and the frames over that lattice were left out as the lattice seen twice): a
+frame over a lattice on its lines is now more of the one grid (`DeskLoot`); and the AEM-5 suppressor's label read
+"AEM-?" named the AEM textbook (the "?" folded away): a "?" is now a glyph, any letter or digit in its place first
+(`DeskMatch`). A raid screenshot the glance doesn't take now says so in the app log, one INFO line with why, named by its
+date, minute and number, never its position ("Raid screenshot 2026-01-01[13-35] (0) not taken for the in-raid glance:
+told as the menus' GEAR tab (812 ms)"; the reasons: not an inventory screen, told as the menus' GEAR tab, stash or
+trading screen, read nothing, the raid changed meanwhile, the setting off, no raid running, the item data not loaded, no
+text recognition), and the line of one it takes names it the same way. A truth of the two pictures' items and regions
+(the fixtures' convention, by the page's regions) stands beside them in the ignored `tests\fixtures\ocr\raid-loot`.
+Measured with `shturmap-cli desk --raid` over the 24 raid pictures, main and the fix: the 22 of 2026-10-19 the same, line
+for line (9 told the raid's inventory, 12 of the world none, the menus' one GEAR; their LOOT cells 39 named, 1 one of N,
+2 unread, no truth); the two new ones GEAR with no regions → the raid's inventory, regions 0 → 10 of 10, their 54 items
+no cell read 54 → 48 named right, 6 one of N (the dogtag, the PS rounds), 0 wrong, the box's 12 items all named. The
+menu sets (`desk`, `desk\keys`, `desk\session`, `stash`) read the same, line for line: no GEAR or stash screen told as the
+raid's, 0 wrong. Tests: a drawn raid screen with a weapon box where the stash would stand (on main the GEAR tab with a
+stash 10×6; now the raid's, its 6×6 grid read from a lattice four wide), a drawn GEAR tab with its stash and the menus'
+bar (and a "LOOT" at the pane's head) still the GEAR tab, the "?" glyph, the log line's wording without a position, and
+a raid screenshot told as the GEAR tab no glance. Open: the player's own backpack on these pictures (a Tri-Zip running
+on past the column's foot) is left out by the glance's rule for a cut region, as before; no real-picture test of the raid
+set exists (the CLI scores the truth).
+
 ## 2026-10-26: a grid on the map, for squads
 
 **The ask** (owner, 2026-10-26): a spec for a "tactical map grid" (100 m squares lettered A to Z without I and O, rows

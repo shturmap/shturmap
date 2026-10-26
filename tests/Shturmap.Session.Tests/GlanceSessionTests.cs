@@ -1,6 +1,7 @@
 using Shturmap.Core.Desk;
 using Shturmap.Core.Logs;
 using Shturmap.Core.Raid;
+using Shturmap.Core.Screenshots;
 using Shturmap.Data.TarkovDev;
 using Shturmap.Game.Screenshots;
 
@@ -98,6 +99,55 @@ public class GlanceSessionTests
         rig.Log("PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0");
         var over = await rig.Until(s => s.Raid.Phase == RaidPhase.Menu, "the raid's end");
         Assert.Null(over.Glance);
+    }
+
+    // The owner's weapon box of 2026-10-26: two raid screenshots told as the menus' GEAR tab left no line in the app log. A
+    // screenshot the glance doesn't take is a line, with why; named by its date and number, never its position (the app
+    // log records none).
+    [Fact]
+    public void A_raid_screenshot_the_glance_doesnt_take_is_named_without_its_position()
+    {
+        Assert.True(ScreenshotName.TryParse("2026-01-01[13-35]_40.00, 2.50, 120.00_0.01000, 0.99900, -0.04000, 0.02000_14.13 (2).png", out var shot));
+        var line = GameSession.GlanceNotTaken(shot, GlanceSkip.MenusGear, 812.4);
+        Assert.Equal("Raid screenshot 2026-01-01[13-35] (2) not taken for the in-raid glance: told as the menus' GEAR tab (812 ms)", line);
+        Assert.Equal("Raid screenshot 2026-01-01[13-35] (2) not taken for the in-raid glance: not an inventory screen",
+            GameSession.GlanceNotTaken(shot, GlanceSkip.NotInventory));
+        // Every reason says itself, and none carries the position, the rotation or the raid's clock.
+        foreach (var why in Enum.GetValues<GlanceSkip>())
+        {
+            var text = GameSession.GlanceNotTaken(shot, why, 5);
+            Assert.DoesNotContain(why.ToString(), text, StringComparison.Ordinal);
+            Assert.DoesNotContain("40.00", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("120.00", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("0.99900", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("14.13", text, StringComparison.Ordinal);
+        }
+    }
+
+    // A raid screenshot told as the menus' GEAR tab is no glance (the app log says so).
+    [Fact]
+    public async Task A_raid_screenshot_told_as_the_menus_gear_tab_is_no_glance()
+    {
+        var asked = new List<string>();
+        await using var rig = Rigged(() => new DeskReading(DeskScreen.Gear, null, 5), asked);
+        rig.RaidUpToItsStart("maps/customs_preset.bundle", "bigmap", DateTime.Now.AddMinutes(-5));
+        await rig.StartAsync();
+        await rig.Until(s => s.Raid.Phase == RaidPhase.InRaid && s.Sources is not null, "the raid running");
+        rig.Screenshot(12, 1, 34);
+        var until = DateTime.UtcNow.AddSeconds(10);
+        while (DateTime.UtcNow < until)
+        {
+            lock (asked)
+            {
+                if (asked.Count > 0)
+                    break;
+            }
+            await Task.Delay(50, TestContext.Current.CancellationToken);
+        }
+        lock (asked)
+            Assert.Single(asked);
+        await Task.Delay(300, TestContext.Current.CancellationToken);
+        Assert.Null(rig.Snapshot.Glance);
     }
 
     [Fact]

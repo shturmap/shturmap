@@ -54,11 +54,17 @@ internal static class StashGrids
     /// <summary>
     /// The grids in the picture, the biggest first: the ones the framed cells give, and the stash from its lines,
     /// which also gives the rows of large items the cells don't frame. w and h are the picture's size, pitch the
-    /// cell's.
+    /// cell's. <paramref name="stashPane"/> false: no stash stands on the screen (the raid's inventory screen with its LOOT
+    /// pane where the stash pane would be, <see cref="DeskLayout"/>): the framed cells' grids alone, each a window's.
     /// </summary>
-    public static List<StashGrid> Find(StashLines lines, StashGray gray, int w, int h, int pitch)
+    public static List<StashGrid> Find(StashLines lines, StashGray gray, int w, int h, int pitch, bool stashPane = true)
     {
         var found = FromFramedCells(lines, gray, w, h, pitch);
+        if (!stashPane)
+        {
+            return found.Select(g => g.Place == StashGridPlace.Stash ? g with { Place = StashGridPlace.Window } : g)
+                .Select(g => g.Place == StashGridPlace.Window ? Aligned(lines, g, pitch) : g).OrderByDescending(g => g.Area).ToList();
+        }
         var framed = found.FirstOrDefault(g => g.Place == StashGridPlace.Stash);
         var byLines = StashFromLines(lines, gray, w, h, pitch, found);
         if (byLines is not null && framed is null)

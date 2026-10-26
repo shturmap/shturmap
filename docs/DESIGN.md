@@ -311,18 +311,34 @@ day, for the in-raid glance: "Which pictures", below):
   HEALTH, SKILLS, read first in a strip of the picture, about 30 ms: a picture of the world goes no further), the
   loadout's headings, and neither the stash pane nor the menus' bar at its foot (BUILDS, HANDBOOK, MESSENGER); QUICK
   USE stays. Looting, the LOOT pane fills the right third: "LOOT" at its head, the container's kind in the game's words
-  at the screen's right edge ("BODY", "SAFE", "DRAWER", "WEAPON BOX"). A container's pane is one grid (its frames on
-  one lattice one grid, starting under the head). A body's is its slots under the loadout's headings (a weapon's
+  at the screen's right edge ("BODY", "SAFE", "DRAWER", "WEAPON BOX"). The LOOT pane stands where the menus' stash pane
+  would: the loadout's headings with no menus' bar at the foot and "LOOT" at the pane's head are the raid's inventory,
+  and a grid there is the container's, never the stash, which isn't looked for (its grids are the framed cells' alone,
+  none taken from the stash's lines; 2026-10-26, the owner's two screenshots of a weapon box: its 6×6 grid's lines,
+  read as a stash ten wide, made the screen the menus' GEAR tab and the glance said nothing). The menus' GEAR tab keeps
+  its bar and stays the GEAR tab. A container's pane is one grid (its frames on one lattice one grid, a frame over the
+  lattice of its empty cells too: the weapon box's rifles hid the lines of its first rows, its empty cells a lattice
+  four wide; starting under the head). A body's is its slots under the loadout's headings (a weapon's
   "?/30" says nothing) and its TACTICAL RIG and BACKPACK (each a slot and a grid beside it) and POCKETS, each with the
   game's search state: "UNSEARCHED" where its grid stands, "SEARCHING ✕ 0:00" at its heading and the items found so
   far; contents not shown are unseen ("+"), never zero, and so is what the pane's scrolling cut at its foot. A part
   whose heading scrolled away above is not read; a slot with nothing in it (the rig taken) has no part. The game's
   experience toasts ("Searching experience", "Looting experience") are left out with what they cover, as the path's
-  are. The page holds the player's regions (ON YOU) and the pane's (LOOT, titled "LOOT · BODY"); it is published for
-  the glance (`SessionSnapshot.Glance`) and goes with the raid: no file, never the desk's page in hand. Measured on the
-  22 screenshots of one raid (`shturmap-cli desk --raid`): the 9 that show an inventory told, the 12 of the world and
-  the menus' one not; the LOOT panes' cells 16 named, 12 "one of N", 11 unread (no truth written; the four panes looked
-  at read as they show); about 1 s an inventory picture, 30 ms one of the world.
+  are. A "?" in a label as read is a glyph the recognition saw: first any letter or digit in its place, then, where that
+  fits nothing, nothing, as before (2026-10-26: the weapon box's "AEM-?" named the AEM textbook for the AEM-5
+  suppressor; every label alike, the desk's too). The page holds the player's regions (ON YOU) and the pane's (LOOT,
+  titled "LOOT · BODY"); it is published for the glance (`SessionSnapshot.Glance`) and goes with the raid: no file, never
+  the desk's page in hand. Measured on the 22 screenshots of one raid (`shturmap-cli desk --raid`): the 9 that show an
+  inventory told, the 12 of the world and the menus' one not; the LOOT panes' cells 16 named, 12 "one of N", 11 unread
+  (39, 1 and 2 on 2026-10-26; no truth written; the four panes looked at read as they show); about 1 s an inventory
+  picture, 30 ms one of the world. The owner's two of a weapon box
+  (2026-10-26, beside them a truth of their items and regions): told the raid's inventory, their regions 10 of 10, their
+  54 items 48 named right and 6 "one of N" (the dogtag, the PS rounds), none wrong, the box's 12 of 12; the 22 and the
+  menu sets read as before. A raid screenshot the glance doesn't take says so in the app log, one INFO line with why
+  (not an inventory screen; told as the menus' GEAR tab, stash or trading screen; read nothing; the raid changed
+  meanwhile; the setting off; no raid running; the item data not loaded; no text recognition), and one it takes says
+  what it read; each names the screenshot by its date, minute and number ("2026-01-01[13-35] (0)"), never its position
+  (below, "Never share a position": the app log records none).
 - **How much of it:** the item grids' cells, their labels, counts and found-in-raid mark as above, and their positions
   and footprints, for the mirror; matched against every item of tarkov.dev's catalogue, for the desk alone (What You
   Have's marks still come from the items BRING lists only). On the GEAR tab that is three regions (five screenshots of
@@ -2789,7 +2805,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   - **Kept:** nothing. No in-raid pixel, position or item is stored for it. The desk's rules on nested containers
     apply (*The stash desk*, *What it mirrors*): in a looted backpack with a rig inside, the rig's contents count only
     from its open window.
-  - **Fixtures:** 22 in-raid screenshots of 2026-10-19 (one raid) in the ignored `tests\fixtures\ocr\raid-loot`.
+  - **Fixtures:** 22 in-raid screenshots of 2026-10-19 (one raid) in the ignored `tests\fixtures\ocr\raid-loot`, and the
+    owner's two of a weapon box of 2026-10-26 with a truth of their items and regions beside them (§2, "In a raid").
   - **Reader built** (the reader round, 2026-10-19; §2, "In a raid"): what the plate gets is `SessionSnapshot.Glance`, a
     `RaidGlance` for the raid's last inventory screenshot, null out of a raid and until one is read: its `Sheet` (the
     page with its values, as the desk's: each region's part, ON YOU for the player's own regions, LOOT for the pane's,
