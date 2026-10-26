@@ -860,4 +860,12 @@
     <value>{count, plural, one {Operational task read: #.} other {Operational tasks read: #.}}</value>
     <comment>Notice in place of the cue for a menu screenshot of the game's Tasks screen (Character › TASKS › OPERATIONAL), or of a trader's TASKS tab (owner, 2026-10-25), that brought new daily or weekly tasks, while a replay plays or another cue of the player's screenshots or quests is up: the tasks now on the rail. {count}: how many tasks the cue would list. "Operational" is the game's name for the tab.</comment>
   </data>
+  <data name="DeskCleared" xml:space="preserve">
+    <value>Desk cleared.</value>
+    <comment>Notice after CLEAR in the stash desk's head (owner, 2026-10-26): the desk's page for this game mode was emptied, every region back to "not in a screenshot yet". An UNDO link stands beside it while the notice does (about 8 s) and no screenshot is read meanwhile; it puts the page back as it was. "Desk" is the stash desk, the view beside Plan (PLAN | DESK).</comment>
+  </data>
+  <data name="DeskFreshAfterRaid" xml:space="preserve">
+    <value>A new desk page after the raid.</value>
+    <comment>Notice when the first stash or gear screenshot read after a raid starts the stash desk's page anew (owner, 2026-10-26): nothing of the page from before the raid is kept, only what this screenshot showed. An UNDO link stands beside it while the notice does (about 8 s) and no other screenshot is read meanwhile; it keeps the page from before the raid with this screenshot taken into it. "Desk" is the stash desk, the view beside Plan (PLAN | DESK); "page" is what the desk shows, the regions read so far.</comment>
+  </data>
 </root>

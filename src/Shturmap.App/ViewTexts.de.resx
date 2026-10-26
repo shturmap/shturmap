@@ -456,6 +456,14 @@
     <value>Schließen</value>
     <comment>en: Dismiss</comment>
   </data>
+  <data name="NoticeUndo" xml:space="preserve">
+    <value>RÜCKGÄNGIG</value>
+    <comment>en: UNDO</comment>
+  </data>
+  <data name="NoticeUndoTip" xml:space="preserve">
+    <value>Desk-Seite wiederherstellen</value>
+    <comment>en: Put the desk's page back</comment>
+  </data>
   <data name="NoticeDismissName" xml:space="preserve">
     <value>Hinweis schließen</value>
     <comment>en: Dismiss the notice</comment>

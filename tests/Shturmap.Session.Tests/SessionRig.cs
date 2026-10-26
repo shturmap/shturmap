@@ -18,6 +18,7 @@ internal sealed class SessionRig : IAsyncDisposable
 
     private readonly string _root = Directory.CreateTempSubdirectory("shturmap-session-").FullName;
     private readonly List<string> _notices = [];
+    private readonly List<SessionNotice> _said = [];
     private readonly List<ViewCue> _cues = [];
     private string _log = "";
 
@@ -42,7 +43,10 @@ internal sealed class SessionRig : IAsyncDisposable
         session.Notice += notice =>
         {
             lock (_notices)
+            {
                 _notices.Add(notice.Text);
+                _said.Add(notice);
+            }
         };
         session.Cue += cue =>
         {
@@ -70,6 +74,16 @@ internal sealed class SessionRig : IAsyncDisposable
         {
             lock (_notices)
                 return _notices.ToList();
+        }
+    }
+
+    /// <summary>The notices said, whole (an UNDO the desk's offers among them).</summary>
+    public IReadOnlyList<SessionNotice> Said
+    {
+        get
+        {
+            lock (_notices)
+                return _said.ToList();
         }
     }
 

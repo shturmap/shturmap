@@ -732,4 +732,12 @@
     <value>Mach in den Menüs des Spiels einen Screenshot von deinem Stash.</value>
     <comment>en: Screenshot your stash in the game's menus.</comment>
   </data>
+  <data name="DeskClear" xml:space="preserve">
+    <value>LEEREN</value>
+    <comment>en: CLEAR</comment>
+  </data>
+  <data name="DeskClearTip" xml:space="preserve">
+    <value>Leert die Desk-Seite für diesen Modus: Der nächste Screenshot beginnt eine neue. Der Hinweis danach kann das rückgängig machen.</value>
+    <comment>en: Empties the desk's page for this mode: the next screenshot starts a new one. The notice that follows can undo it.</comment>
+  </data>
 </root>

@@ -1,0 +1,45 @@
+# QA replay of clearing the stash desk (owner, 2026-10-26: "We need an option to clear the desk because it quickly gets
+# messy"; from the coordinator's options, "Button + fresh after raid"; docs/DESIGN.md §4, *The stash desk*, *Clearing the
+# page*): CLEAR at the head line's right empties the page at once, every region the dashed frame of a region never read,
+# its pins and the card pointed at gone, and the notice "Desk cleared." offers UNDO, which puts the page back as it was,
+# its pins with it; UNDO goes with the notice; the next reading is the mode's first again. A developer build plays it with
+# --dev-view --dev-script; how to run it and what each still must show: desk-clear.md beside this file. Times are in
+# seconds.
+
+# The tour that opens by itself in a --dev-view session ends first, and its notice is waited out.
+tour end
+map customs
+wait 7
+
+# The first reading; its cells come in and its totals count up, then the page stands, CLEAR at the head line's right.
+# The LEDX pinned, the Zhuk's cell pointed at: its card in the rail, the pin's line at the rail's foot.
+desk 1
+wait 7
+desk pin stash 8 0
+desk point backpack 0 0
+wait 1
+snapshot %TEMP%\shturmap-qa\desk-clear\before
+
+# CLEAR: the page empty at once, every region as never read, the head line KEEP 0 · 0 · 0 alone, CLEAR gone; the rail's
+# card and pin gone, the rail's hint in their place; "Desk cleared." with UNDO at the top.
+desk clear
+wait 1
+snapshot %TEMP%\shturmap-qa\desk-clear\cleared
+
+# UNDO: the page as it was, standing at once (nothing comes in, the totals don't count up), the LEDX's pin back; the
+# notice gone.
+desk undo
+wait 1
+snapshot %TEMP%\shturmap-qa\desk-clear\undone
+
+# CLEAR again, and the notice waited out (8 s): UNDO goes with it ("desk undo" then says no notice offers it).
+desk clear
+wait 9
+snapshot %TEMP%\shturmap-qa\desk-clear\expired
+desk undo
+
+# A reading after CLEAR is the mode's first again: it comes in whole.
+desk 1
+wait 7
+snapshot %TEMP%\shturmap-qa\desk-clear\read-again
+exit

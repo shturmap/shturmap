@@ -456,6 +456,14 @@
     <value>Dismiss</value>
     <comment>A notice at the top of the map: tooltip of its close button (×).</comment>
   </data>
+  <data name="NoticeUndo" xml:space="preserve">
+    <value>UNDO</value>
+    <comment>A notice at the top of the map or the stash desk: the amber link beside "Desk cleared." and "A new desk page after the raid." (owner, 2026-10-26), standing while the notice does (about 8 s) and no screenshot is read meanwhile; it puts the desk's page back. Capitals, as the notice's REPORT link; about 35 DIP at 11 px.</comment>
+  </data>
+  <data name="NoticeUndoTip" xml:space="preserve">
+    <value>Put the desk's page back</value>
+    <comment>Tooltip and screen reader name of the notice's UNDO link (NoticeUndo): the desk's page as it was before CLEAR, or before the first screenshot after a raid started a new one.</comment>
+  </data>
   <data name="NoticeDismissName" xml:space="preserve">
     <value>Dismiss the notice</value>
     <comment>A notice at the top of the map: the screen reader's name of its close button (×).</comment>

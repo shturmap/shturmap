@@ -12,7 +12,22 @@ namespace Shturmap.Session;
 
 /// <summary>A one-line message for the user and how long it stays.</summary>
 /// <param name="OffersReport">The notice asks the player to report it: the UI offers the Report dialog (docs/DESIGN.md §8, "Reports").</param>
-public sealed record SessionNotice(string Text, TimeSpan Duration, bool OffersReport = false);
+public sealed record SessionNotice(string Text, TimeSpan Duration, bool OffersReport = false)
+{
+    /// <summary>The notice offers UNDO for the desk's page (owner, 2026-10-26: the desk's CLEAR, and a new page after a
+    /// raid): what <see cref="GameSession.UndoDeskAsync"/> takes; null for every other notice.</summary>
+    public DeskUndoOffer? Undo { get; init; }
+}
+
+/// <summary>
+/// The desk's page a CLEAR or a new page after a raid took away, as a notice offers it back (owner, 2026-10-26: "Button +
+/// fresh after raid"; docs/DESIGN.md §4, *The stash desk*, *Clearing the page*): UNDO stands while the notice does and no
+/// reading came after <paramref name="Reading"/>.
+/// </summary>
+/// <param name="Id">Which page: <see cref="GameSession.UndoDeskAsync"/> puts it back while it is the one held.</param>
+/// <param name="Reading">The desk's reading counter (<see cref="Shturmap.Core.Desk.DeskView.Reading"/>) when it was offered:
+/// a view of a later reading ends the offer.</param>
+public sealed record DeskUndoOffer(int Id, int Reading);
 
 public enum CueKind
 {

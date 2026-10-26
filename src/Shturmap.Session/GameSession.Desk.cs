@@ -46,6 +46,26 @@ public sealed partial class GameSession
     private volatile bool _deskOnScreen;
     private readonly SemaphoreSlim _deskPricesWake = new(0, 1);
 
+    // What a CLEAR or a new page after a raid took away, for the notice's UNDO (owner, 2026-10-26: "Button + fresh after
+    // raid"): the page to put back, and the change it showed; until a reading comes, or it is put back. The notice's going is
+    // the window's to say: it drops the link (the page held here is then let go with the next reading).
+    private sealed record DeskUndoHeld(int Id, GameMode Mode, DeskPage Page, DeskChange? Change);
+
+    private DeskUndoHeld? _deskUndo;
+    private int _deskUndoIds;
+
+    // A new page after a raid, to be said once the screenshot's reading is all taken (ReadStashAsync): its notice last, so
+    // the notice of the needed items the same screenshot showed doesn't take its UNDO away.
+    private DeskUndoOffer? _deskFreshOwed;
+
+    // The last raid of each mode that started, as the game's logs have it, live or read back at start: when it started and
+    // ended (wall-clock times in Zone). The next desk reading after one starts a new page.
+    private readonly Dictionary<GameMode, (DateTime Started, DateTime Ended)> _raidsOver = [];
+
+    /// <summary>How long the notices with UNDO stand: a few seconds, as notices do, a little longer than most's 6 s for the
+    /// click.</summary>
+    public const double DeskUndoSeconds = 8;
+
     private string DeskPath => Path.Combine(paths.Root, "desk.json");
 
     private void OpenDesk() => _desk = DeskLedger.Load(DeskPath, warning => AppLog.Warn(warning));
@@ -88,7 +108,23 @@ public sealed partial class GameSession
             Study.Game("desk.screen", ("screen", reading.Screen), ("ms", ms));
             return null;
         }
-        var change = _desk.Apply(_mode, page);
+        // A new reading: what a CLEAR or a new page took away can't come back over it (owner, 2026-10-26).
+        _deskUndo = null;
+        _deskFreshOwed = null;
+        DeskChange change;
+        if (_desk.Page(_mode) is { Regions.Count: > 0 } before && RaidSince(before, page) is { } raid)
+        {
+            // The first reading after a raid starts a new page (owner, 2026-10-26: "fresh after raid"): nothing of the page
+            // before is kept, dimmed or not; UNDO puts back the page this reading would have made of it.
+            var (fresh, kept) = _desk.ApplyFresh(_mode, page);
+            change = fresh;
+            _deskUndo = new DeskUndoHeld(++_deskUndoIds, _mode, kept.Page, kept);
+            _deskFreshOwed = new DeskUndoOffer(_deskUndo.Id, _deskReadings + 1);
+            AppLog.Info($"Desk page started anew: a raid started at {raid.Started:HH:mm} and ended at {raid.Ended:HH:mm} since the page's last reading");
+            Study.Game("desk.fresh", ("regions", before.Regions.Count));
+        }
+        else
+            change = _desk.Apply(_mode, page);
         _deskChange = change;
         _deskChangeMode = _mode;
         _deskReadings++;
@@ -118,6 +154,103 @@ public sealed partial class GameSession
         SaveDeskIfDirty();
         RefreshDeskPrices();
         return change;
+    }
+
+    // Under the gate: the mode's last raid when it started after the page's last reading and ended before this reading's
+    // screenshot (owner, 2026-10-26: "a raid started and ended since the page's last reading", as the game's logs have it);
+    // null for none. A load cancelled before its raid began is no raid. By the instants the wall-clock times stand for
+    // (WallClock), the earliest where an hour repeats.
+    private (DateTime Started, DateTime Ended)? RaidSince(DeskPage before, DeskPage reading)
+    {
+        if (!_raidsOver.TryGetValue(_mode, out var raid))
+            return null;
+        var started = WallClock.Instants(raid.Started, Zone)[0];
+        var ended = WallClock.Instants(raid.Ended, Zone)[0];
+        return started > before.ReadAt.UtcDateTime && ended <= reading.ReadAt.UtcDateTime + DeskRaidEndSlack ? raid : null;
+    }
+
+    // A screenshot's time against the raid's end line: the line may reach the log a moment after the menus are back.
+    private static readonly TimeSpan DeskRaidEndSlack = TimeSpan.FromSeconds(10);
+
+    // Under the gate (RaidOver): a raid that started is over, by its mode (the session's where the log didn't say one).
+    private void DeskRaidOver(RaidEnded ended)
+    {
+        if (ended.Previous.RaidStartedAt is not { } started)
+            return;
+        var mode = ended.Previous.Mode != GameMode.Unknown ? ended.Previous.Mode : _mode;
+        _raidsOver[mode] = (started, ended.At);
+    }
+
+    // Under the gate, once a menu screenshot's reading is all taken: the notice of a new page after a raid, with its UNDO.
+    private void SayDeskFresh()
+    {
+        if (_deskFreshOwed is not { } offer)
+            return;
+        _deskFreshOwed = null;
+        Say(SessionTexts.DeskFreshAfterRaid, DeskUndoSeconds, undo: offer);
+    }
+
+    /// <summary>
+    /// The desk's CLEAR (owner, 2026-10-26: "We need an option to clear the desk because it quickly gets messy"; from the
+    /// coordinator's options, "Button + fresh after raid"; docs/DESIGN.md §4, *The stash desk*, *Clearing the page*): the
+    /// mode's page emptied at once, every region back to never read, kept so in desk.json, and a notice "Desk cleared." whose
+    /// UNDO puts the page back exactly as it was. No question (principle 7). False when there was nothing to clear.
+    /// </summary>
+    public async Task<bool> ClearDeskAsync()
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            var change = _deskChangeMode == _mode ? _deskChange : null;
+            if (_desk.Clear(_mode, DateTimeOffset.Now) is not { } had)
+                return false;
+            _deskUndo = new DeskUndoHeld(++_deskUndoIds, _mode, had, change);
+            _deskFreshOwed = null;
+            _deskChange = new DeskChange(_desk.Page(_mode)!, new HashSet<string>(), false);
+            _deskChangeMode = _mode;
+            AppLog.Info($"Desk page cleared ({_mode}): {had.Regions.Count} regions");
+            Study.Ui("desk.clear", ("regions", had.Regions.Count));
+            SaveDeskIfDirty();
+            Publish();
+            Say(SessionTexts.DeskCleared, DeskUndoSeconds, undo: new DeskUndoOffer(_deskUndo.Id, _deskReadings));
+            return true;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>
+    /// The notice's UNDO (owner, 2026-10-26): the page a CLEAR or a new page after a raid took away put back as the mode's,
+    /// exactly as it was (its regions, cells, picks and reading times; after a raid, the page this reading would have made
+    /// of it), standing at once (it is no reading: nothing comes in). False when that page is no longer held: a reading came
+    /// since, or it was put back already.
+    /// </summary>
+    public async Task<bool> UndoDeskAsync(int id)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (_deskUndo is not { } held || held.Id != id)
+                return false;
+            _deskUndo = null;
+            _desk.Restore(held.Mode, held.Page);
+            if (held.Mode == _mode)
+            {
+                _deskChange = held.Change;
+                _deskChangeMode = held.Mode;
+            }
+            AppLog.Info($"Desk page put back ({held.Mode}): {held.Page.Regions.Count} regions");
+            Study.Ui("desk.undo", ("regions", held.Page.Regions.Count));
+            SaveDeskIfDirty();
+            Publish();
+            return true;
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     /// <summary>
@@ -275,7 +408,8 @@ public sealed partial class GameSession
     {
         if (!_deskOnScreen)
             return Timeout.InfiniteTimeSpan;
-        if (_tracker.State.Phase != RaidPhase.Menu || _desk.Page(_mode) is null)
+        // A page of no region (CLEAR) has nothing to price, as no page hasn't.
+        if (_tracker.State.Phase != RaidPhase.Menu || _desk.Page(_mode) is not { Regions.Count: > 0 })
             return DeskPricesLook;
         RefreshDeskPrices();
         if (_deskPricesLoading || _sources is not { } sources)

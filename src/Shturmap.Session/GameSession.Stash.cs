@@ -264,6 +264,8 @@ public sealed partial class GameSession
         try
         {
             log = TakeMenu(seen, menu, Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+            // A new desk page after a raid says so last, its UNDO in the notice that stands (owner, 2026-10-26).
+            SayDeskFresh();
         }
         finally
         {

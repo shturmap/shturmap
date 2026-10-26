@@ -395,7 +395,7 @@ public sealed class DevToolsTests : IDisposable
         var (steps, errors) = DevScript.Parse(string.Join('\n', "desk", "desk 2", "desk point backpack", "desk point stash 4 1", "desk plan",
             "desk show", "desk 4", "DESK open Stash", "desk open", "desk point stash 4", "desk fold"));
         const string said = "'desk' takes a reading (1 to 3), 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
-                            + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan', 'show [<n>]', 'prices' or 'probe <n>'";
+                            + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan', 'show [<n>]', 'prices', 'probe <n>', 'clear' or 'undo'";
         Assert.Equal([$"line 7: {said}", $"line 8: {said}", $"line 9: {said}", $"line 10: {said}", $"line 11: {said}"], errors);
         Assert.Equal(
             [
@@ -417,6 +417,18 @@ public sealed class DevToolsTests : IDisposable
         Assert.Equal(2, errors.Count);
         Assert.Equal(
             [new DevScript.DeskStep(DevScript.DeskAct.Prices) { Probe = true }, new DevScript.DeskStep(DevScript.DeskAct.Reading, 3) { Probe = true }],
+            steps.Select(s => DevScript.DeskOf(s)!));
+    }
+
+    // 2026-10-26 (owner: "Button + fresh after raid"): "clear" CLEAR in the desk's head clicked, "undo" the notice's UNDO
+    // clicked; neither takes more.
+    [Fact]
+    public void The_desk_step_clears_the_page_and_undoes_it()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "desk clear", "desk undo", "DESK Clear", "desk clear all", "desk undo 2"));
+        Assert.Equal(2, errors.Count);
+        Assert.Equal(
+            [new DevScript.DeskStep(DevScript.DeskAct.Clear), new DevScript.DeskStep(DevScript.DeskAct.Undo), new DevScript.DeskStep(DevScript.DeskAct.Clear)],
             steps.Select(s => DevScript.DeskOf(s)!));
     }
 
