@@ -6,6 +6,43 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-26: the overnight run's five decisions
+
+**Decided** (owner, 2026-10-26, on the session's decision page; the page stays outside the repository). Each was found
+in the night's work of 25 to 26 October, below; the coordinator's recommendation was taken in four, not in 3.
+
+1. **PaddleOCR where Windows' recognition reads nothing: A, build it.** Measured overnight
+   (`ocr-compare --fallback`, 6fbfde7): on 444 desk truth items Windows alone 361 right and 12 unread, Windows then
+   Paddle 366 and 6, 0 wrong either way; on 35 countdowns 33 then 35, the two being the orange ones under an hour. PP-OCRv5
+   latin recognition through ONNX Runtime on the CPU runs only on a label band or a countdown band Windows' recognition
+   left unread: never first, never on counts. The model (Apache-2.0) and the runtime (MIT) ship with the app; the
+   reading's setting covers it. Cost: about 121 ms more a picture on one thread, 51 on four, over about 1.8 s; about
+   25 MB more in the install. A measured check on the fixture sets before merging, 0 wrong still the bar. This changes
+   the sentence that the reading uses Windows' own text recognition alone (DESIGN.md §2, CLAUDE.md). Of the other ways,
+   B (Windows only) and C (Paddle first) were not taken.
+2. **A slot that reads another container: A, drop the old cells a window covered.** When a region's slot reads a
+   different container than the page's, nothing of the old grid stays, covered or not; the new grid's cells under the
+   window stay unread until a reading shows them (DESIGN.md §4: "its grid was the other one's"). B (keep as built) was
+   not taken.
+3. **The table reader's misread counter: B, build the count's vote in its place and measure it** (the coordinator
+   recommended leaving it). The vote runs after an objective's words are taken (`TasksReader.VoteObjectiveCountsAsync`),
+   so a line the vote reads no count on must not take the misread word back into the objective's text; the task tables
+   among the fixtures are measured before and after (counts, objectives' words), and it is merged only if nothing reads
+   worse.
+4. **A cell labelled with a weapon's preset name: A, name the gun.** A label that begins with a gun's short name and goes
+   on with more words ("USP .45 Expert") names the gun, its figure the bare gun's with the "+" for mods unseen, as a gun's
+   cell already has; only for guns ("RIP ammo pack" stays what it is). B (presets as candidates of their own) and C
+   (leave it unread) were not taken.
+5. **The head line for a part never read: A, leave it out until it is read.** "ON YOU 3.20 M+ ₽ · KEEP 0 · 2 · 1" until
+   the first stash page is read, and likewise no ON YOU while no gear page was read: nothing that reads as a figure for
+   what was never seen. The POCKETS and SPECIAL SLOTS placeholders one cell high, as their grids, so the column doesn't
+   move 40 px when the pockets are first read. B ("STASH —") and C ("STASH 0 ₽") were not taken.
+
+**The plan:** one Opus agent at a time, each in a worktree off main, merged, tested and in the dev build before the
+next: (1) decisions 2, 3 and 4 (the reading and the ledger, each with tests and measured on the fixture sets), (2)
+decision 5 (the view; the senior translator for any text; the UI QA pass), (3) decision 1 (the fallback, bundled, the
+docs it changes, a measured check, the release build scanned for the user name).
+
 ## 2026-10-25: the layout round: a steady desk, the reading's faults, the trader's task view
 
 **The ask** (owner, 2026-10-25, after the test of 2026-10-19): "From the last testing session it is clear that we have to
