@@ -47,6 +47,10 @@ the map of the raid you're in: what you'd otherwise look up in the wiki, in one 
   raid's start and when you ask for it (O twice by default). Take a screenshot while it shows and Shturmap reads it:
   the extracts on your list light up on the map and come first, the others turn hollow. Until then it says that
   the nearest extract isn't checked against your list.
+- **A grid for your squad:** 100 m squares over the map, lettered across and numbered down, each cut in nine as
+  on a number pad. After a screenshot the map's top left says your square ("YOU D5-8"), so you can call it out, and
+  a teammate's "D5-8" is found by reading the strips at the edges, without touching the map. Shturmap sends nothing:
+  you say the square, and teammates need Shturmap of their own to see the same grid. It can be turned off in settings.
 - **After the raid:** with a few screenshots taken, the map replays where you took them, in order, faint at the
   raid's start and bright at its end. REPLAY plays it again until your next raid. Nothing of it is saved.
 - **Quest cards:** objectives, keys and items for any quest, one hover away.

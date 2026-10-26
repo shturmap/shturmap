@@ -743,6 +743,10 @@ quoting it anywhere new.
   map render for The Lab: couldn't download it…"). With tarkov.dev's transform kept, Icebreaker's 10 m squares are
   oblong on its sheet (the lines are still 10 m apart); a map with neither SVG nor tiles would get one scale for both
   axes, so its squares stay square. The credit line names an artist only where their SVG is drawn.
+  **The 10 m grid gives way to the squad grid** (owner, confirmed 2026-10-26: one grid in the app; §4, "Map drawing",
+  *The grid*): while the grid is on (settings, on by default) the sheet draws no 10 m lines but the squad grid's 100 m
+  ones, its corner says "NO ARTWORK FOR THIS MAP · GRID 100 M", the credit line "grid 100 m", and the notices "a grid
+  stands in" without its spacing; with the grid turned off, the 10 m grid as above.
   A sheet that stands in for a render that couldn't be had gives way by itself (the review of 2026-10-04: The Lab
   opened offline stayed a sheet until the app was started again): the tiles the view needs are asked for again
   every 30 s, each tile once a round, whether or not the map is touched meanwhile, and the sheet stays until the
@@ -2097,6 +2101,16 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   artwork has arrived, and a snapshot is written only into the scene of its own map (`SceneGate`; review of
   2026-10-04: the map counted as shown from the moment it was asked for, so a snapshot that came before the artwork
   put the new map's markers and position onto the old map's picture). Until then the map before stays as it was.
+  **Inside the grid's strips** (owner, confirmed 2026-10-26; "Map drawing", *The grid*): while the squad grid shows, the
+  map's own controls step inside its strips, 22 DIP at the left and right and 18 at the top and bottom, times the text
+  size (`MainWindow.Grid`, `PlaceInsideGrid`), so no letter or number lies under a control: the notes 16 + 18 from the
+  top and 16 + 22 from the sides, the buttons and the floor list 16 + 22 from the right and 16 + 18 from the foot, the
+  WIKI MAP link and the credit 16 + 22 from the left and 10 + 18 from the foot, the replay's band 22 from the left,
+  68 + 22 from the right and 46 + 18 from the foot; the roll call's and the tasks' rows and the first raid's line keep
+  60 + 22 clear of the buttons on each side, the tour's band 68 + 22 from the right, and the glance's plate stands 16 + 18
+  from the top while no note shows. What the map draws itself steps inside them too: the scale bar 18 + 22 from the left
+  and 66 + 18 from the foot, the edge badge and its words and the chevrons their insets from the strips' inner edges (a
+  place under a strip counts as out of view). Without the grid everything stands where it did.
 - **Follow my position** (owner, 2026-10-03: "It should be a toggle in the map view and the camera should smooth
   scroll to the updated player position"; it replaces 2026-10-01's "a new fix never moves the view", principle 8):
   a toggle at the top of the map controls, the same 36 px square-cornered frame, its own symbol `E759`, the tooltip
@@ -2902,7 +2916,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   one line says what Automatic comes to and why: "Automatic: English, from the game.", "…, from Windows.", or that
   neither the game's nor Windows' language is translated yet; §8, "The app's own language"), "Text size" (NORMAL ·
   LARGER · LARGEST, on top of Windows' text size, which each choice's tooltip names; a choice applies at once; *Text
-  size* above), "Delete
+  size* above), "Grid on the map" (the squad grid: a tick, on unless unticked, `map.grid` in shturmap.db, applying at
+  once, with the note "100 m squares to tell your squad where you are, as D5-8; help says how to read one. Nothing is
+  sent: teammates see the same grid in their own Shturmap."; owner, 2026-10-26: one setting, on by default; "Map
+  drawing", *The grid*), "Delete
   screenshots after reading" (a tick, off unless ticked, with what goes and what stays; §2), "Read the extract list from
   screenshots" (a tick, on unless unticked, with what is looked at and that nothing of the picture is kept or sent;
   §2), "Flea price to copy" (the stash desk's list price: the last low matched, or 1–20 % under or over it, 3 % under
@@ -2946,10 +2963,10 @@ spawns below).
 
   | level | members | treatment |
   | --- | --- | --- |
-  | 1 | the player; the picked quests, the guide line and plate; the raid replay's pen while it plays | own hues (sand, the picks' colours), rings, drawn last, never faded |
+  | 1 | the player (with the grid its reference on the tag and at the map's top left); the picked quests, the guide line and plate; the raid replay's pen while it plays | own hues (sand, the picks' colours), rings, drawn last, never faded |
   | 2 | quest objectives; extracts and transits for your side | amber discs with glyphs (10 px); 15 px triangles and diamonds; labels in ink; the extracts on your list this raid lit, their names in bold |
   | 3 | boss, sniper and Scav zones | one marker per zone; Scav zones unlabelled; bosses hollow at 70 % and named once, at their likeliest zone, until they matter (2026-10-17) |
-  | 4 | the artwork, its names, the sheet grid; locks, switches, hazards, container dots | receded; names, locks and switches thinned with zoom |
+  | 4 | the artwork, its names, the squad grid's lines and its squares' references (the sheet's 10 m grid without it); locks, switches, hazards, container dots | receded; names, locks and switches thinned with zoom; the grid a lighter step of the ground under every symbol, name and route (*The grid*) |
 
   Extracts and transits are as large as the boss marker (15 px across), no longer smaller. A new symbol gets a
   level, a shape no other symbol uses, a colour from the palette (no new hues) and the collar.
@@ -3572,6 +3589,81 @@ spawns below).
   whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (its pick's colour
   when picked, gold when pointed at). Done objectives don't count. Same vocabulary as the player's edge badge, smaller and
   without a plate: the player is level 1. Nothing is drawn when nothing is highlighted.
+- **The grid** (owner, 2026-10-26, from a panel of five: E, the squad grid; §1's last exception; docs/NEXT.md). Squads
+  tell each other where they are, so the map carries a grid to say it with: (1) the player knows their own reference
+  from a screenshot's fix, and (2) a teammate's spoken one ("Delta 5-8") is found at a glance, without touching the map.
+  Shturmap sends nothing between players (§2, "Never share a position"): the player says the square, and a teammate
+  finds it on their own Shturmap, whose grid is the same.
+  - *The squares* (`Core.Maps.SquadGrid`): 100 m on the map as drawn; the columns lettered A to Z from the left without
+    I and O (they read as 1 and 0; 24 at most), the rows numbered from 1 at the top; each square cut in thirds each
+    way, its nine parts named as on a computer's number pad, 7 8 9 on the top row and 1 2 3 on the bottom (a phone has
+    1 2 3 on top): "D5-8" is the top middle of D5, said "Delta 5-8". The lines lie on world multiples of 100 m and their
+    thirds: every map's coordinateRotation is a multiple of 90° (Factory 90°, The Lab and Labyrinth 270°, the others
+    180°), so right on the map is world x or z, one way or the other, and the lines stand square (on Streets Primorsky
+    Ave. runs along one). A point left of A, past Z or above row 1 has no reference; past the map's last row or column
+    inside A to Z the grid goes on. One grid for every floor. Icebreaker keeps tarkov.dev's transform, stretched 1.75×
+    along one axis: its squares are oblong on screen and 100 m each way in the world. One keypad level, no second.
+  - *A1 fixed in the app* (`Core.Maps.GridOrigins`): a reference is only worth saying if every player's Shturmap draws
+    the same grid, so each map's A1 is never worked out from tarkov.dev's bounds at run time, which can change, but was
+    worked out once from maps.json of 2026-10-26 (the corner of the 100 m square holding the bounds' left and top edge as
+    drawn) and frozen as the corner's world (x, z): Customs 11 × 7 squares (A1 to L7), Factory 2 × 2, Ground Zero 4 × 6,
+    Icebreaker 2 × 2 (its bounds are Factory's numbers; the ship fits in them), Interchange 11 × 10, Lighthouse 12 × 18,
+    Reserve 7 × 6, Shoreline 17 × 12 (the widest, A to S), Streets 7 × 9, Terminal 10 × 11, The Lab 4 × 3, Labyrinth
+    2 × 2, Woods 15 × 15; Night Factory, Ground Zero 21+ and The Lab's dark one share their base's. A map without an
+    entry (one tarkov.dev adds) starts at its bounds and the app log says so once; `shturmap-cli grid` lists every map's
+    A1 and flags a new one (docs/UPDATES.md: a new map gets its entry). `SquadGridTests`, `GridOriginsTests`.
+  - *The lines*, in the artwork's layer (level 4), drawn before the sheet's container dots, the names, zones, routes and
+    symbols, so they lie under every one of them: 1 px, Ink at 90 % in the overlay blend, a lighter step of the ground
+    under the line with no hue of its own, which reads alike on light streets and dark blocks and all but vanishes on the
+    empty ground around a map; visible on purpose from a second monitor. Measured with `shturmap-cli render` (its
+    contrast line: the grid's pixels against the same view without it, inside the strips, the ground around the map left
+    out): the 100 m lines' median ΔL* 19.5 on Streets' whole view at 1600 × 1000 and 23.6 at three times (the panel's E:
+    about 21; the quiet grid B had 11), Woods 14.7 and 13.0, Factory 14.9 to 17.3, Icebreaker 21 to 27. On the sheet
+    (SheetPanel, L* about 6) the overlay steps a line up by about 4, so there the step is added instead: Ink at 19 % in the
+    plus blend, about ΔL* 19 over the panel. The lines break under the map's names and the markers' labels (each box
+    2 DIP larger) and run through nothing else; their runs are laid out with the frame's layout (`MapRenderer.GridOf`),
+    once per view, so a pulse's or a ping's frames draw them without a clip. They give way only where a square is under
+    12 to 20 px (below the whole map's view of the widest maps at the smallest window).
+  - *The keypad*: at the overview a tick at each third of every 100 m line, 4 DIP each way and as strong as the line,
+    the line's own pixel left alone; as the player zooms in, where a third of a square is 45 to 60 px (times the text
+    size), the ticks fade out and the thirds' lines fade in, Ink at 35 % in the overlay (ΔL* 7.7 on Streets at three
+    times, 5.2 on Woods: a step below the 100 m lines); nothing else moves. In a 1.2 s glide from Streets' whole view to
+    three times (`shturmap-cli frames streets-of-tarkov --scene plan --fix 40 2.5 120 --glide`) the fade takes frames 4
+    to 6, at 100 ms a frame.
+  - *The strips*, pinned to the view while it pans, over everything the map draws: 22 DIP at the left and right with
+    the rows' numbers, 18 at the top and bottom with the columns' letters, times the text size; the ground at 88 %, a
+    `Line` hairline at their inner edge, and a `LineStrong` mark 5 DIP into them where each 100 m line meets them. Each
+    letter or number stands at the middle of its column's or row's part inside them (none for a part under 10 DIP),
+    Bahnschrift semibold 11 in ink at 84 %. No label is placed under them, nor beyond them out of view.
+  - *A reference in every square*: "D3" at its top-left corner, where the square's part inside the strips starts (a
+    square whose corner is out of view keeps its reference at the strip), semibold 10.5 in ink at 47 % on a dark halo,
+    so it reads where it is looked for and otherwise stays back; a heard reference is found by reading, not counting.
+    It is left out where anything placed lies under it (a symbol and its badges, a leader, a label, a map name, the
+    guide's plate, the scale bar, a chevron, the player's ring and tag, the readout, the sheet's caption) and in a square
+    shown less than 30 px either way. Woods' whole view at 1600 × 1000: 145 shown, 65 left out (the panel: 146 and 64);
+    Streets' 50 and 13.
+  - *The player's reference*, only while a position is shown (a raid's, or the tour's example raid's; out of a raid
+    there is no "you", and the replay's positions have none): on the marker's tag from the first moment, "D5-8" in the
+    small dark tag, and with the age once it has one by principle 8, "D5-8 · 2 MIN OLD", larger and framed in sand from
+    2 minutes (`MapTexts.PlayerTagMinutesOld`); and large in one fixed place, the map's top left 8 DIP inside the strips
+    (owner, confirmed 2026-10-26: in sand, as the marker): "YOU" small in muted ink, the reference in the glance's large
+    figure size (22) in sand, the age small, muted, and in sand once stale ("YOU D5-8 · 2 MIN OLD"), on a ground plate
+    with a `LineStrong` hairline. Labels keep off it; a symbol under it is covered, the place being fixed. The repel
+    keeps symbols off the tag, as off the age tag before.
+  - *The map's controls step inside the strips* (owner, confirmed 2026-10-26; "Screen anatomy", the map): the scale bar,
+    the credit and the wiki link, the buttons and the floor list, the notes, the edge badge and its words, the chevrons.
+  - *The sheet's 10 m grid gives way* (owner, confirmed 2026-10-26: one grid in the app; §3, "The sheet").
+  - *One setting*, "Grid on the map", on unless unticked ("Screen anatomy", settings); help says how a reference is read
+    and said, and the legend has a row for it.
+  - *Frame times*, measured with `shturmap-cli frames` (each frame's `MapRenderer.Render` on the CPU, the frames tool's
+    timer; the app draws on the GPU) on Customs with every quest active, the roll call's zoom out (`--scene list-callout
+    --quests all`), grid off and on: at 1600 × 1000 a median of 101.9 and 103.2 ms against 102.1 and 105.1 ms (+0.2 and
+    +1.9 %); at the smallest window's map (`--viewport 500x481`) 11.45 and 11.62 ms against 12.04 and 11.96 ms (+5 and
+    +3 %); a glide on Customs' plan with every quest stayed within the PC's run-to-run spread (143, 139 and 160 ms off,
+    148, 138 and 140 on). Its labels and runs are laid out once per view change, never per frame of a pulse or a ping.
+  - Not taken: A (the spec as written), B (the quiet grid, letters at the top and numbers at the left only: (2) hard), C
+    (crosses instead of lines), D (no grid); the spec's extras (NATO words, a hover line and a copy action, which work
+    only out of a raid, where there is no "you"; metres; a second keypad level).
 - **The raid replay** (owner, 2026-10-07: "a post-raid view, similar to the one in Arc Raiders ... only the positions
   from the screenshots ... more on the eye-candy side of things ... automatically played after the raid finishes"; from
   the panels "B and D", then "C, but encode raid time to the color of the pen stroke. Use a fitting color map based on
