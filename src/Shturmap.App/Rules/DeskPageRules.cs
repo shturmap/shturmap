@@ -104,12 +104,24 @@ public static class DeskPageRules
     /// <see cref="DeskPage.InReadingOrder"/>).</summary>
     public static IReadOnlyList<DeskBlock> Blocks(IReadOnlyList<DeskRegion> regions)
     {
-        var blocks = Fixed.Select(kind => regions.FirstOrDefault(r => r.Kind == kind) is { } region && !HeadingAlone(region)
+        var blocks = Fixed.Select(kind => Read(regions, kind) is { } region
             ? new DeskBlock(region.Key, kind, region)
             : new DeskBlock(DeskRegion.KeyOf(kind), kind, null)).ToList();
         blocks.AddRange(regions.Where(r => r.Kind == DeskRegionKind.ContainerWindow).Select(r => new DeskBlock(r.Key, r.Kind, r)));
         return blocks;
     }
+
+    /// <summary>The page's region of a fixed kind, or null where it stands as never read: none of that kind on the page, or
+    /// one a reading made from its heading alone (<see cref="HeadingAlone"/>). The one rule of what was read, for the dashed
+    /// frame (<see cref="Blocks"/>) and the head line (<see cref="PartsRead"/>).</summary>
+    public static DeskRegion? Read(IReadOnlyList<DeskRegion> regions, DeskRegionKind kind) =>
+        regions.FirstOrDefault(r => r.Kind == kind) is { } region && !HeadingAlone(region) ? region : null;
+
+    /// <summary>Whether the page holds a gear page read (LOADOUT or a region of the middle column, read at least once) and
+    /// whether it holds a stash read: the regions <see cref="Read(IReadOnlyList{DeskRegion}, DeskRegionKind)"/> doesn't draw
+    /// as never read. A window counts in the part of the region its container stands in, so it makes no part read alone.</summary>
+    public static (bool Gear, bool Stash) PartsRead(IReadOnlyList<DeskRegion> regions) =>
+        (Fixed.Any(kind => kind != DeskRegionKind.Stash && Read(regions, kind) is not null), Read(regions, DeskRegionKind.Stash) is not null);
 
     /// <summary>
     /// Whether a region on the page is one a reading made from its heading alone, no grid and no cell in it: POCKETS,
@@ -717,10 +729,24 @@ public static class DeskPageRules
             : RuleTexts.DeskNotAttached(count: region.SameName, name: title);
     }
 
-    /// <summary>The head line over the page, in muted capitals: "ON YOU 1.01 M ₽ · STASH 6.84 M ₽ · KEEP 3 · 2 · 4", a
-    /// total with an unseen container in it ending in "+" ("1.01 M+ ₽"). The totals are given apart from the rest, so
-    /// they can count up.</summary>
-    public static string HeadLine(DeskTotals totals, double onYou, double stash) =>
-        RuleTexts.DeskHeadLine(onYou: DeskNumbers.Total(onYou, totals.OnYouPlus), stash: DeskNumbers.Total(stash, totals.StashPlus),
-            now: totals.KeepNow, next: totals.KeepNext, later: totals.KeepLater);
+    /// <summary>
+    /// The head line over the page, in muted capitals: "ON YOU 1.01 M ₽ · STASH 6.84 M ₽ · KEEP 3 · 2 · 4", a total with an
+    /// unseen container in it ending in "+" ("1.01 M+ ₽"). A part never read is left out (owner, 2026-10-26, decision 5:
+    /// "STASH 0 ₽" under a stash never read said a stash worth nothing): STASH until the page holds a stash read, ON YOU
+    /// until it holds a gear page read, by the rule that draws a region as never read (<see cref="PartsRead"/>), "ON YOU
+    /// 3.20 M+ ₽ · KEEP 0 · 2 · 1"; KEEP stays. The totals are given apart from the rest, so they can count up.
+    /// </summary>
+    /// <param name="regions">The page in hand's regions.</param>
+    public static string HeadLine(DeskTotals totals, double onYou, double stash, IReadOnlyList<DeskRegion> regions)
+    {
+        string OnYou() => DeskNumbers.Total(onYou, totals.OnYouPlus);
+        string Stash() => DeskNumbers.Total(stash, totals.StashPlus);
+        return PartsRead(regions) switch
+        {
+            (true, true) => RuleTexts.DeskHeadLine(onYou: OnYou(), stash: Stash(), now: totals.KeepNow, next: totals.KeepNext, later: totals.KeepLater),
+            (true, false) => RuleTexts.DeskHeadLineOnYou(onYou: OnYou(), now: totals.KeepNow, next: totals.KeepNext, later: totals.KeepLater),
+            (false, true) => RuleTexts.DeskHeadLineStash(stash: Stash(), now: totals.KeepNow, next: totals.KeepNext, later: totals.KeepLater),
+            _ => RuleTexts.DeskHeadLineKeep(now: totals.KeepNow, next: totals.KeepNext, later: totals.KeepLater),
+        };
+    }
 }

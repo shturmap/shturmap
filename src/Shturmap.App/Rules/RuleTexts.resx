@@ -360,6 +360,18 @@
     <value>ON YOU {onYou} · STASH {stash} · KEEP {now} · {next} · {later}</value>
     <comment>The stash desk's head line, in muted capitals over the page: what the items on the player are worth, what the stash's are worth ("1.01 M ₽", "6.84 M+ ₽"), then how many cells are kept for an active quest (now), a quest the active ones unlock (next) and one further down (later), as the cells' notches say. Capitals.</comment>
   </data>
+  <data name="DeskHeadLineOnYou" xml:space="preserve">
+    <value>ON YOU {onYou} · KEEP {now} · {next} · {later}</value>
+    <comment>The stash desk's head line (DeskHeadLine) while no screenshot has shown the stash yet: its STASH part left out, so it never says a stash worth nothing. {onYou}: what the items on the player are worth ("3.20 M+ ₽"); {now}, {next}, {later}: the cells kept for an active quest, a quest the active ones unlock, one further down. Capitals.</comment>
+  </data>
+  <data name="DeskHeadLineStash" xml:space="preserve">
+    <value>STASH {stash} · KEEP {now} · {next} · {later}</value>
+    <comment>The stash desk's head line (DeskHeadLine) while no screenshot has shown the player's gear yet (LOADOUT, rig, pockets, backpack…): its ON YOU part left out. {stash}: what the stash's items are worth ("6.84 M ₽"); {now}, {next}, {later}: the cells kept for an active quest, a quest the active ones unlock, one further down. Capitals.</comment>
+  </data>
+  <data name="DeskHeadLineKeep" xml:space="preserve">
+    <value>KEEP {now} · {next} · {later}</value>
+    <comment>The stash desk's head line (DeskHeadLine) while no screenshot has shown the gear or the stash yet (a page of a container's window alone): ON YOU and STASH left out. {now}, {next}, {later}: the cells kept for an active quest, a quest the active ones unlock, one further down. Capitals.</comment>
+  </data>
   <data name="DeskNotRead" xml:space="preserve">
     <value>NOT IN A SCREENSHOT YET</value>
     <comment>The stash desk: muted, inside the dashed frame that stands in the place of a part of the GEAR tab (TACTICAL RIG, POCKETS, BACKPACK, STASH…) no screenshot has shown yet, so the desk keeps the game's layout; under LOADOUT's head when its slots weren't seen. Capitals; the frame is five cells wide (200 DIP at the smallest), SPECIAL SLOTS' three (120 DIP), where the words wrap.</comment>

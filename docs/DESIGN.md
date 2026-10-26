@@ -2259,7 +2259,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       as wide as the game sets theirs (step 2's narrowing of the decision's five: five each took their row to ten cells
       and a gap, the middle column's widest by three cells, so a page of the stash alone stood in one column at 1600×900,
       1232 DIP for 1216, and the size changed again once the pockets were read; the owner's to overrule). It counts
-      nothing, and the layout counts it as read. A region a reading made from its heading alone, no grid and no cell in
+      nothing, and the layout counts it as read; the head line leaves out a part with no region of it read (*The head
+      line*, 2026-10-26). A region a reading made from its heading alone, no grid and no cell in
       it, stands as one never read (code review of 2026-10-25; `DeskPageRules.HeadingAlone`): a POCKETS, SPECIAL SLOTS or
       STASH of 0×0, as the layout gives one on a first reading when the region's frames all lie under a window or under
       no heading, was drawn as a bare head over nothing, POCKETS and SPECIAL SLOTS a DIP wide. A container's region of no
@@ -2350,7 +2351,15 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     (*The cell*; 2026-10-19: a key listed at 15 M nets 5 M after the fee, so the cells' listing prices would double a
     stash of rare keys). A total with an unseen container
     in it ends in "+" ("ON YOU 1.01 M+ ₽"). One total (B2) drowned a raid's haul in the stash's millions; keep counts
-    per part (B3) took two lines for what the notches already say.
+    per part (B3) took two lines for what the notches already say. **A part never read is left out** (owner,
+    2026-10-26, decision 5 of the overnight run: A; `DeskPageRules.PartsRead`): STASH until the page holds a stash read
+    at least once, ON YOU until it holds a gear page read (LOADOUT or a region of the middle column), "read" by the one
+    rule that draws a region as never read (*A region never read*: none of its kind on the page, or one made from its
+    heading alone): "ON YOU 3.20 M+ ₽ · KEEP 0 · 2 · 1" after a first GEAR screenshot, "STASH 6.84 M ₽ · KEEP 3 · 2 · 4"
+    after a stash's alone, "KEEP 0 · 2 · 1" alone where neither was (a page of a window alone); KEEP stays. Each is a whole sentence of the texts
+    file (`DeskHeadLine`, `DeskHeadLineOnYou`, `DeskHeadLineStash`, `DeskHeadLineKeep`). Until then the line said "STASH
+    0 ₽" over a stash never read, a stash worth nothing beside a frame that said "not seen" (UI QA pass of 5410c4d, F1).
+    Not taken: "STASH —" (B), "STASH 0 ₽" as it was (C).
     What a reading changed (compared with the page in hand only, never with a register, §1) comes in (*Fun*); a reading
     that changed nothing changes nothing. **Until 2026-10-25, the fold** (the addendum, B1; built in step B): each
     reading opened the regions it changed and folded the rest into one line where they stood, "UNCHANGED · POUCH ▸ ·

@@ -360,6 +360,18 @@
     <value>AN DIR {onYou} · STASH {stash} · BEHALTEN {now} · {next} · {later}</value>
     <comment>en: ON YOU {onYou} · STASH {stash} · KEEP {now} · {next} · {later}</comment>
   </data>
+  <data name="DeskHeadLineOnYou" xml:space="preserve">
+    <value>AN DIR {onYou} · BEHALTEN {now} · {next} · {later}</value>
+    <comment>en: ON YOU {onYou} · KEEP {now} · {next} · {later}</comment>
+  </data>
+  <data name="DeskHeadLineStash" xml:space="preserve">
+    <value>STASH {stash} · BEHALTEN {now} · {next} · {later}</value>
+    <comment>en: STASH {stash} · KEEP {now} · {next} · {later}</comment>
+  </data>
+  <data name="DeskHeadLineKeep" xml:space="preserve">
+    <value>BEHALTEN {now} · {next} · {later}</value>
+    <comment>en: KEEP {now} · {next} · {later}</comment>
+  </data>
   <data name="DeskNotRead" xml:space="preserve">
     <value>NOCH IN KEINEM SCREENSHOT</value>
     <comment>en: NOT IN A SCREENSHOT YET</comment>
