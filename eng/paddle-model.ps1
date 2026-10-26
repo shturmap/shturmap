@@ -31,8 +31,18 @@ New-Item -ItemType Directory -Force $cache, $Out | Out-Null
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 $agent = 'Shturmap-build (+https://github.com/shturmap/shturmap)'
 
+# The SHA-256 by .NET, not Get-FileHash: Windows PowerShell's Get-FileHash comes from a script module, which can't load
+# when the build is started from PowerShell 7 (as on GitHub's runner, whose pwsh hands its module path down to this
+# powershell), and the build stopped with "The term 'Get-FileHash' is not recognized" (2026-10-26).
+function Get-Sha256([string] $path) {
+  $sha = [Security.Cryptography.SHA256]::Create()
+  $stream = [IO.File]::OpenRead($path)
+  try { -join ($sha.ComputeHash($stream) | ForEach-Object { $_.ToString('X2') }) }
+  finally { $stream.Dispose(); $sha.Dispose() }
+}
+
 function Test-Hash([string] $path, [string] $sha256) {
-  (Test-Path $path) -and (Get-FileHash $path -Algorithm SHA256).Hash -eq $sha256
+  (Test-Path $path) -and (Get-Sha256 $path) -eq $sha256
 }
 
 foreach ($file in $files) {
@@ -51,7 +61,7 @@ foreach ($file in $files) {
         Start-Sleep -Seconds (3 * $try)
       }
     }
-    $hash = (Get-FileHash $part -Algorithm SHA256).Hash
+    $hash = Get-Sha256 $part
     if ($hash -ne $file.Sha256) {
       Remove-Item $part -Force
       throw "$($file.Name) from $($file.Url) has the SHA-256 $hash, not the pinned $($file.Sha256): not kept."
