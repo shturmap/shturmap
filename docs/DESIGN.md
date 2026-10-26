@@ -5026,8 +5026,11 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking.
   `DevScript.Verbs` is the one source of truth for the verbs and what each takes (the parser knows no other); this list
   follows it, and `DevToolsTests` fail when a verb there is missing here.
-  `snapshot` also saves the view's two tabs, and while a cue is up the cue alone with its transparency (`cue.png`, its
-  place in the map's panel in the app log: `window.png` shows that panel empty), writing over
+  `snapshot` also saves the view's two tabs, after the window's pictures while the script goes on (the step ends with
+  the window's: release UI QA pass of 0.7.0, F2, where the tabs made each step some 3 s and a still inside the roll
+  call came after the cue had gone; `exit` waits for the last), and while a cue is up the cue alone with its
+  transparency (`cue.png`, its place in the map's panel in the app log: `window.png` shows that panel empty; none for a
+  cue just faded out, which a still draws with no pixel, the log saying so), writing over
   what the folder had (one folder per moment), and expands `%VARIABLES%` in it, so a script kept in the repository
   names no user's folder. The script's path, and a folder left relative, are read from the app's working folder,
   `%USERPROFILE%` (`Program`). A `--dev-view` session starts on settings of its own, as at a first start, so the tour

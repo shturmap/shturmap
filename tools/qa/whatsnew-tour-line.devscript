@@ -13,7 +13,7 @@ map woods
 wait 4
 
 # 0.5.0's card (Hyena), the version the owner's report was on: "whatsnew 0.5.0" shows that version's card alone, as help's
-# link shows the newest's (0.6.0 is the newest now, and its card has three lines).
+# link shows the newest's (a later version's is the newest now).
 whatsnew 0.5.0
 wait 1
 
@@ -34,10 +34,11 @@ wait 0.5
 snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t3
 
 # The chapter's later moments: the example extract list read, the view taking in its extracts, the extracts ringing out,
-# and the chapter's end.
-wait 2
-snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t4
+# and the chapter's end, after the roll call's cue has gone (it stands about 6.4 s; the waits keep to it with the
+# snapshot step of 2026-10-26, about 0.7 s, the developer view's tabs taken while the script goes on).
 wait 3
+snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t4
+wait 5
 snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t5
 wait 3
 snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t6

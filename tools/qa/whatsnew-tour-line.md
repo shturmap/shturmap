@@ -36,8 +36,9 @@ $app.WaitForExit()
   once, and nothing here can show. Keep the mouse off Shturmap's window: a real pointer over it raises real events.
 - A `--dev-view` session starts on settings of its own, as at a first start, so the tour opens by itself at chapter 1;
   `tour end` ends it first, and its notice ("The tour stays in help …") is gone by the click.
-- The card is 0.5.0's, the version of the owner's report: `whatsnew 0.5.0` shows that version's card alone (0.6.0 is
-  the newest now, and its card has three lines), and `whatsnew 0.5.0 click 4` taps its fourth line.
+- The card is 0.5.0's, the version of the owner's report: `whatsnew 0.5.0` shows that version's card alone (a later
+  version's is the newest now), and `whatsnew 0.5.0 click 4` taps its fourth line. The newest card's lines have their
+  own replay, `whatsnew-lines`.
 - The QA pass runs it again at the smallest window, `--window 900x560` added to the arguments (and in German,
   `--culture de-DE`): there the chapter has the least room between the label at the map's top and the band.
 
@@ -48,12 +49,15 @@ plate, the band), `diagnostics.txt`, and the developer view's `devview-build.png
 
 ## When each still is taken
 
-A `snapshot` step takes about 1.7 s: the window's pictures about 0.7 s, holding the window's thread while it draws the
-map, then the developer view's two. A step of the chapter that falls due while the thread is held comes when it is
-free, so neither the stills nor the chapter keep to the script's times: each still's moment is in the app log. The
-click is the line `Developer view: script: whatsnew click 4`; a still is taken between its `script: snapshot …\tN` line
-and its `Snapshot saved to …\tN` line (`window.png` first, `tour.png` about 0.2 s later, `map.png` last). In runs on a
-Debug build the stills were taken about 0.4, 3.4, 7.3, 9.5, 13.2, 18 and 22.6 s after the click.
+A `snapshot` step takes about 0.7 s, holding the window's thread while it draws the map (1.5 s with the roll call's cue
+up); the developer view's two pictures follow while the script goes on (until 2026-10-26 they were in the step, about
+1.7 s then). A step of the chapter that falls due while the thread is held comes when it is free, so neither the stills
+nor the chapter keep to the script's times: each still's moment is in the app log. The click is the line `Developer
+view: script: whatsnew click 4`; a still is taken between its `script: snapshot …\tN` line and its `Snapshot saved to
+…\tN` line (`window.png` first, `tour.png` about 0.2 s later, `map.png` last). In runs on the Debug build (2026-10-26,
+the default window 2560×1392 and 900×560, English and German) the stills were taken about 0.4, 2.4 to 2.7, 5.1 to 5.7,
+6.2 to 7.2, 9.9 to 11.2, 15.7 to 18.2 and 19.4 to 22.2 s after the click; the roll call's cue came at 9 to 11 s and
+was gone before t5.
 
 A still shows one moment: what the chapter does over time shows in it as where it was by then. In seconds after the
 click, give or take the snapshots before it:
@@ -84,9 +88,11 @@ In every still, t0 to t6:
   None reaches the label at the map's top or runs under the band, and no frame's edge or corner mark crosses the
   label, but for a moment while a frame glides (QA pass, 2026-10-15: at 900×560 the last cut-out reached the label,
   which hid framed extracts; DESIGN.md §4, *The tour*).
-- The list's plate whole above the band, its last row and YOUR LIST THIS RAID: n OF 11 EXTRACTS in sight once read: at
-  the map's top right at 1600×900, under the label at 900×560, where it names fewer extracts (two lit and one ???,
-  "3 OF 11") and, in German, is drawn smaller (QA pass, 2026-10-15: the band covered its last row and the read line).
+- The list's plate whole above the band, its last row and YOUR LIST THIS RAID: n OF m EXTRACTS in sight once read (n
+  the extracts the plate names, m all of Customs' PMC extracts in the data, the same m in every still and both
+  languages): at the map's top right at 1600×900, under the label at 900×560, where it names fewer extracts (two lit
+  and one ???, "3 OF m") and, in German, is drawn smaller (QA pass, 2026-10-15: the band covered its last row and the
+  read line).
 
 Each still, against the table above:
 

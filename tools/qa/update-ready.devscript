@@ -3,8 +3,9 @@
 # pop-up"; from a panel of four: B, "A cue, then the band"). A developer build plays it with --dev-view --dev-script;
 # how to run it, and what each still must show: update-ready.md beside this file. Times are in seconds.
 #
-# A snapshot step takes about 1.6 s and the step after it follows 0.3 s later, so the waits below are what is left
-# between the stills, not their moments: update-ready.md has those.
+# A snapshot step takes about 0.5 to 1 s (the developer view's tabs follow while the script goes on; until 2026-10-26
+# they were in the step, about 1.6 s then) and the step after it follows 0.3 s later, so the waits below are what is
+# left between the stills, not their moments: update-ready.md has those.
 
 # A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
 # once the data was there. It ends first.
@@ -18,10 +19,11 @@ wait 3
 trigger update
 wait 0.5
 snapshot %TEMP%\shturmap-qa\update-ready\t0
-wait 0.5
+# The cue whole and still, its title decoded (from 1.6 s).
+wait 1.4
 snapshot %TEMP%\shturmap-qa\update-ready\t1
-# The cue fades from 4.4 s; from 4.6 s the band glows again, for 1.2 s.
-wait 3
+# The cue fades from 4.4 s; from 4.6 s the band glows again, for 1.2 s; the still comes after that.
+wait 3.7
 snapshot %TEMP%\shturmap-qa\update-ready\t2
 
 # A PMC raid on Customs: the band goes as the raid loads, and the raid card's head holds its row.

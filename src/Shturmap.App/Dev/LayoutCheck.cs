@@ -51,14 +51,16 @@ internal sealed class LayoutCheck
     /// <summary>
     /// Elements that lie over the rest of the window on purpose: the tour's dim and band, the Report dialog, a cue's
     /// band, What's New's plate, the copies of a cue's words its halo is made of (MainWindow.HaloName: the words again
-    /// in the dark, under them), a glowing line's gold copy over its words while it fades (Controls.Glow.CopyName), and
-    /// the stash desk's scroll mark over its page's foot (Controls.DeskBoard.MoreBelowName; what it covers stands in the
-    /// next of the page's screens, MainWindow.LayoutCheck). Their texts are compared with each other, not with what they
-    /// cover.
+    /// in the dark, under them), a glowing line's gold copy over its words while it fades (Controls.Glow.CopyName; the
+    /// update band's title's is UpdateBandGlow: release UI QA pass of 0.7.0, a still in the band's glow took it for text
+    /// over text), and the stash desk's scroll mark over its page's foot (Controls.DeskBoard.MoreBelowName; what it
+    /// covers stands in the next of the page's screens, MainWindow.LayoutCheck). Their texts are compared with each
+    /// other, not with what they cover.
     /// </summary>
     public static readonly IReadOnlySet<string> Layers = new HashSet<string>(StringComparer.Ordinal)
     {
-        "TourLayer", "ReportOverlay", "CuePanel", "WhatsNewPlate", MainWindow.HaloName, Controls.Glow.CopyName, DeskBoard.MoreBelowName,
+        "TourLayer", "ReportOverlay", "CuePanel", "WhatsNewPlate", MainWindow.HaloName, Controls.Glow.CopyName, "UpdateBandGlow",
+        DeskBoard.MoreBelowName,
     };
 
     // How far a box may stick out, in DIP: layout rounding and a hairline's negative margin.

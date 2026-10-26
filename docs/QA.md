@@ -177,7 +177,10 @@ the stash desk's view from the made-up desk's readings (`desk 1`, `2`, `3`): the
 light and stem, the rail's card, the scroll mark at the desk's foot and gone at the page's end, the regions kept and
 dated (until 2026-10-25 the fold), PLAN and DESK, and a raid taking the window and giving it back; `glance`
 (2026-10-19) the in-raid glance's plate from the made-up readings (`glance 1`, a drawer; `glance 2`, a body): its look,
-a newer reading replacing it, its 6 s, a reading waiting for the roll call, and the raid's end taking it.
+a newer reading replacing it, its 6 s, a reading waiting for the roll call, and the raid's end taking it;
+`whatsnew-lines` (2026-10-26, drafted in the release UI QA pass of 0.7.0) the newest What's New card line by line, the
+build's own release whatever its number: each line pointed at (its preview on the map, or none for a `tour:N` line) and
+tapped (a `tour:N` line opens the tour at chapter N).
 
 - **`<flow>.devscript`**: a developer script (DESIGN.md §8, "Developer aids", `--dev-script`; `DevScript.Verbs`), for
   instance `tour end` (a `--dev-view` session starts as a first start, and the tour opens by itself), `quest start <id
@@ -210,9 +213,14 @@ $app.WaitForExit()
 Then `--culture de-DE` and `--window <px>` added to the arguments for the other runs, and after each run
 `Copy-Item -Recurse $qa "$pass\flows\<flow>\<culture>\<size>"`: the next run clears `$qa`. Each moment holds the
 window's pictures with their layout files and the developer view's tabs (`devview-play.png` shows the script's last ten
-lines, newest first); with `--verbose` the app log (`$qa\data\logs`) has every step, what it said and when each still
-was taken. A step that found no quest or failed leaves its moments unchecked. A snapshot takes a second or two, so a
-moment inside a motion shows where the motion was by then; the map's own motion frame by frame is `shturmap-cli frames`.
+lines, newest first: the tabs are taken after the window's pictures while the script goes on, so its newest lines can
+be a step or two past the still's); with `--verbose` the app log (`$qa\data\logs`) has every step, what it said and
+when each still was taken. A step that found no quest or failed leaves its moments unchecked. A snapshot takes 0.15 to
+1.5 s (each picture waits for a frame in a quiet run, longer at a larger window and on a busy PC), so a moment inside a
+motion shows where the motion was by then, and a still timed by waits comes earlier or later from run to run; the map's
+own motion frame by frame is `shturmap-cli frames`. A cue that has just faded out has no `cue.png`: between its fade's
+end and its going a still draws it with no pixel, and the log says "no cue.png, the cue faded out (drawn empty)", or
+"the cue gone while it was drawn" (release UI QA pass of 0.7.0, F2).
 A cue's own motion (its entrance, the rows rising in 0.1 s apart from 0.5 s, 0.3 s each, in the roll call's and the
 tasks' cues) can't be checked frame by frame: the stills are a second or more apart and `frames` draws the map, not the
 cues; accepted as unchecked for now (QA pass of 2026-10-19, F4). The stash desk's entry, its cells coming in 50 ms

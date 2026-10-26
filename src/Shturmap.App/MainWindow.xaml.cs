@@ -2973,7 +2973,9 @@ public sealed partial class MainWindow : Window
 
     // A popup's picture (help, settings) drawn with no pixel at all is taken again, up to five times half a second apart:
     // a popup is drawn on transparency, so an empty picture of one is a render taken before it was drawn, never the popup.
-    private async Task RenderToPngAsync(UIElement element, string path, bool popup = false)
+    // With "unlessEmpty" a picture drawn with no pixel isn't written (false): a cue that has faded out (the developer
+    // snapshot's cue.png).
+    private async Task<bool> RenderToPngAsync(UIElement element, string path, bool popup = false, bool unlessEmpty = false)
     {
         // A larger text size: a popup opened just for its picture takes it too, and the fits settle (Controls.TextScale).
         if (Controls.TextScale.Own != 1)
@@ -2991,6 +2993,8 @@ public sealed partial class MainWindow : Window
             (rtb, pixels) = await RenderAsync();
             AppLog.Info($"Snapshot: {Path.GetFileName(path)} drawn empty, taken again ({again} of 5){(Drawn(pixels) ? ", drawn" : "")}");
         }
+        if (unlessEmpty && !Drawn(pixels))
+            return false;
 
         static bool Drawn(Windows.Storage.Streams.IBuffer buffer)
         {
@@ -3033,5 +3037,6 @@ public sealed partial class MainWindow : Window
         // The layout check: the picture's texts and what a longer language breaks in it, beside it (Dev/LayoutCheck.cs).
         await CheckLayoutAsync(element, path, rtb);
 #endif
+        return true;
     }
 }
