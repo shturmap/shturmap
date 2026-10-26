@@ -24,7 +24,8 @@ namespace Shturmap.Game.Screenshots;
 /// the header, the task's text between the header and the objectives, its rewards below them: none of it in a band).
 /// A countdown band no way read is read once more by PaddleOCR's recognition where the reader has it (owner, 2026-10-26,
 /// decision 1; <see cref="PaddleReader"/>; the orange countdowns under an hour, which no way reads), its text through the
-/// same parse; never a progress, a count or the page's words. The file is opened for reading only, shared with the game
+/// same parse and taken only whole (no digit lost); never a progress, a count or the page's words. The file is opened for
+/// reading only, shared with the game
 /// that may still be writing it, and nothing of the picture is kept or written anywhere.
 /// </summary>
 public sealed class TasksReader
@@ -195,8 +196,8 @@ public sealed class TasksReader
             (days is null || days.Count() * 2 < Ways.Count || TaskTable.DaysOf(read) == days.Key))
         {
             // Where no way read the countdown (the orange ones under an hour, 2026-10-25), PaddleOCR's reading of the band,
-            // through the same parse; never against the days most ways read. It is no vote: on a disagreement with another
-            // row (OperationalChecks) it never wins.
+            // through the same parse, only whole; never against the days most ways read. It is no vote: on a disagreement
+            // with another row (OperationalChecks) it never wins.
             (text, votes) = (read, 0);
             row.TimeByPaddle = true;
         }
@@ -206,7 +207,8 @@ public sealed class TasksReader
     }
 
     /// <summary>A countdown band read by PaddleOCR's recognition at its own size, in a narrow margin of the band's own
-    /// colour (the spike of 2026-10-25): its text when it parses as a countdown, else null; null without the reader.</summary>
+    /// colour (the spike of 2026-10-25): its text when it reads as a whole countdown (<see cref="TaskTable.WholeTimeLeft"/>:
+    /// no digit lost, as nothing outvotes it), else null; null without the reader.</summary>
     private async Task<string?> PaddleCountdownAsync(SKBitmap picture, TaskBand band, Action<string>? note, CancellationToken ct)
     {
         if (_paddle is null)
@@ -220,8 +222,9 @@ public sealed class TasksReader
             text = await _paddle.ReadAsync(framed, ct);
         if (text is null)
             return null;
-        var left = TaskTable.TimeLeft(text);
-        note?.Invoke($"time band {band.X},{band.Y}: PaddleOCR \"{text}\"" + (left is { } t ? $" = {TaskTable.Hms(t)}" : ", no countdown"));
+        var left = TaskTable.WholeTimeLeft(text);
+        note?.Invoke($"time band {band.X},{band.Y}: PaddleOCR \"{text}\"" +
+                     (left is { } t ? $" = {TaskTable.Hms(t)}" : TaskTable.TimeLeft(text) is null ? ", no countdown" : ", not whole (a digit lost?): unread"));
         return left is null ? null : text;
     }
 

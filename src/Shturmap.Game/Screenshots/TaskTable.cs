@@ -576,6 +576,22 @@ public static class TaskTable
         return TimeSpan.FromDays(days[0] - '0') + time;
     }
 
+    // A clock read whole: three groups of exactly two digits, the separators as the game's colon reads.
+    private static readonly Regex WholeClock = new(@"^\d{2}[:.,;]\d{2}[:.,;]\d{2}$", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// A countdown as PaddleOCR reads it (2026-10-26; <see cref="TasksReader"/>), taken only whole: every group of its clock
+    /// exactly two digits, hh:mm:ss, and its day part, if any, as <see cref="TimeLeft"/> takes Windows' ("6 day(s)
+    /// 23:07:57"); else none. Where Windows' recognition read nothing PaddleOCR's reading is the only one, with no vote to
+    /// outvote it, so a digit lost ("05:55:4", which <see cref="TimeLeft"/> takes for 00:55:54) is no countdown.
+    /// </summary>
+    internal static TimeSpan? WholeTimeLeft(string text)
+    {
+        var trimmed = text.Trim().TrimEnd('>', '›', '»', ' ');
+        var clock = DaysPattern.Match(trimmed) is { Success: true } d ? d.Groups["time"].Value : trimmed;
+        return WholeClock.IsMatch(Digits(clock.Replace(" ", "", StringComparison.Ordinal))) ? TimeLeft(text) : null;
+    }
+
     private static readonly Regex DaysStart = new(@"^(?<days>\S{1,2}?)\s*d\s*a\s*[yv]", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     /// <summary>The days of a countdown read as "6 day(s)", with or without the time after them; null for another

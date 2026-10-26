@@ -246,8 +246,28 @@ public sealed class TaskTableTests
         Assert.Null(Assert.Single(page.Rows[1].Objectives).Of);
     }
 
-    // A text PaddleOCR reads that is no countdown is none; and a model that can't be loaded leaves the rows as Windows'
-    // recognition left them, said once.
+    // PaddleOCR's countdown is taken only whole (2026-10-26): where Windows' recognition read nothing it is the only reading,
+    // so a digit lost must read as none, where Windows' text keeps its lenient parse ("05:55:4" is 00:55:54 there).
+    [Theory]
+    [InlineData("00:48:48", "00:48:48")]
+    [InlineData("00:48:48 >", "00:48:48")]
+    [InlineData("1Ø:14:11", "10:14:11")]
+    [InlineData("6 day(s) 23:07:57 >", "167:07:57")]
+    [InlineData("05:55:4", null)]
+    [InlineData("5:55:54", null)]
+    [InlineData("055554", null)]
+    [InlineData("00:4848", null)]
+    [InlineData("6 day(s) 23:7:57", null)]
+    [InlineData("6 day(s)", null)]
+    public void A_countdown_paddle_reads_is_taken_only_whole(string text, string? whole) =>
+        Assert.Equal(whole, TaskTable.WholeTimeLeft(text) is { } t ? TaskTable.Hms(t) : null);
+
+    [Fact]
+    public void A_countdown_with_a_digit_lost_still_parses_from_windows_text() =>
+        Assert.Equal(new TimeSpan(0, 55, 54), TaskTable.TimeLeft("05:55:4"));
+
+    // A text PaddleOCR reads that is no countdown, or one with a digit lost, is none; and a model that can't be loaded
+    // leaves the rows as Windows' recognition left them, said once.
     [Fact]
     public async Task A_countdown_band_paddle_reads_as_no_countdown_or_cant_read_stays_unread()
     {
@@ -256,7 +276,7 @@ public sealed class TaskTableTests
         try
         {
             using var missing = new PaddleReader(Path.Combine(root, "none.onnx"), Path.Combine(root, "none.txt"), failed: failed.Add);
-            foreach (ILineReader paddle in new ILineReader[] { new DeskReaderTests.Lines("Survive"), missing })
+            foreach (ILineReader paddle in new ILineReader[] { new DeskReaderTests.Lines("Survive"), new DeskReaderTests.Lines("05:55:4"), missing })
             {
                 var ocr = TasksReader.Create(paddle);
                 if (ocr is null)

@@ -587,8 +587,12 @@ hour. So a second recognition comes with the app, kept as narrow as the readings
   high, up to three pixels past its ink, as Windows' band reading cuts it; a countdown's band as the vote reads it), read
   once; its text through the same match as Windows' (the whole catalogue at 0.9, the slot's kind, the cell's footprint,
   the preset rule, then the cell's picture against its candidates' icons as any "one of N"; a countdown's parse, never
-  against the days most ways read), and taken only where it names an item or parses. A countdown it read is no vote (0):
-  where two rows disagree (`OperationalChecks`) it never wins. Counts, conditions and marks of a cell it named are read
+  against the days most ways read), and taken only where it names an item or parses. A countdown it read is taken only
+  whole (`TaskTable.WholeTimeLeft`; coordinator, 2026-10-26, for the bar of 0 wrong): every group of its clock exactly two
+  digits, hh:mm:ss, its day part, if any, as Windows' text's is parsed; else it is unread. Where no way of Windows' read
+  the band, its reading is the only one, with nothing to outvote it, and a digit lost would be a wrong countdown
+  ("05:55:4", which Windows' lenient parse takes for 00:55:54; PaddleOCR alone read so on the spike's night). Windows'
+  text keeps its parse. Nor is it a vote (0): where two rows disagree (`OperationalChecks`) it never wins. Counts, conditions and marks of a cell it named are read
   by Windows' recognition, as ever.
 - **The model** is loaded at the first band that needs it (about 110 ms), off the reading's thread, once a run. One that
   can't be loaded (gone from beside the exe, damaged, the runtime's library refused) is said once in the app log (WARN)

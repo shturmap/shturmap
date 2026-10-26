@@ -149,7 +149,10 @@ and the README say it.)
   the first band that needs it (104–113 ms here), off the reading's thread; one that can't be loaded is said once (WARN)
   and never asked again, the readings then Windows' alone. No setting.
 - Where: `TasksReader` on a countdown band no way read (after the 14-way vote and the days split), through
-  `TaskTable.TimeLeft`, never against the days most ways read, as no vote (`TaskRow.TimeByPaddle`, votes 0);
+  `TaskTable.TimeLeft` and taken only whole (`TaskTable.WholeTimeLeft`, the coordinator's addition of the same day: every
+  clock group exactly two digits, a day part as Windows' text's is parsed, else unread, since nothing outvotes it: the
+  spike's "05:55:4" would have been 00:55:54; Windows' text keeps its lenient parse), never against the days most ways
+  read, as no vote (`TaskRow.TimeByPaddle`, votes 0);
   `DeskReader` on a slot whose label no reading fit or that read none (not one under a window), and, in the cells' last
   pass, on an item in its settled place whose label no reading fit (not a footprint contradiction, not an odd shape),
   through the same match (the slot's kind, the footprint, the preset rule; the icons settle a "one of N" as ever). Never a
@@ -200,9 +203,11 @@ and the README say it.)
   none wrong, 3 more said right at the least), `SafetyTests` (telemetry).
 - Texts: the menu screenshots' setting note (`SettingsReadStashNote`) in English and German names PaddleOCR's
   recognition, for the senior translator and the UI QA pass (a longer note in settings).
-- Noticed, left alone: a countdown PaddleOCR reads with a digit lost still parses leniently (the spike's "05:55:4" alone
-  read 00:55:54; on the fixtures the fallback never met one): a stricter parse of its text (two digits a group) would
-  guard it, not built since the decision said the same parse; the icon rule now settles newly named cartridges (PS, SP) to
+- The whole-countdown rule measured again (`shturmap-cli tasks` over `operational` and `operational\trader`): 35 of 35,
+  0 wrong, PaddleOCR's two readings ("00:48:48", "00:48:30") whole. `TaskTableTests`: the rule on whole and cut texts
+  ("05:55:4", "5:55:54", "055554", "6 day(s) 23:7:57" unread; Windows' parse still takes "05:55:4"), and the reader
+  leaving a band PaddleOCR reads cut unread.
+- Noticed, left alone: the icon rule now settles newly named cartridges (PS, SP) to
   one calibre by its own thresholds, plausible on the crops but not sure by eye at that size; ONNX Runtime's managed and
   native packages each bring the same 344 KB ThirdPartyNotices into `licenses`; `ocr-compare` keeps its own copy of the
   recognition behind `-p:OcrSpike=true`.
