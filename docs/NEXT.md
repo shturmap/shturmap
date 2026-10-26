@@ -155,6 +155,16 @@ on its cell".) Decision 3 was left out of this step by the owner's later call; n
   nothing, "5/10" would halve the figure); a preset whose name is a part's short name whole ("MP5 SD", "SA58 SPR") is
   named that part, as before; `ocr-compare --fallback` (`OcrFallback`, decision 1's measuring) matches labels without the
   preset rule.
+- Built (2026-10-26: a gun's rounds aren't its condition): nothing in the code to change. `DeskValues.Of` has left a gun's
+  and a magazine's "a/b" out of the condition since step B (`DeskItemKind.Gun`, from tarkov.dev's type "gun" as
+  `DeskHolds.Mods` is), so "5/10" never halved a figure: the noticed item took the CLI's printed "10/10" for one. Measured
+  on fcdd49c (`shturmap-cli desk`, the four menu sets and the 22 raid screenshots, cache only): 33 gun cells carry a
+  rounds count, 28 below full ("0/17", "0/20", "24/30", "44/50" …), each at the bare gun's figure with its "+"; the
+  truths as in decision 1's line. One pistol's "0/17" did scale a figure, the reading's fault, not the rule's: the M9A3 in
+  the stash page 2026-10-11 16:32 (3), read one cell wide and named the "M9A3 polymer side grips" by the icons (~0, full
+  10k); left alone. Tests: `DeskReaderTests.A_guns_rounds_are_no_condition_and_an_armours_condition_still_counts`
+  (drawn), `DeskSessionTests.A_gun_in_the_item_file_holds_mods_and_its_rounds_are_no_condition`; DESIGN.md §2 and §4
+  (*The cell*) say it.
 
 **Built (2026-10-26: decision 5).** (Binding: DESIGN.md §4, *The stash desk*, *The head line* ("A part never read is left
 out") and *A region never read*.)

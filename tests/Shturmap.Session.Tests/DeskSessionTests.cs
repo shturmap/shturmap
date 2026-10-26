@@ -171,4 +171,30 @@ public class DeskSessionTests
         await Task.Delay(600, TestContext.Current.CancellationToken);
         Assert.Empty(asked);
     }
+
+    // A gun in the item file (tarkov.dev's type "gun") holds mods, as the reading marks its cell, and is a gun to its
+    // figure: its magazine's rounds on its cell ("5/10") are no condition (docs/DESIGN.md §4, *The cell*, "~"; decision
+    // 4's builder took a DVL-10's "10/10" for one, 2026-10-26). An armour's print is its condition.
+    [Fact]
+    public void A_gun_in_the_item_file_holds_mods_and_its_rounds_are_no_condition()
+    {
+        const string gunId = "000000000000000000000403", armourId = "000000000000000000000404";
+        var sources = new ItemSources
+        {
+            Items = new Dictionary<string, ApiItem>
+            {
+                [gunId] = new(gunId, ["gun", "wearable"], 1, 40_000, [], BasePrice: 20_000, Width: 2, Height: 1),
+                [armourId] = new(armourId, ["armor", "wearable"], 1, 60_000, [], BasePrice: 30_000, Width: 3, Height: 3),
+            },
+            Barters = Array.Empty<ApiBarter>().ToLookup(b => ""),
+            Crafts = Array.Empty<ApiCraft>().ToLookup(c => ""),
+            Stations = new Dictionary<string, string>(),
+        };
+        Assert.Equal(DeskHolds.Mods, DeskData.HoldsOf(sources.Items[gunId]));
+        var flea = new DeskFleaRules(0.05, 0.05);
+        var gun = DeskValues.Of(DeskData.Facts(sources, gunId)!, 1, new DeskPrint(5, 10), null, flea);
+        Assert.Equal((40_000d, 40_000d, 1d), (gun.Value, gun.Full, gun.Scale));
+        var armour = DeskValues.Of(DeskData.Facts(sources, armourId)!, 1, new DeskPrint(23, 46), null, flea);
+        Assert.Equal((30_000d, 60_000d, 0.5), (armour.Value, armour.Full, armour.Scale));
+    }
 }
