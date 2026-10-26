@@ -180,7 +180,9 @@ dated (until 2026-10-25 the fold), PLAN and DESK, and a raid taking the window a
 a newer reading replacing it, its 6 s, a reading waiting for the roll call, and the raid's end taking it;
 `whatsnew-lines` (2026-10-26, drafted in the release UI QA pass of 0.7.0) the newest What's New card line by line, the
 build's own release whatever its number: each line pointed at (its preview on the map, or none for a `tour:N` line) and
-tapped (a `tour:N` line opens the tour at chapter N).
+tapped (a `tour:N` line opens the tour at chapter N); `desk-prices` (2026-10-26) the desk's pictures across new prices and
+a reading that changed nothing: each cell's picture drawn in the first frame after, never blank while its file is
+decoded again.
 
 - **`<flow>.devscript`**: a developer script (DESIGN.md §8, "Developer aids", `--dev-script`; `DevScript.Verbs`), for
   instance `tour end` (a `--dev-view` session starts as a first start, and the tour opens by itself), `quest start <id

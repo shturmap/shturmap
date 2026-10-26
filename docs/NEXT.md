@@ -36,7 +36,15 @@ cards with it. The count (DESIGN.md §3): at most 12 requests an hour of desk on
 when the file changed, which it does every few minutes, so about 17 MB an hour of steady desk on screen; a few hundred
 bytes when unchanged. The settings note under the menu screenshots' tick says it (`SettingsReadStashNote`, English and
 German), as do DESIGN.md §2, §3, §4 and §8, the 0.7.0 notes, the README, PRIVACY.md and docs\UPDATES.md. Tests:
-`DeskPricesSessionTests` (a clock and a loader of the test's own), `DeskSwitchTests`, `PriceHistoryTests`.
+`DeskPricesSessionTests` (a clock and a loader of the test's own), `DeskSwitchTests`, `PriceHistoryTests`. Then the
+pictures (the coordinator, the same day: a re-pricing every five minutes must not make them blink): the page built again
+made every cell's picture a new bitmap, blank until its file was decoded again; it now takes the bitmap the page already
+has, by file and decoded width (`DeskBoard.ArtOf`, the last two builds' kept), so new prices, a reading, a pick or a
+language draw each picture in the first frame, the reading's entry as before. Measured headless with
+`tools\qa\desk-prices.devscript` (`desk prices`, `desk probe <n>`: the desk rendered in the frame before and the first frame
+after, each cell's art judged drawn or flat; `DeskBoard.PicturesDrawnAsync`): without the kept bitmaps 3 of 52 pictures in
+the first frame after new prices and after a reading that changed nothing; with them 52 of 52 each time, and after a
+reading that changed the backpack 43 of 43 with its 9 cells coming in.
 
 ## 2026-10-26: a grid on the map, for squads
 

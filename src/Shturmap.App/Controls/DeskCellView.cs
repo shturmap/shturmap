@@ -143,7 +143,7 @@ public sealed partial class DeskCellView : Grid
     public Border Light { get; }
 
     // The band's height: the figure's line, taller where the window's text size draws the figure larger.
-    private double Band => Math.Max(Size >= DeskCells.Large ? 16 : 13.5, Math.Ceiling(TextScale.Drawn(Marks.FigureSize) + 3));
+    internal double Band => Math.Max(Size >= DeskCells.Large ? 16 : 13.5, Math.Ceiling(TextScale.Drawn(Marks.FigureSize) + 3));
 
     private FrameworkElement FigureRow(string figure)
     {
@@ -302,11 +302,28 @@ public sealed partial class DeskCellView : Grid
             var w = Width - 2;
             var h = Height - 2;
             var scale = XamlRoot?.RasterizationScale ?? 1.5;
-            var bitmap = new BitmapImage(new Uri(path)) { DecodePixelWidth = (int)Math.Ceiling(Math.Max(w, h) * scale) };
+            var width = (int)Math.Ceiling(Math.Max(w, h) * scale);
+            // On the desk, the bitmap the page already has for the file (DeskBoard.ArtOf): a page built again draws the
+            // picture in its first frame, so new prices don't make it blink.
+            var bitmap = _board?.ArtOf(path, width) ?? new BitmapImage(new Uri(path)) { DecodePixelWidth = width };
             var image = new Image { Source = bitmap, Stretch = Stretch.Uniform, Width = w, Height = h };
             Canvas.SetLeft(image, 1);
             Canvas.SetTop(image, 1);
-            bitmap.ImageOpened += (_, _) =>
+            // Fitted once its size is known: at once for a bitmap already opened, which opens no more.
+            if (bitmap.PixelWidth > 0)
+                Fit();
+            else
+            {
+                void Opened(object sender, RoutedEventArgs e)
+                {
+                    bitmap.ImageOpened -= Opened;
+                    Fit();
+                }
+                bitmap.ImageOpened += Opened;
+            }
+            canvas.Children.Add(image);
+
+            void Fit()
             {
                 if (boxed && bitmap.PixelWidth > 0 && bitmap.PixelHeight > 0)
                 {
@@ -328,8 +345,7 @@ public sealed partial class DeskCellView : Grid
                 Canvas.SetTop(image, 1 + (h - w) / 2);
                 image.RenderTransformOrigin = new Point(0.5, 0.5);
                 image.RenderTransform = new RotateTransform { Angle = 90 };
-            };
-            canvas.Children.Add(image);
+            }
         }
         catch (Exception e)
         {

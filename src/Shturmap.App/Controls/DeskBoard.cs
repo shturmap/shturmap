@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Shapes;
 using Shturmap.App.Rules;
 using Shturmap.Core.Desk;
@@ -63,6 +64,13 @@ public sealed partial class DeskBoard : Grid
 
     // A container's grid and the slot box beside it: a stem leaving the grid on the box's side goes round the box.
     private readonly Dictionary<Canvas, FrameworkElement> _boxes = [];
+
+    // The cells' pictures as decoded, by file and decoded width: this build's, and the build's before, kept for the next.
+    // A page built again (new prices every five minutes, a reading, a pick, a language) draws each picture it had from the
+    // bitmap already decoded, in its first frame; a new bitmap stays blank until its file is decoded, so every picture
+    // blinked (the coordinator, 2026-10-26, on the desk's prices every five minutes). Only the last two builds' are kept.
+    private Dictionary<(string Path, int Width), BitmapImage> _artBefore = [];
+    private Dictionary<(string Path, int Width), BitmapImage> _art = [];
 
     private DeskView? _view;
     private string _builtShape = "";
@@ -147,6 +155,68 @@ public sealed partial class DeskBoard : Grid
 
     /// <summary>The page on screen, for the layout check and the developer view.</summary>
     public DeskView? View => _view;
+
+#if DEVTOOLS
+    /// <summary>
+    /// The developer script's look at the pictures (the coordinator, 2026-10-26: new prices every five minutes must not
+    /// make them blink): the desk as its next frame draws it (RenderTargetBitmap, called before anything else runs), and
+    /// each cell with a picture in the page's view judged by the middle of its art, under the figure's band and over the
+    /// corners' plates: drawn where its pixels vary, blank where they are the cell's flat ground (a picture not decoded
+    /// yet); a cell coming in (a reading's, its opacity from 0) is counted apart. How many were drawn, of how many judged,
+    /// and how many came in.
+    /// </summary>
+    internal async Task<(int Drawn, int Judged, int Entering)> PicturesDrawnAsync()
+    {
+        var rendered = new RenderTargetBitmap();
+        await rendered.RenderAsync(this);
+        var pixels = System.Runtime.InteropServices.WindowsRuntime.WindowsRuntimeBufferExtensions.ToArray(await rendered.GetPixelsAsync());
+        if (rendered.PixelWidth == 0 || ActualWidth <= 0 || _scroll.Visibility != Visibility.Visible)
+            return (0, 0, 0);
+        var scale = rendered.PixelWidth / ActualWidth;
+        var top = _scroll.TransformToVisual(this).TransformPoint(new Point(0, 0));
+        var view = new Rect(top.X, top.Y, _scroll.ViewportWidth, _scroll.ViewportHeight - (_more.Visibility == Visibility.Visible ? _more.ActualHeight : 0));
+        int drawn = 0, judged = 0, entering = 0;
+        foreach (var cell in _cellViews)
+        {
+            if ((cell.Sheet.Cell.ItemId ?? cell.Sheet.Cell.Ids.FirstOrDefault()) is null || cell.ActualWidth <= 0)
+                continue;
+            var at = cell.TransformToVisual(this).TransformPoint(new Point(0, 0));
+            var middle = new Rect(at.X + cell.ActualWidth * 0.3, at.Y + cell.Band + 2, cell.ActualWidth * 0.4, Math.Max(0, cell.ActualHeight - cell.Band - 18));
+            if (middle.Width < 4 || middle.Height < 4 || middle.X < view.X || middle.Y < view.Y || middle.Right > view.Right || middle.Bottom > view.Bottom)
+                continue;
+            if (cell.Opacity < 1)
+            {
+                entering++;
+                continue;
+            }
+            judged++;
+            if (Varies(pixels, rendered.PixelWidth, (int)(middle.X * scale), (int)(middle.Y * scale), (int)(middle.Width * scale), (int)(middle.Height * scale)))
+                drawn++;
+        }
+        return (drawn, judged, entering);
+
+        // Bgra8 pixels: their brightness's spread over the rectangle, more than a flat ground's.
+        static bool Varies(byte[] bgra, int stride, int x, int y, int w, int h)
+        {
+            double sum = 0, squares = 0;
+            var n = 0;
+            for (var j = y; j < y + h; j++)
+            {
+                for (var i = x; i < x + w; i++)
+                {
+                    var p = (j * stride + i) * 4;
+                    if (p + 2 >= bgra.Length)
+                        continue;
+                    var luma = 0.114 * bgra[p] + 0.587 * bgra[p + 1] + 0.299 * bgra[p + 2];
+                    sum += luma;
+                    squares += luma * luma;
+                    n++;
+                }
+            }
+            return n > 0 && Math.Sqrt(Math.Max(0, squares / n - sum / n * (sum / n))) > 2;
+        }
+    }
+#endif
 
     /// <summary>
     /// Shows a page. With <paramref name="motion"/>, the cells of <paramref name="entering"/>'s regions come in, 50 ms
@@ -325,9 +395,23 @@ public sealed partial class DeskBoard : Grid
 
     // ---- the page ----
 
+    /// <summary>A cell's picture from a file, decoded at a width: the bitmap the page already has for it (this build's or
+    /// the one before's, drawn at once), else a new one.</summary>
+    internal BitmapImage ArtOf(string path, int width)
+    {
+        var key = (path, width);
+        if (_art.TryGetValue(key, out var bitmap))
+            return bitmap;
+        if (!_artBefore.TryGetValue(key, out bitmap))
+            bitmap = new BitmapImage(new Uri(path)) { DecodePixelWidth = width };
+        _art[key] = bitmap;
+        return bitmap;
+    }
+
     // The page anew: its columns, regions and placeholders, and cells; the cells of the entering regions, in reading order.
     private List<DeskCellView> Build(IReadOnlySet<string>? entering)
     {
+        (_artBefore, _art) = (_art, []);
         _columns.Children.Clear();
         _columns.ColumnDefinitions.Clear();
         _stems.Children.Clear();

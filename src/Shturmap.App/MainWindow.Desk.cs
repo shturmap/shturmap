@@ -40,6 +40,10 @@ public sealed partial class MainWindow
     private int _deskExampleReading = 1;
     private readonly Dictionary<DeskCellKey, string> _deskExamplePicks = [];
 
+    // The made-up desk's flea prices against its own (the developer script's "desk prices": new prices, as the session's
+    // every five minutes bring them).
+    private double _deskExamplePriced = 1;
+
     // The price histories the cards asked for, by item, for the mode in hand; those on their way.
     private readonly Dictionary<string, DeskHistory?> _deskHistories = new(StringComparer.Ordinal);
     private readonly HashSet<string> _deskHistoriesLoading = new(StringComparer.Ordinal);
@@ -529,6 +533,7 @@ public sealed partial class MainWindow
     {
         var data = s.Data;
         return DeskExample.View(_deskExampleReading, s.Mode, counter,
-            data is null ? null : id => data.TraderName(id) is { Length: > 0 } name ? name : id, DateTimeOffset.Now, _deskExamplePicks);
+            data is null ? null : id => data.TraderName(id) is { Length: > 0 } name ? name : id, DateTimeOffset.Now, _deskExamplePicks,
+            _deskExamplePriced);
     }
 }

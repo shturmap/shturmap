@@ -147,6 +147,7 @@ public static class DevScript
         Copy,
         Pick,
         Rule,
+        Prices,
     }
 
     /// <summary>A "desk" step's parts: the act; the reading; the region and the cell's grid place (−1, −1 for its first
@@ -158,6 +159,10 @@ public static class DevScript
         public int N { get; init; }
 
         public string? Rule { get; init; }
+
+        /// <summary>The pictures looked at in the first frame after the step, before and after it ("desk probe &lt;n&gt;",
+        /// "desk prices").</summary>
+        public bool Probe { get; init; }
     }
 
     /// <summary>
@@ -168,7 +173,9 @@ public static class DevScript
     /// all]" a pin clicked (all, or nothing named: every pin), "desk pick &lt;region&gt; &lt;i&gt; &lt;j&gt; | &lt;slot&gt; &lt;n&gt;" a
     /// "?" cell's n-th candidate clicked on its card, "desk rule match | under:&lt;n&gt; | over:&lt;n&gt;" the copy's rule, "desk
     /// plan" and "desk show" PLAN and DESK clicked, "desk show &lt;n&gt;" the n-th pinned line in the rail's foot clicked, from
-    /// the top (UI QA pass of the second round, F3, 2026-10-19), so its card shows whole. A region is its key (loadout, rig,
+    /// the top (UI QA pass of the second round, F3, 2026-10-19), so its card shows whole. "desk prices" the made-up desk's
+    /// flea prices a tenth up, as the session's new prices every five minutes bring them, and "desk probe &lt;n&gt;" its reading
+    /// n: each says how many of the page's pictures the first frame after it drew (2026-10-26). A region is its key (loadout, rig,
     /// pockets, special, backpack, pouch, stash) or a window's title (zhuk); a slot its key (headwear, armband). Null for
     /// anything else.
     /// </summary>
@@ -182,6 +189,8 @@ public static class DevScript
         {
             [] => new DeskStep(DeskAct.Reading, 1),
             [var n] when Number(n, out var reading) && reading is >= 1 and <= 3 => new DeskStep(DeskAct.Reading, reading),
+            [var probe, var n] when Is(probe, "probe") && Number(n, out var reading) && reading is >= 1 and <= 3 => new DeskStep(DeskAct.Reading, reading) { Probe = true },
+            [var prices] when Is(prices, "prices") => new DeskStep(DeskAct.Prices) { Probe = true },
             [var plan] when Is(plan, "plan") => new DeskStep(DeskAct.Plan),
             [var show] when Is(show, "show") => new DeskStep(DeskAct.Show),
             [var show, var n] when Is(show, "show") && Number(n, out var line) && line >= 1 => new DeskStep(DeskAct.ShowPin) { N = line },
@@ -342,7 +351,7 @@ public static class DevScript
             if (verb == "desk" && DeskOf(step) is null)
             {
                 errors.Add($"line {i + 1}: 'desk' takes a reading (1 to 3), 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
-                    + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan' or 'show [<n>]'");
+                    + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan', 'show [<n>]', 'prices' or 'probe <n>'");
                 continue;
             }
             if (verb == "glance" && GlanceOf(step) is null)
