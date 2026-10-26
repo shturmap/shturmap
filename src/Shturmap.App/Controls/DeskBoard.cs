@@ -751,7 +751,7 @@ public sealed partial class DeskBoard : Grid
     {
         _shown = totals;
         if (_view is { } view)
-            _head.Text = DeskPageRules.HeadLine(view.Sheet.Totals, totals.OnYou, totals.Stash);
+            _head.Text = DeskPageRules.HeadLine(view.Sheet.Totals, totals.OnYou, totals.Stash, view.Sheet.Page.Regions);
     }
 
     // The totals count up once, from what the head line said to the new totals, eased out.

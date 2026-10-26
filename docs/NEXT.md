@@ -138,6 +138,22 @@ on its cell".) Decision 3 was left out of this step by the owner's later call; n
   named that part, as before; `ocr-compare --fallback` (`OcrFallback`, decision 1's measuring) matches labels without the
   preset rule.
 
+**Built (2026-10-26: decision 5).** (Binding: DESIGN.md §4, *The stash desk*, *The head line* ("A part never read is left
+out") and *A region never read*.)
+
+- The head line (`DeskPageRules.HeadLine`, `PartsRead`): STASH left out until the page holds a stash read at least once,
+  ON YOU until it holds a gear page read (LOADOUT or a region of the middle column), KEEP always. "Read" is
+  `DeskPageRules.Read`, the rule `Blocks` draws the dashed frame by (no region of the kind on the page, or one of its
+  heading alone), so the frame and the line can't disagree; a window makes no part read by itself (it counts where its
+  container is). Four whole sentences in `RuleTexts`: `DeskHeadLine` as it was, `DeskHeadLineOnYou` ("ON YOU {onYou} ·
+  KEEP …", „AN DIR {onYou} · BEHALTEN …“), `DeskHeadLineStash` ("STASH {stash} · KEEP …", „STASH {stash} · BEHALTEN …“)
+  and `DeskHeadLineKeep` ("KEEP …", „BEHALTEN …“). The count-up is as before: the reading that first shows the stash
+  brings STASH in counting up from 0. Tests: `DeskPageRulesTests.The_head_line_leaves_out_a_part_never_read` (the
+  made-up reading 4's line; the four cases; a LOADOUT of no slot, a backpack whose slot was seen empty and pockets read
+  empty each a gear page read; the frame's rule and the line's the same on six pages) and the German test's four lines.
+  Pictures (folder build, `fake-raid.ps1 -PlanOnly -Desk -DeskReading 4`): "ON YOU 3.20 M+ ₽ · KEEP 0 · 2 · 1" at
+  1600×900 in English, „AN DIR 3,20 M+ ₽ · BEHALTEN 0 · 2 · 1“ at 900×560 in German. `docs/tour.md` shows no head line.
+
 ## 2026-10-25: the layout round: a steady desk, the reading's faults, the trader's task view
 
 **The ask** (owner, 2026-10-25, after the test of 2026-10-19): "From the last testing session it is clear that we have to
