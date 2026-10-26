@@ -9,7 +9,8 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 ## 2026-10-26: the overnight run's five decisions
 
 **Decided** (owner, 2026-10-26, on the session's decision page; the page stays outside the repository). Each was found
-in the night's work of 25 to 26 October, below; the coordinator's recommendation was taken in four, not in 3.
+in the night's work of 25 to 26 October, below; the coordinator's recommendation was taken in all five (in 3 after a
+first pick of B).
 
 1. **PaddleOCR where Windows' recognition reads nothing: A, build it.** Measured overnight
    (`ocr-compare --fallback`, 6fbfde7): on 444 desk truth items Windows alone 361 right and 12 unread, Windows then
@@ -24,11 +25,11 @@ in the night's work of 25 to 26 October, below; the coordinator's recommendation
    different container than the page's, nothing of the old grid stays, covered or not; the new grid's cells under the
    window stay unread until a reading shows them (DESIGN.md §4: "its grid was the other one's"). B (keep as built) was
    not taken.
-3. **The table reader's misread counter: B, build the count's vote in its place and measure it** (the coordinator
-   recommended leaving it). The vote runs after an objective's words are taken (`TasksReader.VoteObjectiveCountsAsync`),
-   so a line the vote reads no count on must not take the misread word back into the objective's text; the task tables
-   among the fixtures are measured before and after (counts, objectives' words), and it is merged only if nothing reads
-   worse.
+3. **The table reader's misread counter: A, leave it** (first picked B, build the count's vote and measure it; changed
+   to A the same day). `MisreadCount` stays: the vote runs after an objective's words are taken
+   (`TasksReader.VoteObjectiveCountsAsync`), so on a line it reads no count for, the misread word would stand in the
+   objective's text again, and the reader reads all 17 counts of the fixtures right: no measured gain to buy. The item
+   leaves the cleanups; its accepted limit (below, the code review's list) stands.
 4. **A cell labelled with a weapon's preset name: A, name the gun.** A label that begins with a gun's short name and goes
    on with more words ("USP .45 Expert") names the gun, its figure the bare gun's with the "+" for mods unseen, as a gun's
    cell already has; only for guns ("RIP ammo pack" stays what it is). B (presets as candidates of their own) and C
@@ -39,7 +40,7 @@ in the night's work of 25 to 26 October, below; the coordinator's recommendation
    move 40 px when the pockets are first read. B ("STASH —") and C ("STASH 0 ₽") were not taken.
 
 **The plan:** one Opus agent at a time, each in a worktree off main, merged, tested and in the dev build before the
-next: (1) decisions 2, 3 and 4 (the reading and the ledger, each with tests and measured on the fixture sets), (2)
+next: (1) decisions 2 and 4 (the reading and the ledger, each with tests and measured on the fixture sets), (2)
 decision 5 (the view; the senior translator for any text; the UI QA pass), (3) decision 1 (the fallback, bundled, the
 docs it changes, a measured check, the release build scanned for the user name).
 
