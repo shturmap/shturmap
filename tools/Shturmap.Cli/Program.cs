@@ -36,6 +36,9 @@ switch (command)
     case "frames":
         await Shturmap.Cli.Frames.RunAsync(args.Skip(1).ToList());
         break;
+    case "grid":
+        await Grid();
+        break;
     case "watch":
         await Watch(int.TryParse(args.ElementAtOrDefault(1), out var seconds) ? seconds : 20);
         break;
@@ -112,6 +115,10 @@ switch (command)
                                             turn the wheel at that symbol's place instead of the position;
                                             --viewport: the view's size instead of 1600x1000 (500x481: the map at
                                             the smallest window, 900x560)
+            shturmap-cli grid                every map's squad grid: its A1 as the app fixes it (GridOrigins) and as the data's
+                                            bounds would put it, its squares across and down, flagged NEW (no entry: it
+                                            starts at its bounds, add one), MOVED (the bounds now start elsewhere), WIDE
+                                            (more than 24 columns), TURNED (a rotation not a multiple of 90°)
             shturmap-cli watch [seconds]     run the companion headless and print what it sees
             shturmap-cli simulate            play a scripted Streets raid against a temporary fake game folder
             shturmap-cli quests [mode]       list active quests with every stored observation behind them
@@ -733,6 +740,36 @@ static async Task Render(string mapName, string output, List<string> screenshots
     }
     Console.WriteLine($"{content.Markers.Count} markers, {content.Zones.Count} zones; objectives here: " +
                       string.Join("; ", content.Objectives.Select(o => $"{o.Quest.Name}: {o.Objective.Description} ({o.Places.Count} places)")));
+}
+
+// The squad grid's audit (docs/UPDATES.md): each map's A1 as the app fixes it and as the data's bounds would put it, so a
+// new map or bounds that moved are seen after a tarkov.dev update. A new map gets its entry in GridOrigins (the corner
+// printed here) and in GridOriginsTests.
+static async Task Grid()
+{
+    var http = new CachedHttp(CachedHttp.CreateClient(), Shturmap.Session.AppPaths.Default.DataCache);
+    var data = await new GameDataLoader(http).LoadAsync(GameMode.Pve, "en");
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+    foreach (var definition in data.MapDefinitions.OrderBy(d => d.Key, StringComparer.Ordinal))
+    {
+        var grid = Shturmap.Core.Maps.SquadGrid.For(definition);
+        var bounds = Shturmap.Core.Maps.SquadGrid.FromBounds(definition);
+        var flags = new List<string>();
+        if (!grid.Fixed)
+            flags.Add("NEW");
+        else if (grid.Corner != bounds.Corner)
+            flags.Add("MOVED");
+        if (grid.Columns > Shturmap.Core.Maps.SquadGrid.Letters.Length)
+            flags.Add("WIDE");
+        if (definition.CoordinateRotation % 90 != 0)
+            flags.Add("TURNED");
+        var kind = definition.SvgPath is not null ? "svg" : definition.TilePath is not null ? "tiles" : "sheet";
+        var also = definition.AltKeys.Count > 0 ? "; also " + string.Join(", ", definition.AltKeys) : "";
+        var flagged = flags.Count > 0 ? "  " + string.Join(" ", flags) : "";
+        var last = Shturmap.Core.Maps.SquadGrid.Letter(grid.Columns - 1);
+        Console.WriteLine(string.Create(inv,
+            $"{definition.Key,-22} rot {definition.CoordinateRotation,3} {kind,-5} A1 at x {grid.Corner.X,6:0}, z {grid.Corner.Z,6:0} (bounds: x {bounds.Corner.X,6:0}, z {bounds.Corner.Z,6:0}); {grid.Columns} x {grid.Rows} squares, A to {last}, 1 to {grid.Rows}{also}{flagged}"));
+    }
 }
 
 static async Task Data(string mode, string language)
