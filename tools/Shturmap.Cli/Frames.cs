@@ -208,8 +208,9 @@ internal static class Frames
             shown.Floor = FloorResolver.LayerFor(definition, given);
             about.Add(FormattableString.Invariant($"Player: --fix ({given.X:0.#}, {given.Y:0.#}, {given.Z:0.#}), which the preview itself hasn't got"));
         }
-        // One fitted view for every frame, as the map opens; with --glide the view moves from it as AnimateView moves it.
-        var camera = new Camera();
+        // One fitted view for every frame, as the map opens (inside the grid's strips while it shows, Camera.Inset); with
+        // --glide the view moves from it as AnimateView moves it.
+        var camera = new Camera { Inset = MapRenderer.GridInset(shown, 1) };
         camera.Resize(new SKSize(Width, Height));
         camera.Fit(shown.Projection.WorldRect, 24, Camera.LabelRoom);
         var from = (camera.Center, camera.Zoom);

@@ -115,9 +115,11 @@ public sealed partial class MapView : Grid
 
     // The camera told the text size before it works out a view: the label room's share of the view grows with it
     // (Camera.TextScale; QA pass of 2026-10-19, F2).
+    // And the grid's strips: what a view frames lies inside them (Camera.Inset; UI QA pass of the squad grid, F2).
     private Camera Sized()
     {
         _camera.TextScale = (float)TextScale.Effective;
+        _camera.Inset = _scene is { } scene ? MapRenderer.GridInset(scene, UiScale) : SKSize.Empty;
         return _camera;
     }
 
@@ -167,6 +169,55 @@ public sealed partial class MapView : Grid
 
     private bool _showGrid = true;
 
+    /// <summary>
+    /// Where a plate of the window lies over the map for a while (DIPs in this view; the in-raid glance's), null while none
+    /// does: the player's reference at the map's top left isn't drawn under it (<see cref="MapScene.PlateOver"/>), on every
+    /// scene this view shows; a change redraws at once.
+    /// </summary>
+    public Windows.Foundation.Rect? PlateOver
+    {
+        get => _plateOver;
+        set
+        {
+            _plateOver = value;
+            if (_scene is not null)
+            {
+                _scene.PlateOver = PlatePixels();
+                Invalidate();
+            }
+        }
+    }
+
+    private Windows.Foundation.Rect? _plateOver;
+
+    private SKRect? PlatePixels() => _plateOver is { } r ? Pixels(r) : null;
+
+    private SKRect Pixels(Windows.Foundation.Rect r) =>
+        SKRect.Create((float)r.X * PixelScale, (float)r.Y * PixelScale, (float)r.Width * PixelScale, (float)r.Height * PixelScale);
+
+    /// <summary>
+    /// Where the window's own controls stand over the map (DIPs in this view: the WIKI MAP link with the credit, the buttons
+    /// with the floor list): no label or name is placed under them, and the squares' references are left out there
+    /// (<see cref="MapScene.ControlsOver"/>), on every scene this view shows; a change lays the view out anew.
+    /// </summary>
+    public IReadOnlyList<Windows.Foundation.Rect> ControlsOver
+    {
+        get => _controlsOver;
+        set
+        {
+            _controlsOver = value;
+            if (_scene is not null)
+            {
+                _scene.ControlsOver = ControlPixels();
+                Invalidate();
+            }
+        }
+    }
+
+    private IReadOnlyList<Windows.Foundation.Rect> _controlsOver = [];
+
+    private IReadOnlyList<SKRect> ControlPixels() => _controlsOver.Select(Pixels).ToList();
+
     // The maps whose grid starts at tarkov.dev's bounds for want of a fixed A1 (a map added since; GridOrigins), said once
     // each in the app log.
     private readonly HashSet<string> _gridUnfixedSaid = [];
@@ -177,6 +228,8 @@ public sealed partial class MapView : Grid
         if (scene is not null)
         {
             scene.ShowGrid = _showGrid;
+            scene.PlateOver = PlatePixels();
+            scene.ControlsOver = ControlPixels();
             if (!scene.Grid.Fixed && _gridUnfixedSaid.Add(scene.Definition.Key))
                 Shturmap.Session.AppLog.Warn($"Map grid: no fixed A1 for the map '{scene.Definition.Key}'; its grid starts at tarkov.dev's bounds until it gets one (GridOrigins)");
         }
@@ -527,10 +580,12 @@ public sealed partial class MapView : Grid
         if (_scene is not { } scene || _fitPending)
             return null;
         var scale = PixelScale;
-        var footPixels = (float)(foot * scale);
-        var headPixels = (float)(head * scale);
+        // Inside the grid's strips too, where the head and the foot don't reach further (Camera.Inset).
+        var inset = Sized().Inset;
+        var footPixels = Math.Max((float)(foot * scale), inset.Height);
+        var headPixels = Math.Max((float)(head * scale), inset.Height);
         // The part between the head and the foot, as a view of its own: its middle lies (foot - head) / 2 above the view's.
-        var between = new SKSize(_camera.Viewport.Width, Math.Max(0, _camera.Viewport.Height - footPixels - headPixels));
+        var between = new SKSize(Math.Max(0, _camera.Viewport.Width - 2 * inset.Width), Math.Max(0, _camera.Viewport.Height - footPixels - headPixels));
         double Shift(double zoom) => (footPixels - headPixels) / 2 / zoom;
         var settled = _glide is { } glide ? (glide.To, _camera.Zoom) : View;
         var inPart = (new Shturmap.Core.Maps.MapPoint(settled.Item1.X, settled.Item1.Y - Shift(settled.Item2)), settled.Item2);

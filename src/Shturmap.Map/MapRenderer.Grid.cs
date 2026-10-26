@@ -39,6 +39,11 @@ public static partial class MapRenderer
     // lines' median ΔL* about 21 at its view 3, about twice the quiet grid's).
     private const byte GridLineAlpha = 230, GridKeypadAlpha = 90;
 
+    // The keypad's floor on the artwork's drawn map: ink at this strength in the plus blend, six levels lighter whatever the
+    // ground (UI QA pass of the squad grid, F6), so on dark ground, where the overlay steps a line up least, its lines still
+    // read: on Streets' dark blocks at three times a median ΔL* of 3.7 became 6.6, under the 100 m lines' 8.9 there.
+    private const byte GridKeypadFloorAlpha = 7;
+
     // On the sheet (SheetPanel, L* about 6) the overlay steps the lines up by about 4: there the step is added instead,
     // ink at these strengths in the plus blend, about the same ΔL* (about 20 for the 100 m lines, 7 for the keypad's).
     private const byte SheetLineAlpha = 48, SheetKeypadAlpha = 18;
@@ -50,6 +55,10 @@ public static partial class MapRenderer
 
     // A square shown narrower or lower than this (pixels, before scaling) carries no reference: two stacked read as one.
     private const float GridReferenceRoom = 30;
+
+    // How far above and below its box a reference keeps from anything placed (pixels, before scaling); beside it, a
+    // label's gap (LabelGap).
+    private const float GridReferenceMargin = 3;
 
     // How far a tick reaches each way from its 100 m line (pixels, before scaling).
     private const float GridTickArm = 4;
@@ -91,6 +100,11 @@ public static partial class MapRenderer
     /// <param name="Age">"2 MIN OLD" once the position is a minute old; empty before.</param>
     /// <param name="Stale">From <see cref="PlayerStale"/>: the age said in sand, as the tag is framed in it.</param>
     public sealed record YouReadout(SKRect Box, string Reference, string Age, bool Stale);
+
+    /// <summary>The camera's <see cref="Camera.Inset"/> for a scene: the grid's strips at each side (pixels), so what a view
+    /// frames lies inside them; none without the grid.</summary>
+    public static SKSize GridInset(MapScene scene, float ui) =>
+        scene.ShowGrid ? new SKSize(GridStripWide * ui, GridStripHigh * ui) : SKSize.Empty;
 
     /// <summary>The room the grid's strips take at the view's edges (pixels): none without the grid.</summary>
     internal static (float Left, float Top, float Right, float Bottom) GridStrips(MapScene scene, float ui) =>
@@ -233,6 +247,7 @@ public static partial class MapRenderer
         var room = GridReferenceRoom * ui;
         if (smaller >= room)
         {
+            // What the frame placed, the window's controls over the map with it (MapScene.ControlsOver).
             var obstacles = taken.Where(t => t.IntersectsWith(inner)).ToList();
             using var font = new SKFont(TypefaceBold, GridReferenceSize * ui);
             var c0 = Math.Max(0, (int)Math.Floor((inner.Left - origin.X) / dx));
@@ -253,7 +268,10 @@ public static partial class MapRenderer
                     var box = new SKRect(cell.Left + 2 * ui, cell.Top + 2 * ui, cell.Left + 6 * ui + font.MeasureText(text), cell.Top + 5 * ui + font.Size);
                     if (box.Right > cell.Right || box.Bottom > cell.Bottom)
                         continue;
-                    if (obstacles.Any(t => t.IntersectsWith(box)))
+                    // Nor where something stands close beside it: a name a few pixels after it on its line read as one with
+                    // it ("A8 Crash Site"; UI QA pass of the squad grid, F7), so it keeps a label's gap from all of it.
+                    var clear = SKRect.Inflate(box, LabelGap * ui, GridReferenceMargin * ui);
+                    if (obstacles.Any(t => t.IntersectsWith(clear)))
                     {
                         leftOut++;
                         continue;
@@ -348,7 +366,7 @@ public static partial class MapRenderer
 
     // The lines in the artwork's layer: drawn before every name, symbol and route, broken under the names and labels (each
     // name's box, a little larger; GridOf lays the runs out), so a line never runs through a word. Then the references.
-    private static void DrawGrid(SKCanvas canvas, MapLayout layout, float ui, bool sheet)
+    private static void DrawGrid(SKCanvas canvas, Camera camera, MapScene scene, MapLayout layout, float ui, bool sheet)
     {
         if (layout.Grid is not { } grid)
             return;
@@ -356,10 +374,8 @@ public static partial class MapRenderer
         using var paint = new SKPaint { StrokeWidth = 1, IsAntialias = false, Style = SKPaintStyle.Stroke, BlendMode = sheet ? SKBlendMode.Plus : SKBlendMode.Overlay };
         var (lineAlpha, keypadAlpha) = sheet ? (SheetLineAlpha, SheetKeypadAlpha) : (GridLineAlpha, GridKeypadAlpha);
         // One path a kind, so where its lines cross a pixel isn't lightened twice.
-        void Stroke(IReadOnlyList<(SKPoint From, SKPoint To)> runs, float alpha)
+        void Draw(IReadOnlyList<(SKPoint From, SKPoint To)> runs, SKPaint with)
         {
-            if (runs.Count == 0 || alpha < 1)
-                return;
             using var builder = new SKPathBuilder();
             foreach (var (from, to) in runs)
             {
@@ -367,11 +383,35 @@ public static partial class MapRenderer
                 builder.LineTo(to);
             }
             using var path = builder.Detach();
+            canvas.DrawPath(path, with);
+        }
+        void Stroke(IReadOnlyList<(SKPoint From, SKPoint To)> runs, float alpha)
+        {
+            if (runs.Count == 0 || alpha < 1)
+                return;
             paint.Color = Ink.WithAlpha((byte)Math.Min(255, alpha));
-            canvas.DrawPath(path, paint);
+            Draw(runs, paint);
         }
 
         Stroke(grid.ThirdRuns, keypadAlpha * grid.Keypad * grid.Lines);
+        // On the artwork's drawn map the keypad's overlay is joined by a small added step, a floor of lightening where the
+        // ground is too dark for the overlay to step it up (UI QA pass of the squad grid, F6); no hue, still a step below the
+        // 100 m lines. Not on the empty ground around the map (the artwork's ground, as a hazard keeps to it), where the grid
+        // all but vanishes by design and the floor would draw the keypad as strong as the 100 m lines; nor on tiles or the
+        // sheet, which has its own added step.
+        var floorAlpha = (byte)Math.Round(GridKeypadFloorAlpha * grid.Keypad * grid.Lines);
+        if (!sheet && floorAlpha > 0 && grid.ThirdRuns.Count > 0 && GroundShader(camera, scene) is { } ground)
+        {
+            using (ground)
+            {
+                using var floor = new SKPaint
+                {
+                    StrokeWidth = 1, IsAntialias = false, Style = SKPaintStyle.Stroke, BlendMode = SKBlendMode.Plus, Color = Ink.WithAlpha(floorAlpha),
+                };
+                using var onGround = OnGround(floor, ground);
+                Draw(grid.ThirdRuns, floor);
+            }
+        }
         Stroke(grid.Runs, lineAlpha * grid.Lines);
         // Until the keypad's lines are in, a tick at each third of every 100 m line, each way.
         Stroke(grid.Ticks, lineAlpha * (1 - grid.Keypad) * grid.Lines);
@@ -388,8 +428,9 @@ public static partial class MapRenderer
     }
 
     // The strips pinned to the view, over everything the map draws: the letters along the top and bottom, the numbers
-    // along the left and right, a mark where each 100 m line meets them; then the player's reference at the top left.
-    private static void DrawGridStrips(SKCanvas canvas, Camera camera, MapLayout layout, float ui)
+    // along the left and right, a mark where each 100 m line meets them; then the player's reference at the top left,
+    // unless a plate of the window lies over it (MapScene.PlateOver).
+    private static void DrawGridStrips(SKCanvas canvas, Camera camera, MapScene scene, MapLayout layout, float ui)
     {
         if (layout.Grid is not { } grid)
             return;
@@ -431,7 +472,7 @@ public static partial class MapRenderer
             canvas.DrawText(number, inner.Left / 2, y + cap, SKTextAlign.Center, font, ink);
             canvas.DrawText(number, (inner.Right + w) / 2, y + cap, SKTextAlign.Center, font, ink);
         }
-        if (grid.You is { } you)
+        if (grid.You is { } you && !(scene.PlateOver is { } over && over.IntersectsWith(you.Box)))
             DrawYou(canvas, you, ui);
     }
 

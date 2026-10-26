@@ -1760,8 +1760,9 @@
           </Grid>
         </Border>
         <!-- After a crash: the one question, until answered (docs/DESIGN.md §8, "Reports"). Not in a raid: it lies
-             over the map and waits for a click nobody is there to make; it is back when the raid is over. -->
-        <Border HorizontalAlignment="Center" MaxWidth="900" Padding="14,10,10,10"
+             over the map and waits for a click nobody is there to make; it is back when the raid is over. The floor
+             picker steps aside while it stands (ShowFloors). -->
+        <Border x:Name="CrashPlate" HorizontalAlignment="Center" MaxWidth="900" Padding="14,10,10,10"
                 Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AmberBrush}" BorderThickness="1"
                 Visibility="{x:Bind ShownUnlessHeldBack(ViewModel.CrashQuestion, ViewModel.RaidHoldsBack), Mode=OneWay}">
           <Grid ColumnSpacing="12">

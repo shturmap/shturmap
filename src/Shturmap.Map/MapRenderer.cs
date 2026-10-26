@@ -74,7 +74,7 @@ public static partial class MapRenderer
         }
         else
         {
-            DrawSchematic(canvas, camera, scene, uiScale);
+            DrawSchematic(canvas, camera, scene, uiScale, time);
             // The sheet stands in for a render that couldn't be had (offline): keep asking for this view's tiles, so
             // the render comes by itself once they can be had, without a restart (the review of 2026-10-04).
             if (scene.Tiles is { } missing)
@@ -82,7 +82,7 @@ public static partial class MapRenderer
         }
         var layout = LayoutOf(camera, scene, uiScale, time);
         // The squad grid in the artwork's layer, under every symbol, name and route (docs/DESIGN.md "Map drawing", *The grid*).
-        DrawGrid(canvas, layout, uiScale, sheet);
+        DrawGrid(canvas, camera, scene, layout, uiScale, sheet);
         if (sheet)
             DrawContainers(canvas, camera, scene, uiScale);
 
@@ -172,7 +172,7 @@ public static partial class MapRenderer
         DrawPlayer(canvas, camera, scene, uiScale, time);
         DrawReplay(canvas, camera, scene, uiScale);
         // The grid's strips pinned to the view, and the player's reference in its fixed place, over all of it.
-        DrawGridStrips(canvas, camera, layout, uiScale);
+        DrawGridStrips(canvas, camera, scene, layout, uiScale);
         if (trace is not null)
         {
             foreach (var marker in layout.Markers)
@@ -461,8 +461,9 @@ public static partial class MapRenderer
         var time = now ?? DateTime.Now;
         var markers = ShownMarkers(camera, scene, ui, time);
         var repel = scene.LastRepelRun;
-        // The grid's strips at the view's edges: no label or plate is placed under them.
-        var taken = new List<SKRect>(StripRects(camera, scene, ui));
+        // The grid's strips at the view's edges, and the window's controls over the map (MapScene.ControlsOver): no label or
+        // plate is placed under them.
+        var taken = new List<SKRect>(StripRects(camera, scene, ui).Concat(scene.ControlsOver));
         foreach (var m in markers)
         {
             if (m.Count > 1)
@@ -658,7 +659,7 @@ public static partial class MapRenderer
         }
         // Last: a square's reference is left out where anything placed above lies under it, the sheet's caption too.
         if (scene.ShowGrid && scene.IsSheet)
-            taken.Add(SheetCaption(camera, scene, ui).Box);
+            taken.Add(SheetCaption(camera, scene, ui, youReadout).Box);
         var grid = !scene.ShowGrid ? null : GridOf(camera, scene, ui, taken,
             names.Select(n => n.Box).Concat(labels.Select(l => l.Box)).Select(b => SKRect.Inflate(b, 2 * ui, 2 * ui)).ToList(), youReadout);
         return new MapLayout(markers, labels, names, guide, scale) { Chevrons = chevrons, Repel = repel, ExitGuide = exitGuide, Grid = grid };
@@ -2090,7 +2091,9 @@ public static partial class MapRenderer
     private static readonly SKColor SheetMajor = Palette.Sk(Palette.Line);
     private const double SheetSpacing = 10;
 
-    private static void DrawSchematic(SKCanvas canvas, Camera camera, MapScene scene, float ui)
+    /// <param name="now">The frame's time: the player's reference at the map's top left, which the caption keeps off, says
+    /// the age.</param>
+    private static void DrawSchematic(SKCanvas canvas, Camera camera, MapScene scene, float ui, DateTime now)
     {
         var b = scene.Definition.Bounds;
         SKPoint At(double x, double z) => camera.ToScreen(scene.Projection.ToMap(x, z));
@@ -2118,7 +2121,7 @@ public static partial class MapRenderer
         using var edge = new SKPaint { Color = SheetEdge, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
         canvas.DrawPath(sheet, edge);
 
-        var (caption, at, _) = SheetCaption(camera, scene, ui);
+        var (caption, at, _) = SheetCaption(camera, scene, ui, YouOf(camera, scene, ui, now));
         using var font = new SKFont(TypefaceBold, 10 * ui);
         using var paint = new SKPaint { Color = Ink.WithAlpha(110), IsAntialias = true };
         canvas.DrawText(caption, at.X, at.Y, SKTextAlign.Left, font, paint);
@@ -2126,17 +2129,23 @@ public static partial class MapRenderer
 
     // The sheet's caption in its corner: what it says, its baseline's start and its box (the grid's references keep off it).
     // Without floor data (Labyrinth) every marker is drawn on one plane: it says so rather than imply one floor. The grid it
-    // names is the one drawn: the squad grid's 100 m, or the sheet's own 10 m.
-    private static (string Text, SKPoint At, SKRect Box) SheetCaption(Camera camera, MapScene scene, float ui)
+    // names is the one drawn: the squad grid's 100 m, or the sheet's own 10 m. Where the player's reference at the map's top
+    // left stands over the corner (a sheet seen whole, with a position), the caption stands under it, whole (UI QA pass of
+    // the squad grid, F3: the readout covered "NO ARTWO").
+    internal static (string Text, SKPoint At, SKRect Box) SheetCaption(Camera camera, MapScene scene, float ui, YouReadout? you)
     {
         var b = scene.Definition.Bounds;
         var p1 = camera.ToScreen(scene.Projection.ToMap(b.X1, b.Z1));
         var p2 = camera.ToScreen(scene.Projection.ToMap(b.X2, b.Z2));
         var spacing = Math.Round(scene.ShowGrid ? SquadGrid.Square : SheetSpacing);
         var caption = scene.FloorStack.Count == 0 ? MapTexts.MapSheetCaptionNoFloors(spacing: spacing) : MapTexts.MapSheetCaption(spacing: spacing);
-        var at = new SKPoint(Math.Min(p1.X, p2.X) + 10 * ui, Math.Min(p1.Y, p2.Y) + 18 * ui);
         using var font = new SKFont(TypefaceBold, 10 * ui);
-        return (caption, at, new SKRect(at.X - 2 * ui, at.Y - font.Size - 2 * ui, at.X + font.MeasureText(caption) + 2 * ui, at.Y + 4 * ui));
+        var width = font.MeasureText(caption);
+        SKRect BoxAt(SKPoint at) => new(at.X - 2 * ui, at.Y - font.Size - 2 * ui, at.X + width + 2 * ui, at.Y + 4 * ui);
+        var at = new SKPoint(Math.Min(p1.X, p2.X) + 10 * ui, Math.Min(p1.Y, p2.Y) + 18 * ui);
+        if (you is not null && BoxAt(at).IntersectsWith(SKRect.Inflate(you.Box, 0, 4 * ui)))
+            at = new SKPoint(at.X, you.Box.Bottom + 8 * ui + font.Size);
+        return (caption, at, BoxAt(at));
     }
 
     private static SKPoint Screen(Camera camera, MapScene scene, WorldPoint p) => camera.ToScreen(scene.Projection.ToMap(p));

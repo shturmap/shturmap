@@ -216,6 +216,35 @@ public sealed class MapScene
 
     private SquadGrid? _grid;
 
+    /// <summary>
+    /// Where a plate of the window lies over the map for a while (pixels; the in-raid glance's for its 6 s), null while none
+    /// does: the player's reference at the map's top left isn't drawn where the plate lies over it, its room still kept, and
+    /// the marker's tag says it (UI QA pass of the squad grid, 2026-10-26, F5: the plate left "YOU C" showing). Only drawn
+    /// differently, never laid out anew.
+    /// </summary>
+    public SkiaSharp.SKRect? PlateOver { get; set; }
+
+    /// <summary>
+    /// Where the window's own controls stand over the map (pixels; the window gives them while the grid shows, none
+    /// otherwise): the WIKI MAP link with the credit, the buttons with the floor list. No label, name or plate is placed
+    /// under them and a square's reference is left out there, as under the strips (UI QA pass of the squad grid,
+    /// 2026-10-26, F2: inside the strips the credit ran over "Transit to Interchange" and the link stood over "A9"). Laid
+    /// out anew when they move.
+    /// </summary>
+    public IReadOnlyList<SkiaSharp.SKRect> ControlsOver
+    {
+        get => _controlsOver;
+        set
+        {
+            if (_controlsOver.SequenceEqual(value))
+                return;
+            _controlsOver = value;
+            LayoutVersion++;
+        }
+    }
+
+    private IReadOnlyList<SkiaSharp.SKRect> _controlsOver = [];
+
     /// <summary>Earlier fixes in this raid, oldest first.</summary>
     public IReadOnlyList<WorldPoint> Trail { get; set; } = [];
 

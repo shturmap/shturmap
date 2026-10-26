@@ -46,6 +46,28 @@ public sealed class Camera
     public float TextScale { get; set; } = 1;
 
     /// <summary>
+    /// Pixels at each side of the view that every framing (the whole map's view, <see cref="Fit"/>, with
+    /// <see cref="Overview"/> and <see cref="LimitTo"/>; <see cref="Framing"/>, <see cref="FramingAbove"/>, the roll call's
+    /// <see cref="FittingAll(IReadOnlyCollection{MapPoint}, MapPoint?, float, float)"/>) keeps clear before its padding:
+    /// <c>Width</c> at the left and at the right, <c>Height</c> at the top and at the foot, where a framing's own foot or
+    /// head, given from the view's edge, doesn't reach further. The squad grid's strips while it shows
+    /// (<see cref="MapRenderer.GridInset"/>; UI QA pass of the squad grid, 2026-10-26, F2): the map's own controls stepped
+    /// inside them, so what a view frames steps in with them and keeps from them what it kept from the window's edges before
+    /// (at 900×560 the credit, raised 18 DIP, ran over "Transit to Interchange" at the whole map's foot). Its owner sets it
+    /// (MapView, the CLI); none by default.
+    /// </summary>
+    public SKSize Inset { get; set; }
+
+    // The view inside the inset: centred in the whole view, so a centre worked out in it is the whole view's too.
+    private SKSize Inner => new(Math.Max(0, Viewport.Width - 2 * Inset.Width), Math.Max(0, Viewport.Height - 2 * Inset.Height));
+
+    // A framing inside the inset: the sides' taken from the width (the part left is centred, so its centre is the view's),
+    // the top's and the foot's as a head and a foot of at least their size.
+    private (MapPoint Center, double Zoom) Inside(MapRect rect, float padding, float labelRoom, float foot, float head, double minZoom) =>
+        Place(new SKSize(Math.Max(0, Viewport.Width - 2 * Inset.Width), Viewport.Height), rect, padding, labelRoom, Math.Max(foot, Inset.Height), minZoom,
+            Math.Max(minZoom, MaxZoom), TextScale, Math.Max(head, Inset.Height));
+
+    /// <summary>
     /// The pixels a view of <paramref name="width"/> keeps right of what it fits or frames: the label room
     /// (<paramref name="labelRoom"/>, pixels), at most <see cref="LabelRoomShare"/> of the width times the text size
     /// (<paramref name="text"/>, <see cref="TextScale"/>), never less than the padding.
@@ -100,9 +122,13 @@ public sealed class Camera
             return;
         }
         _fitWhenRoom = null;
-        (Center, Zoom) = FramingAbove(rect, padding, 0, labelRoom);
+        (Center, Zoom) = Whole(rect, padding, labelRoom);
         MinZoom = Zoom * 0.5;
     }
+
+    // The whole map's view: as FramingAbove frames, inside the inset.
+    private (MapPoint Center, double Zoom) Whole(MapRect rect, float padding, float labelRoom) =>
+        Inside(rect, padding, labelRoom, 0, 0, 1e-6);
 
     /// <summary>
     /// Sets how far out the view zooms for the map shown: half the zoom that shows all of it in this view. The limit a
@@ -116,11 +142,11 @@ public sealed class Camera
             MinZoom = Overview(rect, padding, labelRoom) * 0.5;
     }
 
-    private bool HasRoom(float padding) => Viewport.Width > 2 * padding && Viewport.Height > 2 * padding;
+    private bool HasRoom(float padding) => Inner.Width > 2 * padding && Inner.Height > 2 * padding;
 
-    /// <summary>The zoom that shows a rectangle whole, with the padding around it and the label room on its
-    /// right.</summary>
-    public double Overview(MapRect rect, float padding, float labelRoom = 0) => FramingAbove(rect, padding, 0, labelRoom).Zoom;
+    /// <summary>The zoom that shows a rectangle whole, with the padding around it (inside the <see cref="Inset"/>) and the
+    /// label room on its right.</summary>
+    public double Overview(MapRect rect, float padding, float labelRoom = 0) => Whole(rect, padding, labelRoom).Zoom;
 
     /// <summary>Shows a rectangle with some room around it, without changing the zoom limits.</summary>
     public void Frame(MapRect rect, float padding)
@@ -134,7 +160,7 @@ public sealed class Camera
     /// zoom limits of the map shown.
     /// </summary>
     public (MapPoint Center, double Zoom) Framing(MapRect rect, float padding, float labelRoom = 0) =>
-        Place(rect, padding, labelRoom, 0, MinZoom);
+        Inside(rect, padding, labelRoom, 0, 0, MinZoom);
 
     /// <summary>
     /// The centre and zoom that show a rectangle whole in the part of the view above <paramref name="foot"/> pixels at
@@ -147,7 +173,7 @@ public sealed class Camera
     /// <param name="head">Pixels at the view's top that what is framed stays under (the preview label the map's top holds
     /// in the tour; QA pass, 2026-10-15).</param>
     public (MapPoint Center, double Zoom) FramingAbove(MapRect rect, float padding, float foot, float labelRoom = 0, float head = 0) =>
-        Place(Viewport, rect, padding, labelRoom, foot, 1e-6, MaxZoom, TextScale, head);
+        Inside(rect, padding, labelRoom, foot, head, 1e-6);
 
     /// <summary>
     /// The padding (DIPs) the roll call's framing keeps around the listed extracts and the player
@@ -179,9 +205,9 @@ public sealed class Camera
     }
 
     /// <summary>The roll call's view (<see cref="FittingAll(IReadOnlyCollection{MapPoint}, MapPoint?, SKSize, float, float, double, double)"/>)
-    /// in this camera's viewport, within the zoom limits of the map shown.</summary>
+    /// in this camera's viewport inside its <see cref="Inset"/>, within the zoom limits of the map shown.</summary>
     public (MapPoint Center, double Zoom)? FittingAll(IReadOnlyCollection<MapPoint> points, MapPoint? player, float labelRoom, float padding) =>
-        FittingAll(points, player, Viewport, labelRoom, padding, MinZoom, MaxZoom, TextScale);
+        FittingAll(points, player, Inner, labelRoom, padding, MinZoom, MaxZoom, TextScale);
 
     /// <summary>
     /// The roll call's move (owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out"; docs/DESIGN.md,
@@ -221,9 +247,6 @@ public sealed class Camera
         }
         return true;
     }
-
-    private (MapPoint Center, double Zoom) Place(MapRect rect, float padding, float labelRoom, float foot, double minZoom) =>
-        Place(Viewport, rect, padding, labelRoom, foot, minZoom, MaxZoom, TextScale);
 
     private static (MapPoint Center, double Zoom) Place(SKSize viewport, MapRect rect, float padding, float labelRoom, float foot, double minZoom, double maxZoom,
         float text, float head = 0)
