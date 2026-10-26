@@ -253,6 +253,58 @@ and the README say it.)
   native packages each bring the same 344 KB ThirdPartyNotices into `licenses`; `ocr-compare` keeps its own copy of the
   recognition behind `-p:OcrSpike=true`.
 
+**The UI QA pass of 0.7.0's release candidate (2026-10-26, on cd9e27c).** The release pass of docs/QA.md but the full
+layout check, which runs after the map grid's merge with the grid's own UI QA pass (the coordinator's split: the grid
+changes the map's edges and adds texts). The folder build of `eng\publish.ps1`, the developer build for What's New and
+the desk's screens, the Debug build for the replays; every run quiet, off every monitor, on cd9e27c (its pictures outside
+the repository): FAIL (0 blocks, 3 should, 3 nits).
+
+- Ran: plan, raid and quest in English and German at 900×560 and 1600×900 (folder build); the made-up desk's readings 1
+  to 4 in both languages at both sizes, every screen (developer build); the in-raid glance (`-Glance 1` and `2`) in both
+  languages at 900×560 and in English at 1600×900; `-Operational 5 -OperationalEnded` in both languages at both sizes,
+  `-Operational 8` at 900×560, `-Operational 5 -Scav` in the raid; the tour's seven chapters in both languages; What's
+  New (`--whats-new`) in both languages; every replay in `tools\qa\` (desk, glance, operational-feedback,
+  whatsnew-tour-line, extract-roll-call, update-ready) in English and German at the default window and in English at
+  900×560; a drafted replay of 0.7.0's four What's New lines in both languages; `shturmap-cli frames customs` in the
+  `list-read` and `whatsnew-extracts` scenes. 56 snapshot runs and 20 replays, 98 settings and help pictures, each drawn
+  (17 settings pictures on their second take, the app log saying so); 234 layout files, two with a problem (F4, and the
+  notices over the desk, which the design draws so).
+- Confirmed: the head line leaves out a part never read, "ON YOU 3.20 M+ ₽ · KEEP 0 · 2 · 1" on reading 4 and „AN DIR
+  3,20 M+ ₽ · BEHALTEN 0 · 2 · 1“ at both sizes, readings 1 to 3 with all three parts ("ON YOU 3.70 M+ ₽ · STASH 7.46 M+ ₽
+  · KEEP 2 · 6 · 3", then 4.60 M+ and KEEP 3 · 6 · 3); reading 3 the same picture as reading 2 on every screen, in both
+  languages. The settings note names PaddleOCR in English and German, whole and wrapped where the panel shows it all
+  (the default window); at 900×560 and 1600×900 it is below settings' first screen, its layout files without overflow,
+  trim or untranslated text. Each 0.7.0 line of What's New previews nothing (the map unchanged) and its click opens the
+  tour at its chapter (2, 1, 7, 6), in both languages. The glance at 900×560 draws the drawer whole at 40 DIP and the
+  body as its head and the ALSO / DAZU line; the rail's EXIT readable beside it. The desk replay's stills hold what
+  desk.md says, `same` and `back` its `kept` and `show` (the desk's page unchanged). Frames: no symbol moved, the rings
+  over by frame 029, the last frame still. A preset-named gun has no picture: the made-up desk holds none (its rule is
+  the reading's, `DeskReaderTests`).
+- F1 (should): the tour's chapter 1, WHAT IT READS, lists "Your stash, gear and tasks in a menu screenshot, when you take
+  one" and nothing of the in-raid glance, which reads a raid screenshot's inventory and loot (DESIGN.md §4, *The tour*,
+  "Keeping it current"; open since the glance's round of 2026-10-19). `fake-raid.ps1 -PlanOnly -Tour 1` → `tour.png`,
+  English and German.
+- F2 (should): `extract-roll-call` at the default window, English and German: t1's snapshot fails ("Developer script line
+  36 failed: System.ArgumentException: Value does not fall within the expected range.", an ERROR, in
+  `RenderToPngAsync` after window.png and map.png), so t1 has no cue.png and no developer view's tabs; t3's cue.png is
+  empty in English (nothing drawn) and missing in German. The title on its halo is unchecked at that size; at 900×560
+  both are drawn. The 0.6.0 passes of 2026-10-16 had every t1's cue.png. The developer snapshot's, not the player's.
+- F3 (should, not run): of the release pass's other states, `-LocalRaid`, `-HoldLoading`, `-GroupPick`, a sheet map
+  (`-Map lab`), the report and crash dialogs, a larger text size (`--text-scale`), `shturmap-cli render` and the
+  frames' other runs (`--glide`, `--notch`, `--step 2`, `list-callout`, the smallest viewport), in the hour; the
+  layout check (with `-SwitchCheck` and qps-ploc) after the grid, as split.
+- F4 (nit): the desk's pinned lines' compact form trims a long name by design ("a long name is trimmed with an ellipsis
+  at its end", *The stash desk*), but its text isn't marked as one that may trim: the German "Blaue TerraGroup Labs
+  Schlüsselk…" is a "trimmed" problem in its layout file (desk.md's `pinmore`), so a layout check that pictured pins
+  would fail on it.
+- F5 (nit): the German runs loaded tarkov.dev's data checked 2026-10-25 20:16, the English ones 2026-10-26 17:57: the
+  German data isn't the release's fresh one (docs/UPDATES.md, step 1, `shturmap-cli data pve de`).
+- F6 (nit): two replays' expectations trail the data and the version: update-ready.md's band says "0.6.1 · OKAMI" where
+  the app says "0.7.1 · KAOMOJI" (right: a patch keeps its line's name), whatsnew-tour-line.md's list "3 OF 11" where
+  Customs' list now reads "3 OF 12".
+- Proposed: the drafted replay of 0.7.0's What's New lines (`whatsnew 0.7.0 <n>`, a still, `whatsnew 0.7.0 click <n>`,
+  a still, `tour end`, for each line) as `tools\qa\whatsnew-lines.devscript` with its `.md`.
+
 ## 2026-10-25: the layout round: a steady desk, the reading's faults, the trader's task view
 
 **The ask** (owner, 2026-10-25, after the test of 2026-10-19): "From the last testing session it is clear that we have to
