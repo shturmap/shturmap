@@ -72,6 +72,65 @@ by design; the glance's plate, centred at the map's top, covers the readout for 
 tarkov.dev's data are Factory's numbers, so its grid is 2 × 2 around the ship. The German words (Raster, Planquadrat,
 Numpad, DU) are the builder's, for the senior translator.
 
+**The UI QA pass of the squad grid (2026-10-26, on fcdd49c).** The grid's checks (docs/QA.md, "map drawing", with the
+views, the tour's chapter 5 and What's New it reaches) and the release states the release pass's F3 left unrun; not the
+full layout check (run beside it) nor the tour's chapter 1 (being fixed). The folder build of `eng\publish.ps1`, the
+developer build for What's New and `--text-scale`, the Debug build's CLI; every run quiet, off every monitor, with a data
+folder of its own, on fcdd49c (its pictures outside the repository): FAIL (0 blocks, 4 should, 5 nits).
+
+- Ran: raid in English and German at 900×560 and in English at 1600×900, Plan in English and German at 900×560 and in
+  English at 1600×900; the tour's chapter 5 and What's New (`--whats-new`) in both languages; the glance (`-Glance 1`,
+  `-Glance 2` in both languages) at 900×560; `-Map lab` in both languages, `-Map icebreaker`; `--show-crash` in both
+  languages and `--show-report`; `-LocalRaid`, `-HoldLoading`, `-GroupPick`, `-Scav`; `--text-scale 1.5` at 900×765.
+  `shturmap-cli render` of Streets (`--age 2.2`, and `--no-grid`), Woods, Factory, Icebreaker and The Lab's sheet (with
+  and without the grid), `shturmap-cli grid`; `frames` in the `plan` scene with `--glide`, `list-callout` at 1600 × 1000
+  and at 500×481 with every quest, `list-read` with `--glide`, `--notch` and `--step 2`, Streets at 500×481, and the
+  glides and the small roll call again with the grid off. 24 snapshot runs, no ERROR or WARN, 46 settings and help
+  pictures each drawn; 10 frames runs, every frame drawn.
+- Confirmed: the 100 m lines without a hue, under every symbol, name and route and broken under names, median ΔL* 19.5
+  and 23.6 on Streets as DESIGN.md says, Woods 14.7 and 13.0, Factory 14.9 and 17.3, Icebreaker 21.5 (12.9 on the deck a
+  position at 0.5 m shows), the sheet's about 19 over its panel measured by hand (the CLI's 7.4 is against the 10 m
+  grid's stronger line under it); letters top and bottom and numbers left and right on the strips in every picture; the
+  corner references left out under names and symbols (Woods 143 shown and 67 left out, Streets 50 and 13); the keypad's
+  ticks, then its lines from frame 4 to 6 of the glide (0.01, 0.52, 1.00), the roll call's zoom out resting at 0.25; the
+  tag "D5-8 · 2 MIN OLD" framed in sand at 2.2 minutes and "YOU D5-8 2 MIN OLD" 8 DIP inside the strips, YOU in Muted, the
+  reference and the stale age in Sand (sampled), DU in German, each reference right against the keypad by hand; Icebreaker's
+  squares oblong; "GRID 100 M" on the sheet; the buttons, the floor list, WIKI MAP and the credit inside the strips; the
+  setting ticked by default with its note, help's paragraph with SHOW ME, chapter 5's words as tour.md and tour.de.md,
+  What's New's fifth line as whats-new.md and its German; the glides' jumps the same with the grid on and off (frames
+  that zoom by a tenth or more are laid out afresh, as designed); `-LocalRaid`'s side switch, `-HoldLoading`'s LOADING
+  and CHECK YOUR KIT, `-GroupPick`'s GROUP PICKED, the report dialog.
+- F1 (should): the crash question at 900×560 on Streets (six floors): the floor list lies over the box's lower right
+  corner, 15 DIP in English and 35 in German (its answers wrap there); no word hidden. `fake-raid.ps1 -PlanOnly -Window
+  900x560 -MoreArgs '--show-crash'` → `window.png`, both languages. The builder's third open point, confirmed.
+- F2 (should): in a raid at 900×560 the credit, now 10 + 18 DIP from the foot, runs over the map's label "Transit to
+  Interchange" and its diamond; in the same view at cd9e27c, the credit 18 DIP lower, they stood apart. `fake-raid.ps1
+  -Window 900x560 -Glance 1` (and `-Glance 2`), `window.png` over `map.png`. DESIGN.md keeps no label off the credit.
+- F3 (should): on a sheet with a position the readout covers the start of the sheet's caption ("…RTWORK FOR THIS MAP ·
+  GRID 100 M"); *The player's reference*: "Labels keep off it". `shturmap-cli render the-lab <out> <a position>
+  --sheet`.
+- F4 (should, not run): the app on a sheet (its notice, the credit's "grid 100 m", the German caption): the shared tile
+  cache holds The Lab's, Labyrinth's and Icebreaker's tiles, so `-Map lab` and `icebreaker` drew tarkov.dev's render;
+  the app with "Grid on the map" unticked (the controls back where they stood): `fake-raid.ps1` keeps its settings in
+  its own game folder, with no switch for it. Only the CLI's `--sheet`, `--no-grid` and `--grid off` drew them.
+- F5 (nit, the owner's): the glance's plate at 900×560 covers the readout for its 6 s: the drawer's clips its frame,
+  the body's leaves "YOU C" in English and nothing in German; the marker's tag keeps the reference. DESIGN.md says nothing
+  of it. The builder's second open point.
+- F6 (nit, the owner's): the keypad's lines vanish on dark ground: Factory's whole view, whose squares are 668 px and
+  its lines full on, measures a median ΔL* of 1.0 (about 7 on the light floor, 1 on the dark, by hand); on Woods at
+  three times 6.2, faint but seen. DESIGN.md gives Streets' and Woods' numbers only. The builder's first open point.
+- F7 (nit): Plan at 1600×900: "A8" stands 3 px before the label "Crash Site" on its baseline and reads as part of it;
+  the label's box doesn't reach the reference, so it isn't left out.
+- F8 (nit): at `--text-scale 1.5` settings' flea price stepper's "−" and "+" are an overflow in its layout file (24 DIP
+  of 22; the glyphs look whole), so a layout check at that size would flag them.
+- F9 (nit, the owner's): What's New's line "Point at one: the map shows it." stands under 0.7.0's five lines, every one
+  a tour line whose pointing shows nothing (docs/whats-new.md); DESIGN.md gives the line for every card.
+- The builder's open points: (1) the keypad's lines on Woods are faint but read as thirds at three times; the weak case
+  is dark ground, Factory most (F6). (2) The plate over the readout: acceptable for 6 s, the tag carrying the reference,
+  but the cut "YOU C" reads as broken (F5). (3) The crash question under the floor list: confirmed (F1). (4) Chapter 5's
+  words: right, the example tag inside the cut-out shows the square while the readout stays dimmed; the file's name gives
+  the position and Shturmap the square, a fair shorthand.
+
 ## 2026-10-26: the overnight run's five decisions
 
 **Decided** (owner, 2026-10-26, on the session's decision page; the page stays outside the repository). Each was found
