@@ -1773,7 +1773,9 @@
             <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Top" Margin="0,7,0,0" />
             <StackPanel Grid.Column="1" Spacing="6">
               <TextBlock Text="{x:Bind ViewModel.CrashQuestion, Mode=OneWay}" TextWrapping="Wrap" />
-              <StackPanel Orientation="Horizontal" Spacing="18" Visibility="{x:Bind ShownIfTrue(ViewModel.CrashAsking), Mode=OneWay}">
+              <!-- The four answers wrap where the notes' room is short (the smallest window inside the grid's strips, German:
+                   WAS GESENDET WIRD ran 12 DIP past it; layout check of 2026-10-26). -->
+              <controls:WrapRow HorizontalSpacing="18" VerticalSpacing="4" Visibility="{x:Bind ShownIfTrue(ViewModel.CrashAsking), Mode=OneWay}">
                 <HyperlinkButton Padding="0" Click="OnCrashSendClick">
                   <TextBlock Text="{x:Bind local:ViewTexts.CrashSend}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                 </HyperlinkButton>
@@ -1786,7 +1788,7 @@
                 <HyperlinkButton Padding="0" Click="OnCrashDetailsClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.CrashWhatsSentTip}">
                   <TextBlock Text="{x:Bind local:ViewTexts.CrashWhatsSent}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
-              </StackPanel>
+              </controls:WrapRow>
               <HyperlinkButton Padding="0" Click="OnCrashNoteClick" Visibility="{x:Bind ShownIfTrue(ViewModel.CrashSent), Mode=OneWay}"
                                ToolTipService.ToolTip="{x:Bind local:ViewTexts.CrashAddNoteTip}">
                 <TextBlock Text="{x:Bind local:ViewTexts.CrashAddNote}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />

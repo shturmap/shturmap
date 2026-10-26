@@ -12,8 +12,8 @@ chapter (a chapter the release changed; docs/tour.md). A line no preview shows t
 one, the chapter that frames where it is: pointing shows nothing, a click opens the tour there (0.7.0: the text size
 `tour:7`, the settings button; the stash desk `tour:2`, which frames the rail with PLAN | DESK at its head: no preview
 pictures the desk yet, which takes the map's place and Plan's rail with it; the in-raid glance `tour:6`, which frames
-the map in a raid, where its plate stands; the squad grid `tour:5`, whose chapter's words name it and whose example
-position shows YOU with its square). Only what is new for the player has a
+the map in a raid, where its plate stands; the squad grid `tour:5`, whose chapter's words name the square and whose
+example position carries it on its tag). Only what is new for the player has a
 line (owner, 2026-10-19: "Don't add 'new in' entries for stuff that is not really relevant to the player, only add
 really new things, like the desk."): a fix or a refinement goes in the release notes alone. Words as the design
 system's "Words": short, fragments are fine. Add the next version's section with its release (CLAUDE.md). A release
