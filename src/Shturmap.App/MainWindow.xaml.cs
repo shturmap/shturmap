@@ -1125,10 +1125,13 @@ public sealed partial class MainWindow : Window
     private static string Distance(double? metres) => metres is { } m ? MapRenderer.DistanceText(m) : "";
 
 
-    private async void UpdateMap(SessionSnapshot s)
+    /// <param name="under">The What's New preview the shown map comes back under, as it lays only a plate or a cue over it
+    /// (PlayersMapUnder); null otherwise.</param>
+    private async void UpdateMap(SessionSnapshot s, string? under = null)
     {
-        // While another map is previewed, the shown one waits; it comes back when the preview ends.
-        if (s.Definition is null || _session.Artwork is null || _previewing is not null)
+        // While another map is previewed, the shown one waits; it comes back when the preview ends, or under a preview that
+        // lays only a plate or a cue over it.
+        if (s.Definition is null || _session.Artwork is null || _previewing != under)
             return;
         var key = s.Definition.Key;
         // The map's scene is made once its artwork is here. Until then the view holds the scene of the map before,
@@ -1137,7 +1140,7 @@ public sealed partial class MainWindow : Window
         {
             var artwork = await ArtworkFor(s.Definition, s.Map?.Name);
             // Another map was asked for meanwhile, or a preview took the view: its end makes the scene anew.
-            if (_previewing is not null || !_scenes.Arrived(key))
+            if (_previewing != under || !_scenes.Arrived(key))
                 return;
             // Without SVG artwork, tarkov.dev's tile render where it has one (The Lab, Labyrinth, Icebreaker).
             var tiles = artwork is null ? TilesFor(s.Definition, s.Map?.Name) : null;
@@ -1145,7 +1148,9 @@ public sealed partial class MainWindow : Window
             if (artwork is null && tiles is null && _sheetNoticeShown.Add(key))
                 ShowNotice(AppTexts.NoticeNoArtwork(map: s.Map?.Name));
             Map.SetScene(new MapScene(s.Definition, artwork, tiles), _restoreView);
-            _restoreView = null;
+            // Under a preview, the view to come back to stays for the preview's end: a line after it may stage a map again.
+            if (under is null)
+                _restoreView = null;
         }
         // The newest snapshot fills the scene, if the scene in the view is its map's.
         if (Map.Scene is not { } scene || _snapshot is not { } latest || !_scenes.Holds(latest.Definition?.Key))
@@ -1372,11 +1377,19 @@ public sealed partial class MainWindow : Window
     // It steps aside the same way while a cue, What's New's plate, the in-raid glance's plate or the crash question shows,
     // and is back when that goes (QA pass of 2026-10-15: at 900×560 it lay over the end of SEEN IN YOUR STASH's and RAID
     // LOADING's titles, and over the right edge of the item card on the plate; UI QA pass of the squad grid, 2026-10-26,
-    // F1: over the crash question's box).
-    private void ShowFloors() =>
-        ViewModel.Floors = _previewing is not null || CuePanel.Visibility == Visibility.Visible || WhatsNewPlate.Visibility == Visibility.Visible
-            || RaidGlancePlate.Visibility == Visibility.Visible || CrashPlate.Visibility == Visibility.Visible
-            ? [] : _floorChoices;
+    // F1: over the crash question's box). Aside, it is unseen and out of reach but keeps its place, so the map's names keep
+    // off it all the same and nothing moves as it goes and comes (ControlsOverMap; UI QA re-check of the grid's fixes,
+    // 2026-10-26, R1: emptied, it had never been measured when the crash question stood from the start, and names were
+    // written where it comes back).
+    private void ShowFloors()
+    {
+        var aside = _previewing is not null || CuePanel.Visibility == Visibility.Visible || WhatsNewPlate.Visibility == Visibility.Visible
+            || RaidGlancePlate.Visibility == Visibility.Visible || CrashPlate.Visibility == Visibility.Visible;
+        ViewModel.Floors = _floorChoices;
+        FloorList.Opacity = aside ? 0 : 1;
+        FloorList.IsHitTestVisible = !aside;
+        FloorList.IsEnabled = !aside;
+    }
 
     private void EndPreview(bool restore)
     {

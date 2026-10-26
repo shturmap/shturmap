@@ -243,6 +243,8 @@ public sealed partial class MainWindow
         ViewModel.PreviewHint = item.Preview == "notes" ? AppTexts.PreviewExampleNotes
             : item.Preview.StartsWith("stash", StringComparison.Ordinal) ? AppTexts.PreviewExampleStash : AppTexts.PreviewExample;
         Study.Ui("whatsnew.point", ("version", section.Label), ("item", item.Preview));
+        if (!WhatsNew.StagesMap(item.Preview))
+            PlayersMapUnder(wanted);
         switch (item.Preview)
         {
             case "clock":
@@ -310,6 +312,16 @@ public sealed partial class MainWindow
                 }
                 break;
         }
+    }
+
+    // A line that lays only a plate or a cue over the map shows it over the player's map, so where the line before staged a
+    // map of its own, the player's comes back first, made anew at the view it had, as leaving the card would give it back
+    // (Rules.WhatsNew.StagesMap; UI QA re-check of the grid's fixes, 2026-10-26, R3: the clock stood over the extract list's
+    // Customs, the stash cue and the notes card over the joined objectives' Woods, until the pointer left the card).
+    private void PlayersMapUnder(string wanted)
+    {
+        if (_snapshot is { Definition: { } definition } s && _scenes.MakeAnew(definition.Key))
+            UpdateMap(s, under: wanted);
     }
 
     // A preview's map: its artwork, the given quests' places (none of the player's), staged and framed.

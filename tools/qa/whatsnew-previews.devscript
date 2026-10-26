@@ -1,0 +1,40 @@
+# QA replay of older What's New cards' previews (drafted in the UI QA re-check of the grid's fixes, 2026-10-26): one
+# line of each kind pointed at, from one to the next as a pointer moves down the card, one still each: the previews that
+# stage a map of their own (replay, extracts, joined, leaders) inside the grid's strips, and those that lay only a plate
+# or a cue over the player's map (clock, stash, notes), each over the player's map put back (DESIGN.md §4, *What's New*:
+# "leaving puts the map back as it was"). A developer build plays it with --dev-view --dev-script; how to run it, and
+# what each still must show: whatsnew-previews.md beside this file. Times are in seconds.
+
+# A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
+# once the data was there. It ends first.
+tour end
+# The player's map is Customs, read once, so a preview staged there has its map at once.
+map customs
+wait 3
+whatsnew 0.4.0
+wait 1.5
+whatsnew 0.4.0 2
+wait 2.5
+snapshot %TEMP%\shturmap-qa\whatsnew-previews\replay
+whatsnew 0.4.0 3
+wait 2.5
+snapshot %TEMP%\shturmap-qa\whatsnew-previews\extracts
+whatsnew 0.4.0 4
+wait 2.5
+snapshot %TEMP%\shturmap-qa\whatsnew-previews\clock
+whatsnew 0.4.0 5
+wait 2.5
+snapshot %TEMP%\shturmap-qa\whatsnew-previews\joined
+whatsnew 0.5.0 1
+wait 2.5
+snapshot %TEMP%\shturmap-qa\whatsnew-previews\stash
+whatsnew 0.6.0 2
+wait 2.5
+snapshot %TEMP%\shturmap-qa\whatsnew-previews\notes
+whatsnew 0.6.2 1
+wait 2.5
+snapshot %TEMP%\shturmap-qa\whatsnew-previews\leaders
+whatsnew leave
+wait 1.5
+snapshot %TEMP%\shturmap-qa\whatsnew-previews\end
+exit

@@ -63,8 +63,9 @@ public sealed partial class MainWindow
         ReplayBand.Margin = new Thickness(strips.Left, 0, 68 + strips.Right, 46 + strips.Bottom);
         if (TourOpen)
             PlaceTour();
-        // Where they now stand, after the layout pass.
+        // Where they now stand, after the layout pass, and the notes' plates with them.
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, ControlsOverMap);
+        PlateOverMapSoon();
     }
 
     // Watched for the map's drawing: as they change their size, show or go, and as the map changes its own.
@@ -76,10 +77,6 @@ public sealed partial class MainWindow
         MapFoot.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ControlsOverMap());
         MapControls.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ControlsOverMap());
     }
-
-    // The floor list's place while it stands, for while it steps aside (a cue, a plate, the crash question): the names keep
-    // off it all the same, so they don't move as it goes and comes back.
-    private (Windows.Foundation.Rect Over, int Floors)? _floorsOver;
 
     // The map's own controls over the map while the grid shows, for its drawing: its names and labels keep off the WIKI MAP
     // link with the credit, the buttons and the floor list, and the squares' references are left out under them (UI QA pass
@@ -98,24 +95,10 @@ public sealed partial class MainWindow
             // The link and the credit each on its own: right of the link, above the credit, a name may stand.
             if (MapFoot.Visibility == Visibility.Visible)
                 over.AddRange(MapFoot.Children.OfType<FrameworkElement>().Where(Shows).Select(Of));
+            // Each of the column's parts on its own: the floor list is wider than the buttons. Stepped aside (a cue, a plate,
+            // the crash question) it keeps its place unseen, so it counts all the same (ShowFloors).
             if (MapControls.Visibility == Visibility.Visible)
-            {
-                // Each of the column's parts on its own: the floor list is wider than the buttons.
-                foreach (var control in MapControls.Children.OfType<FrameworkElement>())
-                {
-                    if (control is Microsoft.UI.Xaml.Controls.ItemsControl floors)
-                    {
-                        if (Shows(floors))
-                            _floorsOver = (Of(floors), _floorChoices.Count);
-                        if (_floorChoices.Count > 0 && _floorsOver is { } kept && kept.Floors == _floorChoices.Count)
-                            over.Add(kept.Over);
-                    }
-                    else if (Shows(control))
-                    {
-                        over.Add(Of(control));
-                    }
-                }
-            }
+                over.AddRange(MapControls.Children.OfType<FrameworkElement>().Where(Shows).Select(Of));
         }
         if (!over.SequenceEqual(Map.ControlsOver))
             Map.ControlsOver = over;

@@ -170,11 +170,12 @@ public sealed partial class MapView : Grid
     private bool _showGrid = true;
 
     /// <summary>
-    /// Where a plate of the window lies over the map for a while (DIPs in this view; the in-raid glance's), null while none
-    /// does: the player's reference at the map's top left isn't drawn under it (<see cref="MapScene.PlateOver"/>), on every
-    /// scene this view shows; a change redraws at once.
+    /// Where the window's plates and labels lie over the map for a while (DIPs in this view; the in-raid glance's plate, the
+    /// notes at the map's top), none while none does: the player's reference at the map's top left isn't drawn under them,
+    /// and a replay's tags keep off them (<see cref="MapScene.PlateOver"/>), on every scene this view shows; a change
+    /// redraws at once.
     /// </summary>
-    public Windows.Foundation.Rect? PlateOver
+    public IReadOnlyList<Windows.Foundation.Rect> PlateOver
     {
         get => _plateOver;
         set
@@ -188,9 +189,9 @@ public sealed partial class MapView : Grid
         }
     }
 
-    private Windows.Foundation.Rect? _plateOver;
+    private IReadOnlyList<Windows.Foundation.Rect> _plateOver = [];
 
-    private SKRect? PlatePixels() => _plateOver is { } r ? Pixels(r) : null;
+    private IReadOnlyList<SKRect> PlatePixels() => _plateOver.Select(Pixels).ToList();
 
     private SKRect Pixels(Windows.Foundation.Rect r) =>
         SKRect.Create((float)r.X * PixelScale, (float)r.Y * PixelScale, (float)r.Width * PixelScale, (float)r.Height * PixelScale);

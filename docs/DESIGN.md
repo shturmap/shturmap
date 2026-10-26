@@ -1812,7 +1812,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     was: a preview that staged a map of its own gives the player's back made anew, at the view it had; one that showed only a
     cue or a plate over it (`stash`, `stash-card`, `stash-given`, `clock`, `notes`) leaves the map's scene alone, so
     the last position doesn't ping again nor, with Follow my position on, glide (found 2026-10-15, looking into the owner's report
-    on the `tour:5` line below; `SceneGate.MakeAnew`). The
+    on the `tour:5` line below; `SceneGate.MakeAnew`). Each preview starts from the map put back: pointing from a line
+    that staged a map of its own straight to one that shows only a cue or a plate gives the player's map back first, made
+    anew at the view it had (`Rules.WhatsNew.StagesMap`; UI QA re-check of the grid's fixes, 2026-10-26, R3: the clock
+    stood over the extract list's Customs, the stash cue and the notes card over Woods, until the pointer left the card). The
     previews (`replay`, `extracts`, `clock`, `joined`, `leaders`): a made-up raid replayed on Customs, an example extract
     list on Customs, called out as a list just read is (YOUR EXTRACTS THIS RAID with its rows, the view taking the
     extracts in, each flown to its place; without a position, in the data's order), on a PMC raid's map, so without the
@@ -3785,7 +3788,10 @@ spawns below).
     with a `LineStrong` hairline. Labels keep off it; a symbol under it is covered, the place being fixed. The repel
     keeps symbols off the tag, as off the age tag before. While the in-raid glance's plate lies over it (at the smallest
     window, for the plate's 6 s) it isn't drawn, its room still kept, and the marker's tag says the reference (UI QA pass
-    of the squad grid, 2026-10-26, F5: the plate's edge left "YOU C" showing, which read as broken; `MapScene.PlateOver`).
+    of the squad grid, 2026-10-26, F5: the plate's edge left "YOU C" showing, which read as broken; `MapScene.PlateOver`);
+    the same under a note at the map's top: a notice, the crash question, a preview's or a look's label (the re-check of
+    its fixes, R6: the tour's chapter 5 at 900×560 stood "PREVIEW · THE TOUR · CUSTOMS" over "YOU F6-1"; the label stays
+    where the notes stand, the readout gives way, as for the plate).
   - *The map's controls step inside the strips* (owner, confirmed 2026-10-26; "Screen anatomy", the map): the scale bar,
     the credit and the wiki link, the buttons and the floor list, the notes, the edge badge and its words, the chevrons.
     And every framing with them (`Camera.Inset`; UI QA pass of the squad grid, 2026-10-26, F2: at 900×560 the raised
@@ -3795,8 +3801,11 @@ spawns below).
     map is so a little smaller in its view (Streets at 900×560 about 8 %). And no label, map name or plate is placed under
     the window's controls while the grid shows (the WIKI MAP link with the credit, the buttons, the floor list, whose place
     is kept while it steps aside so nothing moves as it goes and comes; `MapScene.ControlsOver`): in Plan at 900×560
-    "Transit to Interchange", written under its diamond, ran under the credit in the whole map's view too. Without the
-    grid, as before.
+    "Transit to Interchange", written under its diamond, ran under the credit in the whole map's view too. Aside, the
+    floor list stays laid out, unseen and out of reach, so its place counts from the first moment (UI QA re-check of the
+    grid's fixes, 2026-10-26, R1: emptied, it had never been measured when the crash question stood from the start, and
+    at 900×560 "KOLLONTAY 75%" and "Klimov Shopping Mall Exfil" were written where it came back). A replay's tags keep
+    off the controls too (*The raid replay*). Without the grid, as before.
   - *The sheet's 10 m grid gives way* (owner, confirmed 2026-10-26: one grid in the app; §3, "The sheet").
   - *One setting*, "Grid on the map", on unless unticked ("Screen anatomy", settings); help says how a reference is read
     and said, and the legend has a row for it.
@@ -3850,7 +3859,10 @@ spawns below).
     35 % sand (too little difference). Each position is a dot (2.6 DIP) in its time's colour on a dark collar, with its
     minute beside it, "8 MIN IN" (never bare minutes, which read as a time to get somewhere, owner, 2026-10-04; the
     panel's "8 MIN" changed for that), ink on a dark tag set where it covers no other tag or dot and stays above the
-    band, else left out. The newest position pings as a new position does. At the end the last one's tag says "LAST
+    band, and, as the map's labels, off the grid's strips, the window's controls and its plates and labels over the map,
+    the preview's label among them (UI QA re-check of the grid's fixes, 2026-10-26: What's New's replay ran "LAST SEEN ·
+    4 MIN BEFORE THE END" under the + and − buttons at 900×560, R2, and "0 MIN IN" under the PREVIEW label, R7), else
+    left out. The newest position pings as a new position does. At the end the last one's tag says "LAST
     SEEN · 2 MIN BEFORE THE END" ("JUST BEFORE THE END" within a minute), framed in sand as an old position's tag is.
     Positions on another floor are drawn as on the floor shown. A straight line between positions minutes apart reads
     as a route Shturmap doesn't know; the owner chose the pen knowing that, and the minutes and the timeline show the gaps.

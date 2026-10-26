@@ -121,14 +121,19 @@ public static partial class MapRenderer
 
     // The minutes beside the positions, each where it covers no other tag, dot or the band at the foot; one with no
     // free place is left out (the timeline still has it). At the end the last position's tag says when it was last
-    // seen, framed in sand as an old position's tag is, and it is placed first.
+    // seen, framed in sand as an old position's tag is, and it is placed first. As the map's labels do, the tags keep off
+    // the grid's strips and the window's controls (MapScene.ControlsOver), and off its plates and labels over the map, the
+    // preview's label among them (MapScene.PlateOver; UI QA re-check of the grid's fixes, 2026-10-26, R2: What's New's
+    // replay at 900×560 ran "LAST SEEN · 4 MIN BEFORE THE END" under the + and − buttons; R7: "0 MIN IN" under the PREVIEW
+    // label).
     private static void DrawReplayTags(SKCanvas canvas, Camera camera, MapScene scene, RaidReplay replay,
         IReadOnlyList<ReplayFix> shown, IReadOnlyList<SKPoint> points, float ui)
     {
         if (points.Count == 0)
             return;
         var foot = camera.Viewport.Height - scene.ReplayFoot * ui;
-        var taken = points.Select(p => SKRect.Create(p.X - 5 * ui, p.Y - 5 * ui, 10 * ui, 10 * ui)).ToList();
+        var taken = points.Select(p => SKRect.Create(p.X - 5 * ui, p.Y - 5 * ui, 10 * ui, 10 * ui))
+            .Concat(StripRects(camera, scene, ui)).Concat(scene.ControlsOver).Concat(scene.PlateOver).ToList();
         var order = Enumerable.Range(0, points.Count).ToList();
         if (scene.ReplayDone)
         {

@@ -145,6 +145,12 @@ public class WhatsNewTests
         Assert.False(WhatsNew.ShowsPreview(hyena.Items[3].Preview));
     }
 
+    // Each preview starts from the player's map put back (UI QA re-check of the grid's fixes, 2026-10-26, R3: the clock
+    // stood over the extract list's Customs): only these stage a map of their own; the others lay a plate or a cue over it.
+    [Fact]
+    public void Only_the_map_previews_stage_a_map_of_their_own() =>
+        Assert.Equal(["extracts", "joined", "leaders", "replay"], WhatsNew.Previews.Where(WhatsNew.StagesMap).Order(StringComparer.Ordinal));
+
     // The note at the card's foot says what its lines do (UI QA pass of the squad grid, F9, 2026-10-26: "Point at one: the
     // map shows it." stood under 0.7.0's five tour lines, which preview nothing). A card with several versions counts the
     // lines of all of them.

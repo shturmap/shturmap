@@ -182,7 +182,9 @@ a newer reading replacing it, its 6 s, a reading waiting for the roll call, and 
 build's own release whatever its number: each line pointed at (its preview on the map, or none for a `tour:N` line) and
 tapped (a `tour:N` line opens the tour at chapter N); `desk-prices` (2026-10-26) the desk's pictures across new prices and
 a reading that changed nothing: each cell's picture drawn in the first frame after, never blank while its file is
-decoded again.
+decoded again; `whatsnew-previews` (2026-10-26, drafted in the UI QA re-check of the grid's fixes) older cards' preview
+lines, one of each kind, pointed at one after the other: the framings inside the grid's strips, the replay's tags off the
+window's controls and the PREVIEW label, and each plate or cue over the player's map put back.
 
 - **`<flow>.devscript`**: a developer script (DESIGN.md §8, "Developer aids", `--dev-script`; `DevScript.Verbs`), for
   instance `tour end` (a `--dev-view` session starts as a first start, and the tour opens by itself), `quest start <id

@@ -111,6 +111,29 @@ public class ReplayTests
     }
 
     [Fact]
+    public void The_tags_keep_off_the_windows_controls_and_its_plates_over_the_map()
+    {
+        // UI QA re-check of the grid's fixes, 2026-10-26: What's New's replay at 900×560 ran "LAST SEEN · 4 MIN BEFORE THE END"
+        // under the + and − buttons (R2), and "0 MIN IN" stood under the PREVIEW label (R7). The last position at (700, 500):
+        // its LAST SEEN tag, in sand, takes the place right of it first.
+        var (camera, scene) = Of([]);
+        scene.Replay = new RaidReplay("test", "Test map", [Fix(0, -200, 0), Fix(10, 0, 0), Fix(20, 200, 0)], 30);
+        scene.ReplayDone = true;
+        var right = SKRect.Create(706, 470, 290, 60);
+        int SandIn(SKBitmap bitmap) => Enumerable.Range((int)right.Left, (int)right.Width)
+            .Sum(x => Enumerable.Range((int)right.Top, (int)right.Height).Count(y => bitmap.GetPixel(x, y) is var c && c.Red > 60 && c.Red > c.Blue + 8));
+        using (var free = Render(camera, scene))
+            Assert.True(SandIn(free) > 50, "the tag stands right of the last position");
+        scene.ControlsOver = [right];
+        using (var control = Render(camera, scene))
+            Assert.Equal(0, SandIn(control));
+        scene.ControlsOver = [];
+        scene.PlateOver = [right];
+        using (var plate = Render(camera, scene))
+            Assert.Equal(0, SandIn(plate));
+    }
+
+    [Fact]
     public void The_map_recedes_under_the_replay()
     {
         var (camera, scene) = Of([Quest("a", 300, 300, "Somewhere")]);
