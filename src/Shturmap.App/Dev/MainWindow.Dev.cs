@@ -450,6 +450,27 @@ public sealed partial class MainWindow
         return $"glance: reading {reading}" + (GlanceUp ? "" : _glanceWaiting is not null ? " (waiting for the cue to go)" : " (not shown)");
     }
 
+    /// <summary>
+    /// The developer script's "desk prices" and "desk probe &lt;n&gt;" (2026-10-26): the step, with the page's pictures looked
+    /// at in the frame before it and in the first frame after it (DeskBoard.PicturesDrawnAsync), so a page built again is
+    /// seen to draw them at once, not blank until their files are decoded again.
+    /// </summary>
+    internal async Task<string> DevDeskProbedAsync(DevScript.DeskStep step)
+    {
+        (int Drawn, int Judged, int Entering) before = _deskChosen ? await StashDesk.PicturesDrawnAsync() : (0, 0, 0);
+        var head = StashDesk.View?.Sheet.Totals;
+        // The step and the page built again, all before the next frame; the render asked for at once is that frame.
+        var done = DevDesk(step);
+        var after = StashDesk.PicturesDrawnAsync();
+        var drawn = await after;
+        var now = StashDesk.View?.Sheet.Totals;
+        var line = $"{done}; pictures drawn in the frame before: {before.Drawn} of {before.Judged}, in the first frame after: {drawn.Drawn} of {drawn.Judged}" +
+                   (drawn.Entering > 0 ? $" ({drawn.Entering} more coming in)" : "") +
+                   (head is not null && now is not null ? $"; totals {head.OnYou:0}/{head.Stash:0} -> {now.OnYou:0}/{now.Stash:0}" : "");
+        AppLog.Info("Developer view: " + line);
+        return line;
+    }
+
     /// <summary>The developer script's "desk" (DevScript.DeskOf): what was done, or why not.</summary>
     internal string DevDesk(DevScript.DeskStep step)
     {
@@ -457,6 +478,15 @@ public sealed partial class MainWindow
             return "desk: no snapshot yet";
         switch (step.Act)
         {
+            case DevScript.DeskAct.Prices:
+                // New prices, as the session's every five minutes bring them: the made-up desk's flea prices a tenth up,
+                // the same reading, so nothing comes in.
+                if (_deskExample is not { } shown)
+                    return "desk: the made-up desk isn't up";
+                _deskExamplePriced *= 1.1;
+                _deskExample = MadeUpDesk(s, shown.Reading) with { Changed = shown.Changed, First = shown.First };
+                UpdateDesk(s);
+                return $"desk: prices ×{_deskExamplePriced:0.###}, the same reading";
             case DevScript.DeskAct.Reading:
                 if (s.Data is null)
                     return "desk: no data yet";

@@ -37,6 +37,13 @@ public static class DeskSwitch
         !inRaid && (newReading && !tourUp || chosen);
 
     /// <summary>
+    /// Whether the desk is on screen, for its prices (owner, 2026-10-26: "When finding prices in the stash it's important
+    /// that they are recent"; docs/DESIGN.md §3): the window shows the Desk view, never in a raid, and isn't minimised.
+    /// While it is, the session asks for the prices again as they turn five minutes old.
+    /// </summary>
+    public static bool OnScreen(bool inRaid, bool deskChosen, bool minimised) => Shown(inRaid, deskChosen) == WindowState.Desk && !minimised;
+
+    /// <summary>
     /// Whether a desk's reading counter says a reading was taken since the last one this window saw. The counter counts
     /// the readings taken while Shturmap runs: a page read back from its file at start is 0 and opens nothing; before
     /// any desk, nothing was seen (0).

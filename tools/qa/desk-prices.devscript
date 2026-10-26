@@ -1,0 +1,34 @@
+# QA replay of the desk's pictures across a price update (2026-10-26; the owner: "When finding prices in the stash it's
+# important that they are recent", so the session prices the page again every five minutes while the desk is on screen,
+# docs/DESIGN.md §3): the page is built again for new prices and for a reading, and must draw each cell's picture in its
+# first frame, never blank until its file is decoded again (DeskBoard.ArtOf). "desk probe <n>" and "desk prices" say in
+# their line how many pictures the frame before and the first frame after drew, of how many in the page's view. A
+# developer build plays it with --dev-view --dev-script; how to run it and what the lines must say: desk-prices.md beside
+# this file. Times are in seconds.
+
+tour end
+map customs
+wait 7
+
+# The first reading; its cells come in and its totals count up, then the page stands.
+desk 1
+wait 7
+snapshot %TEMP%\shturmap-qa\desk-prices\before
+
+# A reading that changed nothing: the page built again, nothing comes in.
+desk probe 3
+wait 2
+
+# New prices, as the session's every five minutes bring them: the flea's a tenth up each time, the same reading.
+desk prices
+wait 2
+snapshot %TEMP%\shturmap-qa\desk-prices\priced
+desk prices
+wait 2
+desk prices
+wait 2
+
+# A reading that changed the backpack alone: it comes in, the rest is built again where it stands.
+desk probe 2
+wait 2
+exit

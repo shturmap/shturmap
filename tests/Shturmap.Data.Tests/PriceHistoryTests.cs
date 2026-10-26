@@ -73,13 +73,13 @@ public class PriceHistoryTests : IDisposable
         Assert.Equal(12, history.Points[1].Offers);
     }
 
-    // The desk's prices (owner, 2026-10-19, after the test: "Maybe we need to fetch the prices more often then?"): when a
-    // reading arrives, the item file is asked for again with its ETag once the saved copy is over ten minutes old (an hour
-    // until then); a younger copy is used as it is. Never on a timer: the age is asked only when a reading arrives.
+    // The desk's prices (owner, 2026-10-26: "When finding prices in the stash it's important that they are recent"): the
+    // item file is asked for again with its ETag once the saved copy is five minutes old (ten from 2026-10-19, an hour
+    // before); a younger copy is used as it is. When it is asked (a reading, the desk on screen): DeskPricesSessionTests.
     [Fact]
-    public async Task The_desks_item_file_is_asked_for_again_after_ten_minutes()
+    public async Task The_desks_item_file_is_asked_for_again_after_five_minutes()
     {
-        Assert.Equal(TimeSpan.FromMinutes(10), GameDataLoader.DeskPricesAge);
+        Assert.Equal(TimeSpan.FromMinutes(5), GameDataLoader.DeskPricesAge);
         var server = new Server();
         var http = new CachedHttp(CachedHttp.CreateClient(server), _folder);
         var ct = TestContext.Current.CancellationToken;
@@ -93,10 +93,10 @@ public class PriceHistoryTests : IDisposable
             node["FetchedAt"] = DateTimeOffset.UtcNow.AddMinutes(-minutes).ToString("o");
             File.WriteAllText(meta, node.ToJsonString());
         }
-        FetchedAgo(9);
+        FetchedAgo(4);
         await http.GetAsync(uri, "pve_items.json", GameDataLoader.DeskPricesAge, ct, json: true);
         Assert.Single(server.Asked);
-        FetchedAgo(11);
+        FetchedAgo(6);
         await http.GetAsync(uri, "pve_items.json", GameDataLoader.DeskPricesAge, ct, json: true);
         Assert.Equal(2, server.Asked.Count);
         Assert.Contains("\"h1\"", server.Asked[1].Headers.IfNoneMatch.ToString());

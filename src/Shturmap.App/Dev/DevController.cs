@@ -641,7 +641,7 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 // The made-up stash desk: a reading, a cell pointed at, pinned, clicked or picked, the copy's rule, or PLAN
                 // (step B, 2026-10-19; step C, 2026-10-19; the fold's "open" gone with the fold, 2026-10-25).
                 if (DevScript.DeskOf(step) is { } desk)
-                    Say(window.DevDesk(desk));
+                    Say(desk.Probe ? await window.DevDeskProbedAsync(desk) : window.DevDesk(desk));
                 break;
             case "glance":
                 // The made-up in-raid glance: a raid screenshot of an inventory screen, its reading as the session publishes it

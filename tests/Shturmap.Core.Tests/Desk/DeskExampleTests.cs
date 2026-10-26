@@ -37,6 +37,20 @@ public class DeskExampleTests
         Assert.True(DeskExample.View(0, GameMode.Pve, 1, null, DateTimeOffset.UnixEpoch).First);
     }
 
+    // New prices (the developer script's "desk prices", 2026-10-26): the flea's a tenth up, the traders' as they are, the
+    // same page and cells; the totals follow.
+    [Fact]
+    public void Priced_again_its_flea_figures_rise_and_its_page_stays()
+    {
+        var first = Reading(1);
+        var priced = DeskExample.View(1, GameMode.Pve, 1, id => "trader " + id[..4], DateTimeOffset.UnixEpoch, priced: 1.1);
+        Assert.Equal(first.Sheet.Regions.Select(r => (r.Region.Key, r.Cells.Count)), priced.Sheet.Regions.Select(r => (r.Region.Key, r.Cells.Count)));
+        Assert.Equal((first.Reading, first.First), (priced.Reading, priced.First));
+        Assert.True(priced.Sheet.Totals.Stash > first.Sheet.Totals.Stash);
+        var flea = Cells(priced).First(c => c.Figure?.Source == DeskSource.Flea && c.Cell.ItemId is not null);
+        Assert.True(priced.FactsOf(flea.Cell.ItemId!)!.LastLow > first.FactsOf(flea.Cell.ItemId!)!.LastLow);
+    }
+
     [Fact]
     public void Its_page_holds_every_mark_the_view_draws()
     {

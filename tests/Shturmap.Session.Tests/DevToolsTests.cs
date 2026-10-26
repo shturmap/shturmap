@@ -395,7 +395,7 @@ public sealed class DevToolsTests : IDisposable
         var (steps, errors) = DevScript.Parse(string.Join('\n', "desk", "desk 2", "desk point backpack", "desk point stash 4 1", "desk plan",
             "desk show", "desk 4", "DESK open Stash", "desk open", "desk point stash 4", "desk fold"));
         const string said = "'desk' takes a reading (1 to 3), 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
-                            + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan' or 'show [<n>]'";
+                            + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan', 'show [<n>]', 'prices' or 'probe <n>'";
         Assert.Equal([$"line 7: {said}", $"line 8: {said}", $"line 9: {said}", $"line 10: {said}", $"line 11: {said}"], errors);
         Assert.Equal(
             [
@@ -406,6 +406,18 @@ public sealed class DevToolsTests : IDisposable
             ],
             steps.Select(s => DevScript.DeskOf(s)!));
         Assert.False(DevScript.FollowsAtOnce(steps[0]));
+    }
+
+    // 2026-10-26 (the desk's prices every five minutes): "prices" the made-up desk's flea prices a tenth up, the same reading,
+    // and "probe <n>" its reading n, each with the pictures looked at in the first frame after it.
+    [Fact]
+    public void The_desk_step_prices_the_page_again_or_probes_a_reading()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "desk prices", "desk probe 3", "desk probe 4", "desk probe"));
+        Assert.Equal(2, errors.Count);
+        Assert.Equal(
+            [new DevScript.DeskStep(DevScript.DeskAct.Prices) { Probe = true }, new DevScript.DeskStep(DevScript.DeskAct.Reading, 3) { Probe = true }],
+            steps.Select(s => DevScript.DeskOf(s)!));
     }
 
     // Step C (2026-10-19): "pin" a cell right-clicked, "copy" a cell clicked (the clipboard left alone), "unpin" a pin or

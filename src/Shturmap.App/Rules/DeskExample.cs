@@ -281,8 +281,10 @@ public static class DeskExample
     /// <param name="counter">The reading counter to give it (<see cref="DeskView.Reading"/>): one past the last the window saw.</param>
     /// <param name="traderName">A trader's name by id, from the data.</param>
     /// <param name="picks">The "?" cells picked on their cards (the developer script's "desk pick", a candidate clicked).</param>
+    /// <param name="priced">The flea's prices against the made-up ones (the developer script's "desk prices": new prices,
+    /// 1.1 a tenth up), the traders' as they are.</param>
     public static DeskView View(int reading, GameMode mode, int counter, Func<string, string>? traderName, DateTimeOffset now,
-        IReadOnlyDictionary<DeskCellKey, string>? picks = null)
+        IReadOnlyDictionary<DeskCellKey, string>? picks = null, double priced = 1)
     {
         reading = Math.Clamp(reading, 1, Readings);
         var page = Page(reading);
@@ -296,7 +298,11 @@ public static class DeskExample
                 }).ToList(),
             };
         }
-        var sheet = DeskSheet.Of(page, id => Facts.GetValueOrDefault(id), DeskFleaRules.Default, Keep, default, traderName);
+        Func<string, DeskItemFacts?> facts = priced == 1 ? id => Facts.GetValueOrDefault(id)
+            : id => Facts.GetValueOrDefault(id) is { } f
+                ? f with { LastLow = f.LastLow * priced, Avg24h = f.Avg24h * priced, Low24h = f.Low24h * priced, High24h = f.High24h * priced }
+                : null;
+        var sheet = DeskSheet.Of(page, facts, DeskFleaRules.Default, Keep, default, traderName);
         IReadOnlySet<string> changed = reading switch
         {
             1 or 4 => page.Regions.Select(r => r.Key).ToHashSet(StringComparer.Ordinal),
@@ -305,7 +311,7 @@ public static class DeskExample
         };
         return new DeskView(mode, sheet, changed, reading is 1 or 4, counter, now)
         {
-            FactsOf = id => Facts.GetValueOrDefault(id),
+            FactsOf = facts,
             Flea = DeskFleaRules.Default,
         };
     }
