@@ -256,6 +256,10 @@
     <value>YOU</value>
     <comment>Map, top left, with the grid on, while your position is shown: the small label before your grid square in large type ("YOU D5-8 · 2 MIN OLD"), so a squad can be told where you are. Capitals; one short word.</comment>
   </data>
+  <data name="MapGridPointer" xml:space="preserve">
+    <value>POINTER</value>
+    <comment>Map, top left, with the grid on, while the mouse pointer is over the map: the small label before the grid square under the pointer ("POINTER D5-8"), on a line under "YOU D5-8" in a raid, alone outside one. It names the mouse pointer, not a person or a direction. Capitals; one short word, about as long as the English.</comment>
+  </data>
   <data name="ReplayMinute" xml:space="preserve">
     <value>{minute} MIN IN</value>
     <comment>Map: a small tag in capitals beside a marker; short. The raid replay: a position's minute into the raid. {minute}: whole minutes since the raid's start.</comment>

@@ -1,0 +1,51 @@
+# QA replay of the grid under the pointer (owner, 2026-10-26: "When you are with the mouse over the map highlight the
+# current square and sub-square and show the currently mouse-overed position somewhere where it makes sense"): the mouse
+# moved over Streets in Plan and in a raid, as its own moves do. The square under it lit faintly and its ninth a little
+# more, the strips' letter and number stronger, and its reference in the readout at the map's top left, the only line out
+# of a raid and under YOU's in one; all of it gone as the pointer leaves the map. A developer build plays it with
+# --dev-view --dev-script; how to run it, and what each still must show: grid-pointer.md beside this file. Times are in
+# seconds.
+
+# A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
+# once the data was there. It ends first, and leaves its notice at the map's top for 6 s.
+tour end
+map streets-of-tarkov
+wait 1.5
+
+# Plan, the notice still up: the pointer onto the map, a little up and left of its middle. The square lit, the readout's
+# line not drawn under the notice.
+pointer 0.45 0.45
+wait 0.5
+snapshot %TEMP%\shturmap-qa\grid-pointer\plan-notice
+wait 6
+# The notice gone: the readout's line in YOU's place.
+snapshot %TEMP%\shturmap-qa\grid-pointer\plan
+# Further down and right: another square and ninth, the strips and the readout with them.
+pointer 0.6 0.7
+wait 0.5
+snapshot %TEMP%\shturmap-qa\grid-pointer\plan-moved
+# On the readout's corner, left of column A: off the lettered grid, so nothing lit and no line.
+pointer 0.07 0.06
+wait 0.5
+snapshot %TEMP%\shturmap-qa\grid-pointer\plan-off-grid
+# Off the map: nothing lit, no readout.
+pointer leave
+wait 0.5
+snapshot %TEMP%\shturmap-qa\grid-pointer\plan-left
+
+# A PMC raid on Streets with a position in D5: YOU's line, and the pointer's under it once the pointer is on the map. The
+# raid's cues go first (a still taken while a cue decodes or fades fails to render it).
+load
+steps
+start
+wait 3
+pos 40 2.5 120 90
+wait 6.5
+snapshot %TEMP%\shturmap-qa\grid-pointer\raid-you
+pointer 0.45 0.45
+wait 0.5
+snapshot %TEMP%\shturmap-qa\grid-pointer\raid
+pointer leave
+wait 0.5
+snapshot %TEMP%\shturmap-qa\grid-pointer\raid-left
+exit

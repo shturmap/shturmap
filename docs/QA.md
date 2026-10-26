@@ -53,7 +53,7 @@ Within the time the checks the change is judged by come first; what didn't fit i
 | change | checks |
 | --- | --- |
 | the rail, a card, a cue, a dialog, the status bar, help, settings, a text | the views plan, raid, quest (help and settings in each) it reaches, en-US at 900x560 and 1600x900, de-DE at 900x560 (both sizes only when a text changed), folder build; the layout check only when a text or the layout changed, for those views, en-US and de-DE (qps-ploc before a release) |
-| map drawing | `shturmap-cli render` of the maps it reaches; `shturmap-cli frames` in the scene the change reaches, with `--glide`, `--notch` or `--step 2` only when the change moves the view; the raid view at the smallest window |
+| map drawing | `shturmap-cli render` of the maps it reaches (with `--pointer <fx> <fy>` where it reaches the grid under the pointer); `shturmap-cli frames` in the scene the change reaches, with `--glide`, `--notch` or `--step 2` only when the change moves the view (`--pointer` where it draws under the pointer); the raid view at the smallest window |
 | an animation or a flow | the replay script of that flow, or one drafted in the pass folder for a flow without one; `frames` for a map animation |
 | the layout, in any language | the layout check, every view, en-US, de-DE and qps-ploc, both sizes |
 | a release | all of the above for every view; the tour's seven chapters in both languages; What's New and each line's preview; the layout check in full with `-SwitchCheck` |
@@ -184,12 +184,16 @@ tapped (a `tour:N` line opens the tour at chapter N); `desk-prices` (2026-10-26)
 a reading that changed nothing: each cell's picture drawn in the first frame after, never blank while its file is
 decoded again; `whatsnew-previews` (2026-10-26, drafted in the UI QA re-check of the grid's fixes) older cards' preview
 lines, one of each kind, pointed at one after the other: the framings inside the grid's strips, the replay's tags off the
-window's controls and the PREVIEW label, and each plate or cue over the player's map put back.
+window's controls and the PREVIEW label, and each plate or cue over the player's map put back; `grid-pointer`
+(2026-10-26) the mouse over Streets in Plan and in a raid (`pointer <fx> <fy>`, `pointer leave`): the grid's square and
+ninth under it lit, the strips' letter and number, the readout's pointer line alone out of a raid and under YOU's in
+one, under a notice not drawn, and all of it gone as the pointer leaves.
 
 - **`<flow>.devscript`**: a developer script (DESIGN.md §8, "Developer aids", `--dev-script`; `DevScript.Verbs`), for
   instance `tour end` (a `--dev-view` session starts as a first start, and the tour opens by itself), `quest start <id
   or name>`, `pick`, `show` (`show <quest> at row`: its card held at its own row, as a click holds it, so a card from
-  a row near the window's foot can be pictured), `hover`, `point`, `whatsnew [<version>] [<n>]` (an older version's
+  a row near the window's foot can be pictured), `hover`, `point`, `pointer <fx> <fy> | leave` (the mouse onto the map at
+  those fractions of its size, as its own moves are, or off it), `whatsnew [<version>] [<n>]` (an older version's
   card with its version, `whatsnew 0.4.0 3`), `whatsnew [<version>] click <n>` (taps line n, as a click does),
   `whatsnew leave` (the pointer leaves the line), `focus help|feedback|settings|map|rail|<x:Name>` (the keyboard focus
   there, as Tab moves it, so the next still shows its focus ring), `note <quest id or name> <text>` (a quest note

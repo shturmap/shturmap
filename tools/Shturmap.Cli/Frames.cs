@@ -60,6 +60,9 @@ internal static class Frames
         var grid = Take(options, "--grid") is not "off";
         // --quests all: every quest active, the busiest the map gets, instead of render's example quests.
         AllQuests = Take(options, "--quests") is "all";
+        // --pointer: the mouse sweeps the view, a step a frame, as the map view tells the scene (MapScene.Pointer; owner,
+        // 2026-10-26: the grid's square under it lit), so a frame's drawing time with it can be set against one without.
+        var sweep = options.Remove("--pointer");
         var scene = Take(options, "--scene") ?? "list-read";
         if (scene is not ("list-read" or "whatsnew-extracts" or "list-callout" or "plan"))
             throw new ArgumentException($"Unknown scene {scene}: list-read, whatsnew-extracts, list-callout or plan");
@@ -167,7 +170,8 @@ internal static class Frames
         if (options.Count != 2)
         {
             throw new ArgumentException("Use: shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout|plan] [--every <ms>] [--count <n>] " +
-                                        "[--fix <x> <y> <z>] [--glide [ms] | --notch [ms] | --step <factor> [ms] | --sway [n]] [--toward <name>] [--viewport <W>x<H>]");
+                                        "[--fix <x> <y> <z>] [--glide [ms] | --notch [ms] | --step <factor> [ms] | --sway [n]] [--toward <name>] [--viewport <W>x<H>] " +
+                                        "[--grid off] [--quests all] [--pointer]");
         }
         var (mapName, output) = (options[0], Path.GetFullPath(options[1]));
 
@@ -202,6 +206,8 @@ internal static class Frames
         about.Add(grid ? "Grid: on (the squad grid, as the app starts)" : "Grid: off (--grid off)");
         if (AllQuests)
             about.Add("Quests: every quest active (--quests all)");
+        if (sweep)
+            about.Add("Pointer: sweeps the view from its top left to its bottom right, a step a frame (--pointer; MapScene.Pointer)");
         if (scene == "whatsnew-extracts" && fixAt is { } given)
         {
             shown.Player = new PlayerFix(given, null, Start);
@@ -298,8 +304,18 @@ internal static class Frames
         var drawn = new List<double>();
         // The grid's keypad (0: ticks, 1: its lines in) and how many references each frame placed.
         var keypads = new List<(int Frame, float Keypad, int References)>();
+        // --pointer: the frames whose pointer showed another square or ninth than the frame before (MapRenderer.PointerMoved):
+        // the window draws only those for a move of the pointer.
+        var pointerFrames = 0;
         for (var k = 0; k < count; k++)
         {
+            if (sweep)
+            {
+                var t = count > 1 ? (float)k / (count - 1) : 0.5f;
+                shown.Pointer = new SKPoint(Width * (0.04f + 0.92f * t), Height * (0.04f + 0.92f * t));
+                if (MapRenderer.PointerMoved(camera, shown, 1))
+                    pointerFrames++;
+            }
             var ms = (double)k * every;
             var time = Start + TimeSpan.FromMilliseconds(ms);
             if (glideMs is { } length)
@@ -364,6 +380,8 @@ internal static class Frames
         var timing = FormattableString.Invariant(
             $"Drawing (MapRenderer.Render, CPU raster, {Width}x{Height}): median {sorted[sorted.Count / 2]:0.00} ms, mean {drawn.Average():0.00} ms, slowest {sorted[^1]:0.00} ms over {drawn.Count} frames (the first {drawn[0]:0.00} ms)");
         summary += timing + Environment.NewLine;
+        if (sweep)
+            summary += FormattableString.Invariant($"Pointer: {pointerFrames} of {count} frames showed another square or ninth than the frame before (the window draws a frame for those only)") + Environment.NewLine;
         if (keypads.Count > 0)
         {
             // Each frame where the keypad's fade changed, and the references' count.

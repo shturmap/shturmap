@@ -256,6 +256,10 @@
     <value>DU</value>
     <comment>en: YOU</comment>
   </data>
+  <data name="MapGridPointer" xml:space="preserve">
+    <value>MAUS</value>
+    <comment>en: POINTER</comment>
+  </data>
   <data name="ReplayMinute" xml:space="preserve">
     <value>{minute} MIN IM RAID</value>
     <comment>en: {minute} MIN IN</comment>

@@ -227,6 +227,20 @@ public sealed class MapScene
     public IReadOnlyList<SkiaSharp.SKRect> PlateOver { get; set; } = [];
 
     /// <summary>
+    /// Where the pointer is over the map (pixels; the map view sets it as the pointer moves, null once it leaves): with the
+    /// grid on, the square and the ninth under it are lit, the strips' letter and number drawn stronger, and the readout
+    /// at the map's top left says its reference (owner, 2026-10-26: "When you are with the mouse over the map highlight the
+    /// current square and sub-square and show the currently mouse-overed position somewhere where it makes sense";
+    /// <see cref="MapRenderer.GridPointer"/>). Only drawn differently, never laid out anew: a move of the pointer places
+    /// nothing.
+    /// </summary>
+    public SkiaSharp.SKPoint? Pointer { get; set; }
+
+    /// <summary>What the last frame drew for the pointer (<see cref="MapRenderer.Render"/>; null for nothing): the map view
+    /// draws a frame for a move of the pointer only where that changes it (<see cref="MapRenderer.PointerMoved"/>).</summary>
+    public (GridReference Reference, bool LineShown)? PointerShown { get; internal set; }
+
+    /// <summary>
     /// Where the window's own controls stand over the map (pixels; the window gives them while the grid shows, none
     /// otherwise): the WIKI MAP link with the credit, the buttons with the floor list. No label, name or plate is placed
     /// under them and a square's reference is left out there, as under the strips (UI QA pass of the squad grid,

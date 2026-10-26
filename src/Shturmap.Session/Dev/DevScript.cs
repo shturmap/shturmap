@@ -42,6 +42,8 @@ public static class DevScript
         ["transit"] = "<normalized name>: a transit to that map, during a raid",
         ["quest"] = "start | complete | fail <quest id or part of its name>; here [<n>]: starts the first n (8) of the shown map's quests by level",
         ["place"] = "<fx> <fy> [<to fx> <to fy>]: a click (or drag, for the facing) on the map at fractions of its size",
+        ["pointer"] = "<fx> <fy> | leave: the mouse moved onto the map at fractions of its size, through the code the pointer's moves call "
+            + "(with the grid, the square under it lit and its reference in the readout at the map's top left); leave, off the map, as leaving does",
         ["pick"] = "<id or name>: picks (or unpicks) the quest for the coming raid, as its pen does",
         ["trader"] = "[<trader's name or id>]: holds that trader's focus, as a click on its portrait in the strip under the MAP list does; alone, lets go of it",
         ["tick"] = "<quest id or name> <n>: ticks (or unticks) the quest's n-th objective as done, as the box on its card does; not saved",
@@ -305,12 +307,27 @@ public static class DevScript
         step.Args.Count != 1 ? null : FocusParts.GetValueOrDefault(step.Args[0]) ?? step.Args[0];
 
     /// <summary>
-    /// Whether the next step follows at once. The pointer's steps (hover, point, trail, cards, and What's New's click
+    /// A "pointer" step's place on the map, as fractions of its size (0 to 1 each way; "pointer 0.4 0.5"), or null for
+    /// "pointer leave": the mouse off the map. A step with anything else doesn't get past <see cref="Parse"/>.
+    /// </summary>
+    public static (double X, double Y)? PointerOf(DevStep step) =>
+        step.Args is [var x, var y]
+        && double.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var fx) && fx is >= 0 and <= 1
+        && double.TryParse(y, NumberStyles.Float, CultureInfo.InvariantCulture, out var fy) && fy is >= 0 and <= 1
+            ? (fx, fy)
+            : null;
+
+    // Whether a "pointer" step says where: two fractions, or "leave".
+    private static bool PointerReads(DevStep step) =>
+        PointerOf(step) is not null || step.Args is [var only] && only.Equals("leave", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether the next step follows at once. The pointer's steps (hover, point, pointer, trail, cards, and What's New's click
     /// and leave) and "wait" write nothing for the app to read, and what they check is a matter of tenths of a second;
     /// after every other step the app is given 0.3 s, as it reads the logs about twice a second.
     /// </summary>
     public static bool FollowsAtOnce(DevStep step) =>
-        step.Verb is "hover" or "point" or "trail" or "cards" or "wait"
+        step.Verb is "hover" or "point" or "pointer" or "trail" or "cards" or "wait"
         || step.Verb == "whatsnew" && WhatsNewOf(step) is { Act: WhatsNewAct.Click or WhatsNewAct.Leave };
 
     /// <summary>A folder a step names, with its %VARIABLES% expanded: a script kept in the repository names no user's
@@ -341,6 +358,11 @@ public static class DevScript
             if (verb == "whatsnew" && WhatsNewOf(step) is null)
             {
                 errors.Add($"line {i + 1}: 'whatsnew click' needs the line's number, from 1");
+                continue;
+            }
+            if (verb == "pointer" && !PointerReads(step))
+            {
+                errors.Add($"line {i + 1}: 'pointer' takes where on the map, two fractions of its size from 0 to 1 ('pointer 0.4 0.5'), or 'leave'");
                 continue;
             }
             if (verb == "tasks" && TasksOf(step) is null)

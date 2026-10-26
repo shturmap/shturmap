@@ -495,6 +495,18 @@ public sealed class DevToolsTests : IDisposable
         Assert.Equal(["line 2: 'tour' takes 'end'", "line 3: 'tour' takes 'end'"], errors);
     }
 
+    // "pointer" moves the mouse over the map at fractions of its size (owner, 2026-10-26: the grid's square under the
+    // pointer lit, its reference in the readout), or off it with "leave"; anything else is a script's error.
+    [Fact]
+    public void The_pointer_step_takes_two_fractions_of_the_map_or_leave()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "pointer 0.4 0.55", "pointer leave", "pointer", "pointer 1.2 0.5", "pointer 0.5", "pointer left"));
+        Assert.Equal([(0.4, 0.55), null], steps.Select(DevScript.PointerOf));
+        Assert.Equal(["pointer 0.4 0.55", "pointer leave"], steps.Select(s => s.ToString()));
+        Assert.Equal([3, 4, 5, 6], errors.Select(e => int.Parse(e.Split(':')[0]["line ".Length..], System.Globalization.CultureInfo.InvariantCulture)));
+        Assert.All(errors, e => Assert.Contains("'pointer' takes where on the map", e));
+    }
+
     // A step that writes nothing for the app to read follows at once: the click on a tour line, the pointer's leaving
     // 0.4 s later and the snapshot after it keep the times the script gives them.
     [Theory]
@@ -503,6 +515,8 @@ public sealed class DevToolsTests : IDisposable
     [InlineData("hover", true)]
     [InlineData("point", true)]
     [InlineData("trail 1 2", true)]
+    [InlineData("pointer 0.4 0.5", true)]
+    [InlineData("pointer leave", true)]
     [InlineData("cards", true)]
     [InlineData("wait 0.4", true)]
     [InlineData("whatsnew", false)]

@@ -572,6 +572,11 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 }
                 window.DevPoint(new Controls.Focus(new HashSet<string> { pointQuest }, Objective: numbered ? pointAll[pointNumber - 1].Id : null));
                 break;
+            case "pointer":
+                // The mouse onto the map at fractions of its size, through the code its own moves call (with the grid, the
+                // square under it lit and its reference in the readout); "leave", off the map again.
+                Say(window.DevPointerOnMap(DevScript.PointerOf(step)));
+                break;
             case "place":
                 PlaceOnView(step.Number(0, 0.5), step.Number(1, 0.5),
                     step.Args.Count >= 4 ? step.Number(2) : null, step.Args.Count >= 4 ? step.Number(3) : null);
