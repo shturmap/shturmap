@@ -148,9 +148,13 @@
     <value>Loot-Container auf einer Map ohne Grafik: blasse Punkte.</value>
     <comment>en: Loot containers, on a map without artwork: faint dots.</comment>
   </data>
+  <data name="LegendGrid" xml:space="preserve">
+    <value>Das Raster: 100-m-Planquadrate, quer mit Buchstaben, nach unten mit Zahlen, jedes in seiner Ecke benannt; Drittel wie auf dem Numpad (D5-8 ist oben in der Mitte von D5).</value>
+    <comment>en: The grid: 100 m squares, lettered across and numbered down, each named in its corner; thirds as on a number pad (D5-8 is the top middle of D5).</comment>
+  </data>
   <data name="LegendSheet" xml:space="preserve">
-    <value>Keine Grafik für diese Map: ein Blatt mit 10-m-Raster, nur aus Daten.</value>
-    <comment>en: No artwork for this map: a sheet with a 10 m grid, from data only.</comment>
+    <value>Keine Grafik für diese Map: ein Blatt nur aus Daten, mit seinem Raster.</value>
+    <comment>en: No artwork for this map: a sheet from data only, with its grid.</comment>
   </data>
   <data name="MarkerExtract" xml:space="preserve">
     <value>Extract</value>
@@ -239,6 +243,18 @@
   <data name="PlayerAgeHoursOld" xml:space="preserve">
     <value>{hours} H ALT</value>
     <comment>en: {hours} H OLD</comment>
+  </data>
+  <data name="PlayerTagMinutesOld" xml:space="preserve">
+    <value>{reference} · {minutes} MIN ALT</value>
+    <comment>en: {reference} · {minutes} MIN OLD</comment>
+  </data>
+  <data name="PlayerTagHoursOld" xml:space="preserve">
+    <value>{reference} · {hours} H ALT</value>
+    <comment>en: {reference} · {hours} H OLD</comment>
+  </data>
+  <data name="MapGridYou" xml:space="preserve">
+    <value>DU</value>
+    <comment>en: YOU</comment>
   </data>
   <data name="ReplayMinute" xml:space="preserve">
     <value>{minute} MIN IM RAID</value>

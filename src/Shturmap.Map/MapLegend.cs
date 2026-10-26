@@ -42,6 +42,7 @@ public enum LegendSymbol
     Replay,
     LooseItem,
     Containers,
+    Grid,
     Sheet,
 }
 
@@ -116,6 +117,7 @@ public static class MapLegend
         If(scene.Replay is not null, LegendSymbol.Replay);
         If(scene.Spawns.Count > 0, LegendSymbol.LooseItem);
         If(scene.IsSheet && scene.Containers.Count > 0, LegendSymbol.Containers);
+        If(scene.ShowGrid, LegendSymbol.Grid);
         If(scene.IsSheet, LegendSymbol.Sheet);
         return on;
     }
@@ -166,6 +168,7 @@ public static class MapLegend
         new(LegendSymbol.Replay, MapTexts.LegendReplay),
         new(LegendSymbol.LooseItem, MapTexts.LegendLooseItem),
         new(LegendSymbol.Containers, MapTexts.LegendContainers),
+        new(LegendSymbol.Grid, MapTexts.LegendGrid),
         new(LegendSymbol.Sheet, MapTexts.LegendSheet),
     ];
 
@@ -369,6 +372,28 @@ public static partial class MapRenderer
                 scene.Spawns = [At(0, 0)];
                 DrawSpawns(canvas, camera, scene, ui);
                 break;
+            case LegendSymbol.Grid:
+            {
+                // One square of the grid with its corner's reference and the ticks at its thirds. On the map its lines are a
+                // lighter step of the ground under them (overlay); on the swatch's transparent ground, ink at their strength.
+                var side = 24 * ui;
+                var square = SKRect.Create(center.X - side / 2, center.Y - side / 2, side, side);
+                using var line = new SKPaint { Color = Ink.WithAlpha(150), StrokeWidth = Math.Max(1, ui), Style = SKPaintStyle.Stroke };
+                canvas.DrawRect(square, line);
+                var arm = GridTickArm * ui * 0.75f;
+                for (var k = 1; k <= 2; k++)
+                {
+                    var (x, y) = (square.Left + side * k / 3, square.Top + side * k / 3);
+                    canvas.DrawLine(x, square.Top - arm, x, square.Top + arm, line);
+                    canvas.DrawLine(x, square.Bottom - arm, x, square.Bottom + arm, line);
+                    canvas.DrawLine(square.Left - arm, y, square.Left + arm, y, line);
+                    canvas.DrawLine(square.Right - arm, y, square.Right + arm, y, line);
+                }
+                using var font = new SKFont(TypefaceBold, 8 * ui);
+                using var text = new SKPaint { Color = Ink.WithAlpha(190), IsAntialias = true };
+                canvas.DrawText("D5", square.Left + 2.5f * ui, square.Top + 2 * ui + font.Size * 0.82f, SKTextAlign.Left, font, text);
+                break;
+            }
             case LegendSymbol.Sheet:
             {
                 var box = SKRect.Create(4 * ui, 3 * ui, size.Width - 8 * ui, size.Height - 6 * ui);

@@ -56,6 +56,10 @@ internal static class Frames
     public static async Task RunAsync(List<string> args)
     {
         var options = new List<string>(args);
+        // --grid off: without the squad grid (the setting unticked); on, as the app starts, by default.
+        var grid = Take(options, "--grid") is not "off";
+        // --quests all: every quest active, the busiest the map gets, instead of render's example quests.
+        AllQuests = Take(options, "--quests") is "all";
         var scene = Take(options, "--scene") ?? "list-read";
         if (scene is not ("list-read" or "whatsnew-extracts" or "list-callout" or "plan"))
             throw new ArgumentException($"Unknown scene {scene}: list-read, whatsnew-extracts, list-callout or plan");
@@ -194,6 +198,10 @@ internal static class Frames
             "plan" => Plan(data, map, definition, artwork, tiles, fixAt),
             _ => ListRead(data, map, definition, artwork, tiles, fixAt),
         };
+        shown.ShowGrid = grid;
+        about.Add(grid ? "Grid: on (the squad grid, as the app starts)" : "Grid: off (--grid off)");
+        if (AllQuests)
+            about.Add("Quests: every quest active (--quests all)");
         if (scene == "whatsnew-extracts" && fixAt is { } given)
         {
             shown.Player = new PlayerFix(given, null, Start);
@@ -285,6 +293,10 @@ internal static class Frames
 
         Directory.CreateDirectory(output);
         var frames = new List<FrameRecord>();
+        // Each frame's drawing time (MapRenderer.Render alone, on the CPU, the trace included; not the PNG's encoding).
+        var drawn = new List<double>();
+        // The grid's keypad (0: ticks, 1: its lines in) and how many references each frame placed.
+        var keypads = new List<(int Frame, float Keypad, int References)>();
         for (var k = 0; k < count; k++)
         {
             var ms = (double)k * every;
@@ -316,7 +328,11 @@ internal static class Frames
             }
             var trace = new List<SymbolTrace>();
             using var surface = SKSurface.Create(new SKImageInfo(Width, Height));
+            var drawing = System.Diagnostics.Stopwatch.StartNew();
             MapRenderer.Render(surface.Canvas, camera, shown, 1, null, time, trace);
+            drawn.Add(drawing.Elapsed.TotalMilliseconds);
+            if (shown.GridShown is { } gridShown)
+                keypads.Add((k, gridShown.Keypad, gridShown.References.Count));
             var file = $"frame-{k:000}.png";
             using (var image = surface.Snapshot())
             using (var png = image.Encode(SKEncodedImageFormat.Png, 90))
@@ -343,6 +359,18 @@ internal static class Frames
         };
         await File.WriteAllTextAsync(Path.Combine(output, "frames.json"), JsonSerializer.Serialize(json, Json));
         var summary = Summary(map.Name, scene, every, glideMs is not null || zooms, about, shown, rings, frames, flown, checks, sway, toward);
+        var sorted = drawn.Order().ToList();
+        var timing = FormattableString.Invariant(
+            $"Drawing (MapRenderer.Render, CPU raster, {Width}x{Height}): median {sorted[sorted.Count / 2]:0.00} ms, mean {drawn.Average():0.00} ms, slowest {sorted[^1]:0.00} ms over {drawn.Count} frames (the first {drawn[0]:0.00} ms)");
+        summary += timing + Environment.NewLine;
+        if (keypads.Count > 0)
+        {
+            // Each frame where the keypad's fade changed, and the references' count.
+            var changes = keypads.Where((p, i) => i == 0 || Math.Abs(p.Keypad - keypads[i - 1].Keypad) > 1e-3 || i == keypads.Count - 1)
+                .Select(p => FormattableString.Invariant($"frame {p.Frame}: {p.Keypad:0.00}"));
+            summary += "Grid: keypad lines (0 ticks, 1 lines in) " + string.Join(", ", changes) +
+                       FormattableString.Invariant($"; references {keypads.Min(p => p.References)} to {keypads.Max(p => p.References)} a frame") + Environment.NewLine;
+        }
         await File.WriteAllTextAsync(Path.Combine(output, "summary.txt"), summary);
         Console.WriteLine(summary);
         Console.WriteLine($"{count} frames, frames.json and summary.txt in {output}");
@@ -411,9 +439,15 @@ internal static class Frames
         return (scene, about);
     }
 
-    // The map's content with render's example quests active, or every quest where none of those has a place on it.
+    // --quests all: every quest active instead of render's example quests.
+    private static bool AllQuests;
+
+    // The map's content with render's example quests active, or every quest where none of those has a place on it (or
+    // with --quests all).
     private static MapContent ExampleContent(GameData data, ApiMap map)
     {
+        if (AllQuests)
+            return MapContentBuilder.Build(data, map.Id, data.Tasks.Keys.ToList(), new HashSet<string>());
         var active = data.Tasks.Values.Where(t => new[] { "audit", "dandies", "secret-message", "road-closed", "ballet-lover", "glory-to-cpsu", "revision-streets-of-tarkov" }
             .Contains(t.NormalizedName)).Select(t => t.Id).ToList();
         var content = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());

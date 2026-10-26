@@ -80,10 +80,12 @@ public static partial class MapRenderer
             if (scene.Tiles is { } missing)
                 AskForTiles(camera, scene, missing);
         }
+        var layout = LayoutOf(camera, scene, uiScale, time);
+        // The squad grid in the artwork's layer, under every symbol, name and route (docs/DESIGN.md "Map drawing", *The grid*).
+        DrawGrid(canvas, layout, uiScale, sheet);
         if (sheet)
             DrawContainers(canvas, camera, scene, uiScale);
 
-        var layout = LayoutOf(camera, scene, uiScale, time);
         foreach (var name in layout.Names)
             DrawMapName(canvas, name, uiScale);
         var hazardLabels = new List<(string Text, SKPoint At)>();
@@ -169,6 +171,8 @@ public static partial class MapRenderer
         var flyingOutOfView = DrawFlights(canvas, camera, scene, layout.Markers, uiScale, time, traced);
         DrawPlayer(canvas, camera, scene, uiScale, time);
         DrawReplay(canvas, camera, scene, uiScale);
+        // The grid's strips pinned to the view, and the player's reference in its fixed place, over all of it.
+        DrawGridStrips(canvas, camera, layout, uiScale);
         if (trace is not null)
         {
             foreach (var marker in layout.Markers)
@@ -393,6 +397,10 @@ public static partial class MapRenderer
         /// <summary>While a gated extract is pointed at, the guide from it to the first step of what leaving there takes,
         /// in its colour, with the distance on the plate (<see cref="ExitGuideOf"/>); null otherwise.</summary>
         public GuideLine? ExitGuide { get; init; }
+
+        /// <summary>The squad grid's lines, strips, references and the player's readout (<see cref="GridOf"/>); null
+        /// without the grid.</summary>
+        public GridLayout? Grid { get; init; }
     }
 
     /// <summary>How a layout placed the symbols set apart on leaders (<see cref="Repel"/>): afresh, as a still view shows
@@ -425,7 +433,8 @@ public static partial class MapRenderer
     public static MapLayout LayoutOf(Camera camera, MapScene scene, float ui, DateTime? now = null)
     {
         var time = now ?? DateTime.Now;
-        var age = scene.Player is { } player && Shturmap.Core.Logs.WallClock.Elapsed(player.At, time) is var old && old >= PlayerOld ? AgeTag(old).Text : "";
+        // The player's tag says the age (and, with the grid, the reference: it changes only with the position).
+        var age = scene.Player is { } player && PlayerTag(scene, Shturmap.Core.Logs.WallClock.Elapsed(player.At, time)) is { } tag ? tag.Text : "";
         var key = new LayoutKey(scene.LayoutVersion, camera.Center, camera.Zoom, camera.Viewport, ui, scene.Dim > 0, scene.IsSheet, age, UiLanguage.Code);
         if (scene.LastLayout is { } last && last.Key == key && !last.Layout.Scale.Held)
         {
@@ -452,7 +461,8 @@ public static partial class MapRenderer
         var time = now ?? DateTime.Now;
         var markers = ShownMarkers(camera, scene, ui, time);
         var repel = scene.LastRepelRun;
-        var taken = new List<SKRect>();
+        // The grid's strips at the view's edges: no label or plate is placed under them.
+        var taken = new List<SKRect>(StripRects(camera, scene, ui));
         foreach (var m in markers)
         {
             if (m.Count > 1)
@@ -481,14 +491,16 @@ public static partial class MapRenderer
         {
             var at = Screen(camera, scene, player.Position);
             taken.Add(Square(at, (PlayerRing + 3) * ui));
-            var age = Shturmap.Core.Logs.WallClock.Elapsed(player.At, time);
-            if (age >= PlayerOld)
+            if (PlayerTag(scene, Shturmap.Core.Logs.WallClock.Elapsed(player.At, time)) is { } tag)
             {
-                var (text, stale) = AgeTag(age);
-                using var tagFont = new SKFont(TypefaceBold, AgeTagSize(stale) * ui);
-                taken.Add(AgeTagBox(at, tagFont.MeasureText(text), stale, ui));
+                using var tagFont = new SKFont(TypefaceBold, AgeTagSize(tag.Stale) * ui);
+                taken.Add(AgeTagBox(at, tagFont.MeasureText(tag.Text), tag.Stale, ui));
             }
         }
+        // The player's reference at the map's top left, with the grid: its plate's room before any label's.
+        var youReadout = YouOf(camera, scene, ui, time);
+        if (youReadout is not null)
+            taken.Add(youReadout.Box);
         // After every symbol: the guide's plate gives way to them. The guide ends, and the chevrons count, where the
         // symbols are drawn: a marker set off its place (Repel, SideBySide) is there for them too.
         var drawnAt = markers.Where(m => m.Count == 1).GroupBy(m => m.Marker.Id).ToDictionary(g => g.Key, g => g.First().At, StringComparer.Ordinal);
@@ -519,9 +531,10 @@ public static partial class MapRenderer
         var labelGap = LabelGap * ui;
         bool Free(SKRect box) =>
             !taken.Any(t => t.IntersectsWith(box)) && !labels.Any(l => OnOneLine(l.Box, box) && SKRect.Inflate(l.Box, labelGap, 0).IntersectsWith(box));
-        // Where a picked or pointed-at name ends at most, LabelEdge in from the map's right edge, and how wide it moves in
-        // from there at most (LitNameMost).
-        var litEdge = camera.Viewport.Width - LabelEdge * ui;
+        // Where a picked or pointed-at name ends at most, LabelEdge in from the map's right edge (the grid's strip's, with
+        // the grid), and how wide it moves in from there at most (LitNameMost).
+        var inner = GridInner(camera, scene, ui);
+        var litEdge = inner.Right - LabelEdge * ui;
         var litMost = Math.Min(LitNameMost * ui, camera.Viewport.Width * LitNameShare);
         // Where a marker's label may go, in order (null where it may not: past the map's left edge, or past right).
         List<SKRect?> Candidates(ShownMarker m, SKFont font, string text, float right = float.PositiveInfinity, float tracking = 0)
@@ -539,7 +552,7 @@ public static partial class MapRenderer
                 var below = candidates[^1];
                 candidates.Add(SKRect.Create(below.Left, below.Bottom + 3 * ui, below.Width, below.Height));
             }
-            return candidates.Select((c, side) => Inward(OffBadges(m, c, side, ui), m.At, LabelEdge * ui, right)).ToList();
+            return candidates.Select((c, side) => Inward(OffBadges(m, c, side, ui), m.At, inner.Left + LabelEdge * ui, right)).ToList();
         }
         // While the view only moves (the scale bar's rule, Scale), a picked or pointed-at name keeps the side it took in
         // the layout before (the rule Steady while the view moves): on its right it is trimmed at the edge rather than sent
@@ -643,7 +656,12 @@ public static partial class MapRenderer
                 names.Add(new PlacedName(text, at, (float)label.Rotation, font.Size, box) { Landmark = tier.Landmark });
             }
         }
-        return new MapLayout(markers, labels, names, guide, scale) { Chevrons = chevrons, Repel = repel, ExitGuide = exitGuide };
+        // Last: a square's reference is left out where anything placed above lies under it, the sheet's caption too.
+        if (scene.ShowGrid && scene.IsSheet)
+            taken.Add(SheetCaption(camera, scene, ui).Box);
+        var grid = !scene.ShowGrid ? null : GridOf(camera, scene, ui, taken,
+            names.Select(n => n.Box).Concat(labels.Select(l => l.Box)).Select(b => SKRect.Inflate(b, 2 * ui, 2 * ui)).ToList(), youReadout);
+        return new MapLayout(markers, labels, names, guide, scale) { Chevrons = chevrons, Repel = repel, ExitGuide = exitGuide, Grid = grid };
     }
 
     /// <summary>How near (pixels, before scaling) two markers with the same label may be before only one is labelled.</summary>
@@ -1487,15 +1505,15 @@ public static partial class MapRenderer
         return (circles, text);
     }
 
-    /// <summary>The player's age tag, where it stands and what it says, once the position is a minute old; else null.</summary>
+    /// <summary>The player's tag, where it stands and what it says (<see cref="PlayerTag"/>: the grid's reference from the
+    /// first moment, the age once the position is a minute old); null while it says nothing.</summary>
     /// <param name="now">The frame's time (<see cref="Render"/>'s); the clock's when null.</param>
     internal static (SKRect Box, string Text)? PlayerAgeTag(Camera camera, MapScene scene, float ui, DateTime? now = null)
     {
-        if (scene.Player is not { } player || Shturmap.Core.Logs.WallClock.Elapsed(player.At, now ?? DateTime.Now) is var age && age < PlayerOld)
+        if (scene.Player is not { } player || PlayerTag(scene, Shturmap.Core.Logs.WallClock.Elapsed(player.At, now ?? DateTime.Now)) is not { } tag)
             return null;
-        var (text, stale) = AgeTag(age);
-        using var font = new SKFont(TypefaceBold, AgeTagSize(stale) * ui);
-        return (AgeTagBox(Screen(camera, scene, player.Position), font.MeasureText(text), stale, ui), text);
+        using var font = new SKFont(TypefaceBold, AgeTagSize(tag.Stale) * ui);
+        return (AgeTagBox(Screen(camera, scene, player.Position), font.MeasureText(tag.Text), tag.Stale, ui), tag.Text);
     }
 
     // Single linkage: items closer than the test (directly or through others) end up in one cluster.
@@ -2080,28 +2098,45 @@ public static partial class MapRenderer
         using var panel = new SKPaint { Color = SheetPanel, IsAntialias = true };
         canvas.DrawPath(sheet, panel);
 
-        var step = SKPoint.Distance(At(0, 0), At(SheetSpacing, 0));
-        canvas.Save();
-        canvas.ClipPath(sheet, antialias: true);
-        using var minor = new SKPaint { Color = SheetMinor, StrokeWidth = 1, Style = SKPaintStyle.Stroke };
-        using var major = new SKPaint { Color = SheetMajor, StrokeWidth = 1, Style = SKPaintStyle.Stroke };
-        foreach (var line in SchematicGrid.Lines(b, SheetSpacing, 5))
+        // The 10 m grid gives way to the squad grid: one grid in the app (owner, 2026-10-26). Without the squad grid the
+        // sheet keeps its own.
+        if (!scene.ShowGrid)
         {
-            if (!line.Major && step < 6)
-                continue;
-            canvas.DrawLine(At(line.X1, line.Z1), At(line.X2, line.Z2), line.Major ? major : minor);
+            var step = SKPoint.Distance(At(0, 0), At(SheetSpacing, 0));
+            canvas.Save();
+            canvas.ClipPath(sheet, antialias: true);
+            using var minor = new SKPaint { Color = SheetMinor, StrokeWidth = 1, Style = SKPaintStyle.Stroke };
+            using var major = new SKPaint { Color = SheetMajor, StrokeWidth = 1, Style = SKPaintStyle.Stroke };
+            foreach (var line in SchematicGrid.Lines(b, SheetSpacing, 5))
+            {
+                if (!line.Major && step < 6)
+                    continue;
+                canvas.DrawLine(At(line.X1, line.Z1), At(line.X2, line.Z2), line.Major ? major : minor);
+            }
+            canvas.Restore();
         }
-        canvas.Restore();
         using var edge = new SKPaint { Color = SheetEdge, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
         canvas.DrawPath(sheet, edge);
 
-        var box = sheet.Bounds;
+        var (caption, at, _) = SheetCaption(camera, scene, ui);
         using var font = new SKFont(TypefaceBold, 10 * ui);
         using var paint = new SKPaint { Color = Ink.WithAlpha(110), IsAntialias = true };
-        // Without floor data (Labyrinth) every marker is drawn on one plane: say so rather than imply one floor.
-        var spacing = Math.Round(SheetSpacing);
+        canvas.DrawText(caption, at.X, at.Y, SKTextAlign.Left, font, paint);
+    }
+
+    // The sheet's caption in its corner: what it says, its baseline's start and its box (the grid's references keep off it).
+    // Without floor data (Labyrinth) every marker is drawn on one plane: it says so rather than imply one floor. The grid it
+    // names is the one drawn: the squad grid's 100 m, or the sheet's own 10 m.
+    private static (string Text, SKPoint At, SKRect Box) SheetCaption(Camera camera, MapScene scene, float ui)
+    {
+        var b = scene.Definition.Bounds;
+        var p1 = camera.ToScreen(scene.Projection.ToMap(b.X1, b.Z1));
+        var p2 = camera.ToScreen(scene.Projection.ToMap(b.X2, b.Z2));
+        var spacing = Math.Round(scene.ShowGrid ? SquadGrid.Square : SheetSpacing);
         var caption = scene.FloorStack.Count == 0 ? MapTexts.MapSheetCaptionNoFloors(spacing: spacing) : MapTexts.MapSheetCaption(spacing: spacing);
-        canvas.DrawText(caption, box.Left + 10 * ui, box.Top + 18 * ui, SKTextAlign.Left, font, paint);
+        var at = new SKPoint(Math.Min(p1.X, p2.X) + 10 * ui, Math.Min(p1.Y, p2.Y) + 18 * ui);
+        using var font = new SKFont(TypefaceBold, 10 * ui);
+        return (caption, at, new SKRect(at.X - 2 * ui, at.Y - font.Size - 2 * ui, at.X + font.MeasureText(caption) + 2 * ui, at.Y + 4 * ui));
     }
 
     private static SKPoint Screen(Camera camera, MapScene scene, WorldPoint p) => camera.ToScreen(scene.Projection.ToMap(p));
@@ -2472,8 +2507,11 @@ public static partial class MapRenderer
     // no chevron while its symbol shows, and one while it doesn't.
     private static List<EdgeChevron> Chevrons(Camera camera, MapScene scene, float ui, IReadOnlyDictionary<string, SKPoint> drawnAt)
     {
-        var (w, h) = (camera.Viewport.Width, camera.Viewport.Height);
-        var center = new SKPoint(w / 2, h / 2);
+        // Inside the grid's strips, with the grid: a place under a strip counts as out of view, and its chevron stands
+        // the inset from the strip's inner edge (docs/DESIGN.md "Map drawing", *The grid*).
+        var inner = GridInner(camera, scene, ui);
+        var (w, h) = (inner.Width, inner.Height);
+        var center = new SKPoint(inner.MidX, inner.MidY);
         var inset = ChevronInset * ui;
         var points = new List<(SKPoint Edge, SKPoint Direction, SKColor Color, bool Pointed)>();
         foreach (var marker in scene.Markers)
@@ -2481,7 +2519,7 @@ public static partial class MapRenderer
             if (marker.Objective is null || marker.Kind == MarkerKind.ObjectiveDone || !(IsPointed(scene, marker) || IsSelected(scene, marker)))
                 continue;
             var at = drawnAt.TryGetValue(marker.Id, out var drawn) ? drawn : Screen(camera, scene, marker.Position);
-            if (at.X >= 0 && at.X <= w && at.Y >= 0 && at.Y <= h)
+            if (at.X >= inner.Left && at.X <= inner.Right && at.Y >= inner.Top && at.Y <= inner.Bottom)
                 continue;
             var d = at - center;
             var tx = Math.Abs(d.X) < 1e-3 ? float.MaxValue : Math.Max(0, w / 2 - inset) / Math.Abs(d.X);
@@ -2569,7 +2607,9 @@ public static partial class MapRenderer
     /// <param name="now">The frame's time: the player's age tag is part of the view the rule compares.</param>
     private static ScaleBar Scale(Camera camera, MapScene scene, float ui, IReadOnlyList<SKRect> symbols, DateTime now)
     {
-        var at = new SKPoint(18 * ui, camera.Viewport.Height - 66 * ui);
+        // Inside the grid's strips, with the grid, as the wiki link and the credit line under it step inside them.
+        var (stripLeft, _, _, stripBottom) = GridStrips(scene, ui);
+        var at = new SKPoint(18 * ui + stripLeft, camera.Viewport.Height - 66 * ui - stripBottom);
         var from = scene.Projection.ToWorld(camera.ToMap(at));
         var to = scene.Projection.ToWorld(camera.ToMap(new SKPoint(at.X + 100, at.Y)));
         var metresIn100 = Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Z - from.Z) * (to.Z - from.Z));
@@ -2934,12 +2974,15 @@ public static partial class MapRenderer
         if (scene.Player is not { } player)
             return null;
         var at = Screen(camera, scene, player.Position);
-        var (w, h) = (camera.Viewport.Width, camera.Viewport.Height);
+        // Inside the grid's strips, with the grid: a position under a strip is out of view, and the badge keeps the inset
+        // from the strip's inner edge.
+        var inner = GridInner(camera, scene, ui);
+        var (w, h) = (inner.Width, inner.Height);
         var margin = 6 * ui;
-        if (at.X >= margin && at.X <= w - margin && at.Y >= margin && at.Y <= h - margin)
+        if (at.X >= inner.Left + margin && at.X <= inner.Right - margin && at.Y >= inner.Top + margin && at.Y <= inner.Bottom - margin)
             return null;
         var inset = EdgeInset * ui;
-        var center = new SKPoint(w / 2, h / 2);
+        var center = new SKPoint(inner.MidX, inner.MidY);
         var d = at - center;
         var tx = Math.Abs(d.X) < 1e-3 ? float.MaxValue : Math.Max(0, w / 2 - inset) / Math.Abs(d.X);
         var ty = Math.Abs(d.Y) < 1e-3 ? float.MaxValue : Math.Max(0, h / 2 - inset) / Math.Abs(d.Y);
@@ -3022,14 +3065,15 @@ public static partial class MapRenderer
         var text = MapTexts.MapNewPosition;
         using var font = new SKFont(TypefaceBold, 13 * ui);
         var width = font.MeasureText(text);
-        var center = new SKPoint(camera.Viewport.Width / 2, camera.Viewport.Height / 2);
+        var inner = GridInner(camera, scene, ui);
+        var center = new SKPoint(inner.MidX, inner.MidY);
         var inward = center - edge;
         var length = Math.Max(1, inward.Length);
         var labelAt = new SKPoint(edge.X + inward.X / length * (r + 18 * ui), edge.Y + inward.Y / length * (r + 18 * ui));
         var left = inward.X >= 0 ? labelAt.X : labelAt.X - width;
         if (Math.Abs(inward.X) < Math.Abs(inward.Y) * 0.5f)
             left = labelAt.X - width / 2;
-        left = Math.Clamp(left, 8 * ui, camera.Viewport.Width - width - 8 * ui);
+        left = Math.Clamp(left, inner.Left + 8 * ui, inner.Right - width - 8 * ui);
         var baseline = labelAt.Y + font.Size * 0.35f;
         using var shadow = new SKPaint { Color = Background.WithAlpha(235), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 4 * ui };
         using var label = new SKPaint { Color = Player, IsAntialias = true };
@@ -3090,11 +3134,12 @@ public static partial class MapRenderer
         using var edge = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f * ui };
         canvas.DrawCircle(at, 6.5f * ui, body);
         canvas.DrawCircle(at, 6.5f * ui, edge);
-        if (!old)
+        // With the grid the tag says the reference from the first moment ("D5-8"), the age with it once a minute old.
+        if (PlayerTag(scene, age) is not { } tag)
             return;
         // Past PlayerStale the tag says so on its own, larger and framed in sand: it took over from the big
         // "POSITION 7 MIN OLD" over the map (owner, 2026-10-03: "Put it next to the marker").
-        var (text, stale) = AgeTag(age);
+        var (text, stale) = tag;
         using var font = new SKFont(TypefaceBold, AgeTagSize(stale) * ui);
         var box = AgeTagBox(at, font.MeasureText(text), stale, ui);
         using var plate = new SKPaint { Color = Background.WithAlpha((byte)(stale ? 240 : 230)), IsAntialias = true };
