@@ -1443,6 +1443,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (_lastRaidMap is not null)
             RememberMap(_lastRaidMap);
         _lastRaidEnded = ended.At;
+        // The desk's next reading starts a new page (owner, 2026-10-26): the raid's times, by its mode.
+        DeskRaidOver(ended);
         // The replay of the raid just over, while its positions are still here; only for a raid whose end the log
         // says (its length is known), live.
         _lastReplay = announce && ended.LengthIn(Zone) is { } length && _lastRaidMap is not null && _raidFixes.Count > 0
@@ -1996,10 +1998,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         Cue?.Invoke(cue);
     }
 
-    private void Say(string message, double seconds = 6, bool offersReport = false)
+    private void Say(string message, double seconds = 6, bool offersReport = false, DeskUndoOffer? undo = null)
     {
         Study.Game("notice", ("text", message));
-        Notice?.Invoke(new SessionNotice(message, TimeSpan.FromSeconds(seconds), offersReport));
+        Notice?.Invoke(new SessionNotice(message, TimeSpan.FromSeconds(seconds), offersReport) { Undo = undo });
     }
 
     private void Publish()

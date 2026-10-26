@@ -129,6 +129,7 @@ public sealed partial class MainWindow : Window
             if (ViewModel.NoticeOpen)
                 Study.Ui("notice.expire", ("text", ViewModel.NoticeText));
             ViewModel.NoticeOpen = false;
+            DropNoticeUndo();
         });
         _noticeTimer.Interval = TimeSpan.FromSeconds(6);
         _noticeTimer.IsRepeating = false;
@@ -194,7 +195,8 @@ public sealed partial class MainWindow : Window
         session.Notice += notice => DispatcherQueue.TryEnqueue(() =>
         {
             if (!_stopped)
-                ShowNotice(notice.Text, notice.Duration, notice.OffersReport);
+                ShowNotice(notice.Text, notice.Duration, notice.OffersReport,
+                    notice.Undo is { } offer ? new NoticeUndoAct(offer.Reading, () => _session.UndoDeskAsync(offer.Id)) : null);
         });
         session.Cue += cue => DispatcherQueue.TryEnqueue(() =>
         {
@@ -2225,12 +2227,15 @@ public sealed partial class MainWindow : Window
     // Each type's glyph widths, in DIPs (DecodeGlyphs).
     private static readonly Dictionary<string, Dictionary<char, double>> GlyphWidths = new(StringComparer.Ordinal);
 
-    private void ShowNotice(string message, TimeSpan? duration = null, bool offersReport = false)
+    private void ShowNotice(string message, TimeSpan? duration = null, bool offersReport = false, NoticeUndoAct? undo = null)
     {
         if (DemoQuiet)
             return;
         ViewModel.NoticeText = message;
         ViewModel.NoticeOffersReport = offersReport;
+        // A notice offers the desk's page back only while it is the one standing (MainWindow.Desk).
+        _noticeUndo = undo;
+        ViewModel.NoticeOffersUndo = undo is not null;
         ViewModel.NoticeOpen = true;
         _noticeTimer.Stop();
         _noticeTimer.Interval = duration ?? TimeSpan.FromSeconds(6);
@@ -2842,6 +2847,7 @@ public sealed partial class MainWindow : Window
     {
         Study.Ui("notice.close", ("text", ViewModel.NoticeText));
         ViewModel.NoticeOpen = false;
+        DropNoticeUndo();
     }
 
     private void OnShowMeClick(object sender, RoutedEventArgs e)

@@ -6,6 +6,68 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-26: clearing the desk
+
+**Asked** (owner, 2026-10-26, after 0.7.0's release): "We need an option to clear the desk because it quickly gets
+messy".
+
+**Decided** (owner, 2026-10-26, from the coordinator's options): "Button + fresh after raid". A CLEAR control in the stash
+desk's head, small, in the app's text-button style, that empties the page in hand for the mode at once: every region back
+to never read, the head line as for a page never read, pinned and open cards closed; no confirmation (DESIGN.md §4,
+principle 7). UNDO instead of a question: a one-line notice "Desk cleared · UNDO" that dismisses itself as notices do, its
+UNDO putting the page back exactly as it was while the notice stands and no new reading came. And a fresh page after a
+raid: the first desk reading after a raid ended (the game's logs: a raid started and ended since the page's last reading)
+starts from an empty page, nothing of the page before kept, dimmed or not, said the same way with the same UNDO.
+Everything else stays: the readings log, the in-raid glance, the prices.
+
+**Built (2026-10-26)** (DESIGN.md §4, *The stash desk*, *Clearing the page*). CLEAR (German LEEREN) stands at the head
+line's right, at the desk's right edge, in amber capitals at 11 px as FORGET ALL MARKS and help's links are, its baseline
+level with the head line's, while the page has a region (`Rules.DeskClearing.Offered`; `Controls.DeskBoard`). A click
+(`MainWindow.ClearDeskAsync`) empties the mode's page in the session (`GameSession.ClearDeskAsync`, `DeskLedger.Clear`):
+a page of no region, kept so in `desk.json`, which the board draws as the GEAR tab's shape with every region the dashed
+frame of one never read and the head line "KEEP 0 · 0 · 0" alone (the existing rule for a page with no part read); the
+pins and the card pointed at go. Until now a page of no region drew the one line of a desk never read; it draws the
+page's shape now, and only a mode with no page at all keeps that line. The notice "Desk cleared." (German „Desk
+geleert.“) carries UNDO (RÜCKGÄNGIG) where a notice's REPORT link stands, for 8 s (`SessionNotice.Undo`,
+`DeskUndoOffer`); UNDO (`GameSession.UndoDeskAsync`, `DeskLedger.Restore`) puts the very page back, its regions, cells,
+picks and reading times, standing at once (no reading: nothing comes in), and the pins come back with it (they are kept
+with the page they were on). The session holds the page until the next reading; the window drops the link when the
+notice goes, another takes its place, or a view of a later reading comes (`DeskClearing.UndoStands`). The next reading
+after CLEAR is the mode's first again; while the page stands empty no prices are asked for on the desk's five minutes
+(`GameSession.LookAtDeskPrices`). The fresh page: the session notes each mode's last raid that started, live or
+read back from the log at start (`GameSession.RaidOver`, `DeskRaidOver`), and a desk reading whose page's last reading
+is older than that raid's start, and whose screenshot is not older than its end (10 s of slack for the end line), is
+taken into an empty page (`DeskLedger.ApplyFresh`): its regions as a first reading's, every one coming in. Its notice "A
+new desk page after the raid." („Neue Desk-Seite nach dem Raid.“) comes once the screenshot's reading is all taken, after
+"Seen in your stash: …" of the same screenshot, so it is the one standing; its UNDO puts back the page the reading would
+have made of the page before the raid (the regions it showed replaced, the rest kept, dimmed and dated). A load
+cancelled before its start is no raid, a PvP raid starts no new PvE page, and a raid of an older log session that
+Shturmap didn't read starts nothing (the logs it follows are the newest session's). The developer script's `desk clear`
+and `desk undo` click the two through the code the clicks call, on the made-up desk too (`DeskClearing.Emptied`); the
+replay `tools\qa\desk-clear.devscript` with its `.md`. Tests: `DeskLedgerTests` (clear, restore, the fresh page),
+`DeskClearSessionTests` (clear empties and persists, UNDO restores the very page, UNDO gone after a reading, the first
+reading after a raid fresh and the second not, no raid or a cancelled load keeps the page, a raid before the page's
+reading starts nothing, each mode its own), `DeskClearingTests`, `DevToolsTests`. Texts: `AppTexts.DeskClear`,
+`DeskClearTip`, `ViewTexts.NoticeUndo`, `NoticeUndoTip`, `SessionTexts.DeskCleared`, `DeskFreshAfterRaid`, each in
+English and German.
+
+**Investigated alongside** (owner, the same day: "For example if you have multiple crates open time after time it
+quickly gets very small"; the keeping rules unchanged, the choice is the owner's): a window attached to its case stays on
+the page however long it goes unseen (only a window attached to nothing leaves, after three readings, `DeskLedger`), and
+the layout counts the windows in what has to fit the desk's height (`DeskPageRules.Arrangement.Held`: the windows' own
+column, or the stash's with them under it), so each case opened shrinks the cells. Measured on the owner's page of
+2026-10-19 (the stash ten by thirteen) with cases of 8×8, 7×7, 7×7, 4×4 and 5×10 attached in turn: on a 2560 monitor's
+desk (2176 × 1330 DIP) 80 DIP with no window, 56 with one or two, 48 with three, 40 from six; on a desk of 2544 × 1401,
+96, 72, 72, 56, then 40 from six; at 1600×900 (1216 × 760) and 900×560 it is 40 already and the page only grows (the
+stash's column from 543 DIP to 3,853 with ten windows). Ways out: (1) windows never shrink the cells, the page scrolls for
+them (the size the page has without windows: 80 at 2176 × 1330, the windows under the stash, the page 1.3 screens high
+with one window, 3.7 with six; a layout rule only, nothing of the page lost; the cost, scrolling down to the windows);
+(2) a window leaves the page once a reading shows its case's cell with no window over it (the game shows a case's
+contents only while its window is open; the cost, the case's contents leave the totals and its "+" comes back, and a
+reading of the stash's other page can't tell a closed case from one not shown); (3) at most a few windows, the
+longest unseen leaving first (simple and bounded; the cost, an arbitrary number and contents lost). CLEAR, now, is the
+manual way out of all three.
+
 ## 2026-10-26: the 0.7.0 release check
 
 **Decided** (owner, 2026-10-26, on the release check page; the page stays outside the repository), each the coordinator's

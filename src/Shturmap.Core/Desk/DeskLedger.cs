@@ -42,11 +42,58 @@ public sealed class DeskLedger
     /// <summary>Takes a reading into the mode's page.</summary>
     public DeskChange Apply(GameMode mode, DeskPage reading)
     {
-        var old = Page(mode);
-        var merge = MergeAll(old, reading);
-        _pages[mode] = merge.Page;
+        var change = ChangeOf(Held(mode), reading);
+        _pages[mode] = change.Page;
         Dirty = true;
+        return change;
+    }
+
+    /// <summary>
+    /// Takes a reading into an empty page in place of the mode's (owner, 2026-10-26: "Button + fresh after raid"; the first
+    /// desk reading after a raid): nothing of the page before stays, the reading's regions as a first reading has them.
+    /// Also what the reading would have made of the page in hand (<see cref="Apply"/>'s page), for the notice's UNDO.
+    /// </summary>
+    public (DeskChange Fresh, DeskChange Kept) ApplyFresh(GameMode mode, DeskPage reading)
+    {
+        var kept = ChangeOf(Held(mode), reading);
+        var fresh = ChangeOf(null, reading);
+        _pages[mode] = fresh.Page;
+        Dirty = true;
+        return (fresh, kept);
+    }
+
+    // The mode's page a reading is taken into: none before the first reading, nor after CLEAR (a page of no region), so the
+    // next is the mode's first again.
+    private DeskPage? Held(GameMode mode) => Page(mode) is { Regions.Count: > 0 } page ? page : null;
+
+    // What a reading makes of a page (none: the mode's first reading), as a change.
+    private static DeskChange ChangeOf(DeskPage? old, DeskPage reading)
+    {
+        var merge = MergeAll(old, reading);
         return new DeskChange(merge.Page, merge.Changed, old is null) { Refused = merge.Refused, Kept = merge.Kept, Dropped = merge.Dropped };
+    }
+
+    /// <summary>
+    /// Empties the mode's page (owner, 2026-10-26: "We need an option to clear the desk because it quickly gets messy"; the
+    /// desk's CLEAR): a page of no region, every region drawn as never read, until the next reading. The page it had, for
+    /// the notice's UNDO (<see cref="Restore"/>); null when there was none, or none with a region.
+    /// </summary>
+    /// <param name="at">When it was cleared: the empty page's time.</param>
+    public DeskPage? Clear(GameMode mode, DateTimeOffset at)
+    {
+        if (Page(mode) is not { Regions.Count: > 0 } had)
+            return null;
+        _pages[mode] = new DeskPage(at, []);
+        Dirty = true;
+        return had;
+    }
+
+    /// <summary>Puts a page back as the mode's, exactly as it was (the notice's UNDO): its regions, cells, picks and reading
+    /// times.</summary>
+    public void Restore(GameMode mode, DeskPage page)
+    {
+        _pages[mode] = page;
+        Dirty = true;
     }
 
     /// <summary>A "?" cell's pick (step C: a candidate clicked on its card): kept with the cell until a reading changes it;

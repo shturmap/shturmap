@@ -123,6 +123,72 @@ public sealed class DeskLedgerTests : IDisposable
         Assert.Equal(["backpack", "stash"], window.SameNameIn.Order());
     }
 
+    // The desk's CLEAR (owner, 2026-10-26: "We need an option to clear the desk because it quickly gets messy"): the mode's
+    // page emptied, kept so in the file, the other mode's page as it was; the page it had given back for the notice's UNDO,
+    // which puts it back exactly: its regions, cells, picks and reading times.
+    [Fact]
+    public void Clear_empties_the_modes_page_and_restore_puts_it_back_exactly()
+    {
+        var path = Path.Combine(_root, "desk.json");
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(0, 0, 1, 2, Water)), Backpack(Cell(0, 0, 1, 1, Wallet))));
+        ledger.Apply(GameMode.Pve, Page(5, Stash(Cell(0, 0, 1, 2, Water), Cell(2, 0, 2, 2, Zhuk, ZhukOther))));
+        Assert.True(ledger.Pick(GameMode.Pve, "stash", null, 2, 0, ZhukOther));
+        ledger.Apply(GameMode.Pvp, Page(1, Stash(Cell(4, 4, 1, 1, Salewa))));
+        var had = ledger.Page(GameMode.Pve)!;
+
+        var taken = ledger.Clear(GameMode.Pve, At.AddMinutes(9));
+        Assert.Same(had, taken);
+        Assert.Empty(ledger.Page(GameMode.Pve)!.Regions);
+        Assert.Equal(At.AddMinutes(9), ledger.Page(GameMode.Pve)!.ReadAt);
+        Assert.Equal(Salewa, Assert.Single(ledger.Page(GameMode.Pvp)!.Region("stash")!.Cells).ItemId);
+        ledger.Save(path);
+        Assert.Empty(DeskLedger.Load(path).Page(GameMode.Pve)!.Regions);
+        // A page of no region has nothing to clear.
+        Assert.Null(ledger.Clear(GameMode.Pve, At.AddMinutes(10)));
+        Assert.Null(new DeskLedger().Clear(GameMode.Pve, At));
+
+        ledger.Restore(GameMode.Pve, taken!);
+        Assert.Same(had, ledger.Page(GameMode.Pve));
+        ledger.Save(path);
+        var back = DeskLedger.Load(path).Page(GameMode.Pve)!;
+        Assert.Equal(At.AddMinutes(5), back.ReadAt);
+        Assert.Equal((At, 1), (back.Region("backpack")!.ReadAt, back.Region("backpack")!.Missed));
+        Assert.Equal(At.AddMinutes(5), back.Region("stash")!.ReadAt);
+        Assert.Equal(ZhukOther, back.Region("stash")!.Cells.Single(c => c.I == 2).ItemId);
+    }
+
+    // After CLEAR the next reading is the mode's first again: its regions come in, the rest stands as never read.
+    [Fact]
+    public void After_a_clear_the_next_reading_is_the_modes_first()
+    {
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(0, 0, 1, 2, Water)), Backpack(Cell(0, 0, 1, 1, Wallet))));
+        ledger.Clear(GameMode.Pve, At.AddMinutes(1));
+        var change = ledger.Apply(GameMode.Pve, Page(2, Stash(Cell(0, 0, 1, 2, Water))));
+        Assert.True(change.First);
+        Assert.Equal(["stash"], change.Changed);
+        Assert.Null(ledger.Page(GameMode.Pve)!.Region("backpack"));
+    }
+
+    // The first reading after a raid (owner, 2026-10-26: "fresh after raid"): nothing of the page before stays, dimmed or
+    // not; what the reading would have made of the page in hand comes with it, for the notice's UNDO.
+    [Fact]
+    public void A_fresh_page_keeps_nothing_of_the_one_before_and_gives_the_kept_one_for_undo()
+    {
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(0, 0, 1, 2, Water)), Backpack(Cell(0, 0, 1, 1, Wallet))));
+        var (fresh, kept) = ledger.ApplyFresh(GameMode.Pve, Page(30, Stash(Cell(3, 3, 1, 2, Salewa))));
+        Assert.True(fresh.First);
+        Assert.Equal(["stash"], fresh.Changed);
+        Assert.Equal(["stash"], fresh.Page.Regions.Select(r => r.Key));
+        Assert.Same(fresh.Page, ledger.Page(GameMode.Pve));
+        Assert.False(kept.First);
+        Assert.Equal(["backpack", "stash"], kept.Page.Regions.Select(r => r.Key).Order());
+        Assert.Equal(Salewa, Assert.Single(kept.Page.Region("stash")!.Cells).ItemId);
+        Assert.Equal(At, kept.Page.Region("backpack")!.ReadAt);
+    }
+
     [Fact]
     public void The_modes_keep_a_page_each()
     {

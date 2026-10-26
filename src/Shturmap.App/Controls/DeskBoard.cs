@@ -40,6 +40,9 @@ public sealed partial class DeskBoard : Grid
     /// <summary>A cell was right-clicked: its card is pinned in the rail, or unpinned.</summary>
     public event Action<DeskCellView>? CellPinToggled;
 
+    /// <summary>CLEAR in the head was clicked: the page in hand is emptied (owner, 2026-10-26; Rules.DeskClearing).</summary>
+    public event Action? ClearClicked;
+
     // The cells whose cards are pinned in the rail: their tab on the page.
     private IReadOnlySet<DeskCellKey> _pinned = new HashSet<DeskCellKey>();
 
@@ -50,7 +53,27 @@ public sealed partial class DeskBoard : Grid
     // The head line's margins: 14 DIP over it, 4 under it, the page's lane under that (DeskPageRules.Lane).
     private const double HeadTop = 14, HeadBottom = 4;
 
+    // The room between the head line and CLEAR at its right.
+    private const double ClearGap = 16;
+
+    /// <summary>CLEAR's name in the desk's head, for the layout check and the developer view.</summary>
+    public const string ClearName = "DeskClear";
+
+    /// <summary>Whether CLEAR stands in the desk's head (the developer view).</summary>
+    public bool ClearShown => _clear.Visibility == Visibility.Visible && _headRow.Visibility == Visibility.Visible;
+
+    // CLEAR's word and tip, said anew with each build: a language switch builds the page anew (MainWindow.RetellDesk).
+    private void ClearWords()
+    {
+        _clearWords.Text = AppTexts.DeskClear;
+        ToolTipService.SetToolTip(_clear, AppTexts.DeskClearTip);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_clear, AppTexts.DeskClear);
+    }
+
     private readonly TextBlock _head;
+    private readonly Grid _headRow;
+    private readonly HyperlinkButton _clear;
+    private readonly TextBlock _clearWords;
     private readonly TextBlock _empty;
     private readonly ScrollViewer _scroll;
     private readonly Grid _more;
@@ -91,10 +114,37 @@ public sealed partial class DeskBoard : Grid
         {
             Style = (Style)Application.Current.Resources["StatusText"],
             Foreground = Brush("MutedBrush"),
-            Margin = new Thickness(Gap, HeadTop, Gap, HeadBottom),
+            Margin = new Thickness(Gap, HeadTop, ClearGap, HeadBottom),
             TextWrapping = TextWrapping.Wrap,
         };
-        Children.Add(_head);
+        // CLEAR at the head line's right, in the app's text links' style (FORGET ALL MARKS, help's TAKE THE TOUR): small,
+        // amber, a word in capitals (owner, 2026-10-26: "Button + fresh after raid"; docs/DESIGN.md §4, *The stash desk*,
+        // *Clearing the page*). At the desk's right edge it stands still while the totals count up beside it.
+        _clearWords = new TextBlock
+        {
+            Style = (Style)Application.Current.Resources["StatusText"],
+            FontSize = 11,
+            Foreground = Brush("AmberBrush"),
+            Text = AppTexts.DeskClear,
+        };
+        _clear = new HyperlinkButton
+        {
+            Name = ClearName,
+            Padding = new Thickness(0),
+            Margin = new Thickness(0, HeadTop, Gap, HeadBottom),
+            VerticalAlignment = VerticalAlignment.Top,
+            Content = _clearWords,
+            Visibility = Visibility.Collapsed,
+        };
+        _clear.Click += (_, _) => ClearClicked?.Invoke();
+        _headRow = new Grid();
+        _headRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        _headRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        _headRow.Children.Add(_head);
+        SetColumn(_clear, 1);
+        _headRow.Children.Add(_clear);
+        Children.Add(_headRow);
+        ClearWords();
         _empty = new TextBlock
         {
             Style = (Style)Application.Current.Resources["NoteText"],
@@ -223,10 +273,12 @@ public sealed partial class DeskBoard : Grid
     /// apart, and the totals count up from what the head line said (from nothing on the page's first showing); without,
     /// the page stands at once (animation effects off, a snapshot run).
     /// </summary>
-    public void Show(DeskView? view, IReadOnlySet<string> entering, bool motion)
+    /// <param name="clearable">CLEAR stands in the head (<see cref="DeskClearing.Offered"/>).</param>
+    public void Show(DeskView? view, IReadOnlySet<string> entering, bool motion, bool clearable = false)
     {
         var had = _view is not null;
         _view = view;
+        _clear.Visibility = clearable && view is not null ? Visibility.Visible : Visibility.Collapsed;
         var cells = Build(motion ? entering : null);
         if (view is null)
             return;
@@ -264,6 +316,9 @@ public sealed partial class DeskBoard : Grid
         if (cell is not null)
             CellPointed?.Invoke(cell);
     }
+
+    /// <summary>The page back at its top, at once (CLEAR: the empty page stands from its head, as a first reading's does).</summary>
+    public void ScrollToTop() => _scroll.ChangeView(null, 0, null, disableAnimation: true);
 
     /// <summary>PgUp and PgDn: the page up or down by most of what shows.</summary>
     public void PageBy(int direction)
@@ -419,9 +474,12 @@ public sealed partial class DeskBoard : Grid
         _cellViews.Clear();
         _boxes.Clear();
         var entered = new List<DeskCellView>();
-        if (_view is not { Sheet.Regions.Count: > 0 } view)
+        ClearWords();
+        // No page: the one line. A page of no region (cleared, or a reading that read nothing) stands as the page does,
+        // every region in its place as never read (owner, 2026-10-26: CLEAR).
+        if (_view is not { } view)
         {
-            _head.Visibility = Visibility.Collapsed;
+            _headRow.Visibility = Visibility.Collapsed;
             _scroll.Visibility = Visibility.Collapsed;
             _more.Visibility = Visibility.Collapsed;
             // Said with each build: a language switch builds the page anew (MainWindow.RetellDesk).
@@ -430,7 +488,7 @@ public sealed partial class DeskBoard : Grid
             _builtShape = "";
             return entered;
         }
-        _head.Visibility = Visibility.Visible;
+        _headRow.Visibility = Visibility.Visible;
         _scroll.Visibility = Visibility.Visible;
         _empty.Visibility = Visibility.Collapsed;
         if (_moreWords is not null)

@@ -182,7 +182,9 @@ a newer reading replacing it, its 6 s, a reading waiting for the roll call, and 
 build's own release whatever its number: each line pointed at (its preview on the map, or none for a `tour:N` line) and
 tapped (a `tour:N` line opens the tour at chapter N); `desk-prices` (2026-10-26) the desk's pictures across new prices and
 a reading that changed nothing: each cell's picture drawn in the first frame after, never blank while its file is
-decoded again; `whatsnew-previews` (2026-10-26, drafted in the UI QA re-check of the grid's fixes) older cards' preview
+decoded again; `desk-clear` (2026-10-26) the desk's CLEAR and its notice's UNDO on the made-up desk: the page emptied to
+the dashed frames of regions never read, its pins and card gone, "Desk cleared." with UNDO, the page put back with its
+pins, UNDO gone with the notice, and the next reading the mode's first again; `whatsnew-previews` (2026-10-26, drafted in the UI QA re-check of the grid's fixes) older cards' preview
 lines, one of each kind, pointed at one after the other: the framings inside the grid's strips, the replay's tags off the
 window's controls and the PREVIEW label, and each plate or cue over the player's map put back.
 

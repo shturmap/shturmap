@@ -1753,6 +1753,13 @@
                                Visibility="{x:Bind ShownIfTrue(ViewModel.NoticeOffersReport), Mode=OneWay}">
                 <TextBlock Text="{x:Bind ReportOfferText}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
               </HyperlinkButton>
+              <!-- A notice that took the desk's page away (its CLEAR, a new page after a raid) offers it back while it stands
+                   and no reading came since (owner, 2026-10-26; docs/DESIGN.md §4, *The stash desk*, *Clearing the page*). -->
+              <HyperlinkButton x:Name="NoticeUndo" Padding="6,0" Click="OnNoticeUndoClick" VerticalAlignment="Center"
+                               Visibility="{x:Bind ShownIfTrue(ViewModel.NoticeOffersUndo), Mode=OneWay}"
+                               ToolTipService.ToolTip="{x:Bind local:ViewTexts.NoticeUndoTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.NoticeUndoTip}">
+                <TextBlock Text="{x:Bind local:ViewTexts.NoticeUndo}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+              </HyperlinkButton>
               <Button Width="24" Height="24" Padding="0" Click="OnNoticeClosed" Background="Transparent" BorderThickness="0"
                       ToolTipService.ToolTip="{x:Bind local:ViewTexts.NoticeDismissTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.NoticeDismissName}">
                 <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
