@@ -149,7 +149,7 @@
     <comment>en: Loot containers, on a map without artwork: faint dots.</comment>
   </data>
   <data name="LegendGrid" xml:space="preserve">
-    <value>Das Raster: 100-m-Planquadrate, quer mit Buchstaben, nach unten mit Zahlen, jedes in seiner Ecke benannt; Drittel wie auf dem Numpad (D5-8 ist oben in der Mitte von D5).</value>
+    <value>Das Raster: 100-m-Planquadrate, waagerecht mit Buchstaben, senkrecht mit Zahlen, jedes in seiner Ecke benannt; Drittel wie auf dem Numpad (D5-8 ist oben in der Mitte von D5).</value>
     <comment>en: The grid: 100 m squares, lettered across and numbered down, each named in its corner; thirds as on a number pad (D5-8 is the top middle of D5).</comment>
   </data>
   <data name="LegendSheet" xml:space="preserve">
