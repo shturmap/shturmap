@@ -525,6 +525,9 @@ public sealed partial class DeskCardView : UserControl
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.Children.Add(new Picture { ItemId = words.ItemId, Size = 24, Opacity = words.Plate == DeskPlate.Pick ? 0.5 : 1 });
         var name = new TextBlock { Text = words.Name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+        // A long name is trimmed at its end by design, the whole name on its card a click away (DESIGN.md §4, *The stash
+        // desk*; release UI QA pass of 0.7.0, F4: the layout check took "Blaue TerraGroup Labs Schlüsselk…" for a fault).
+        Fit.SetMayTrim(name, true);
         Grid.SetColumn(name, 1);
         row.Children.Add(name);
         if (words.Figure is { } figure)
