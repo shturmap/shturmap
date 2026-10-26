@@ -13,10 +13,15 @@ namespace Shturmap.Session.Tests;
 // first, the cell, the short name). The pictures stay on the PC that took them (tests\fixtures\ocr\desk and \stash,
 // ignored by git) and the catalogue comes from the app's download cache, read without a request: skipped without either.
 // A name read must never be another item's; how many are named is held to a floor below the measured (29 of 37 and 129
-// of 148 on 2026-10-19), as the recognition's reading may differ by a letter on another Windows.
+// of 148 on 2026-10-19), as the recognition's reading may differ by a letter on another Windows. They read as the app
+// reads, with PaddleOCR's recognition on the label bands Windows' leaves unread (owner, 2026-10-26) where the build put
+// its model beside the tests (ocr\).
 public class DeskRealPictureTests
 {
     private static string Fixtures(string folder) => Path.Combine(AppContext.BaseDirectory, "fixtures", "ocr", folder);
+
+    // One for the class: its model is loaded once.
+    private static readonly PaddleReader? Paddle = PaddleReader.IsBundled ? PaddleReader.Bundled() : null;
 
     private sealed class Offline : HttpMessageHandler
     {
@@ -94,7 +99,7 @@ public class DeskRealPictureTests
         if (truths.Count == 0)
             Assert.Skip($"Real screenshots stay out of the repository: none with a truth on this PC (tests\\fixtures\\ocr\\{folder}).");
         var (data, catalogue) = await CatalogueAsync();
-        var reader = DeskReader.Create("en");
+        var reader = DeskReader.Create("en", Paddle);
         if (reader is null)
             Assert.Skip("This Windows has no text recognition language installed.");
         int right = 0, wrong = 0, unsure = 0, items = 0;
@@ -153,7 +158,7 @@ public class DeskRealPictureTests
         if (sets.Count == 0)
             Assert.Skip("Real screenshots stay out of the repository: the layout round's test set isn't on this PC (tests\\fixtures\\ocr\\desk\\session).");
         var (data, catalogue) = await CatalogueAsync();
-        var reader = DeskReader.Create("en");
+        var reader = DeskReader.Create("en", Paddle);
         if (reader is null)
             Assert.Skip("This Windows has no text recognition language installed.");
         var faults = new List<string>();
@@ -202,6 +207,75 @@ public class DeskRealPictureTests
         Assert.Equal(0, wrong);
         Assert.True(sized >= 91, $"{sized} of {regions} regions of their size");
         Assert.True(named >= 260, $"{named} of {items} items named right");
+    }
+
+    // PaddleOCR where Windows' recognition reads nothing (owner, 2026-10-26, decision 1): the layout round's five truths
+    // (every item whose label shows, by the page's regions) read by Windows' recognition alone and as the app reads, with
+    // PaddleOCR on the label bands it left unread. Every item the first named is named the same by the second, none is
+    // named wrong, and the second says more of them right, alone or "one of N" with the truth among them (measured
+    // 2026-10-26: 315 → 317 of 338 right, one of N 12 → 14, nothing said 9 → 5, no cell 2 → 2; the floor is 3 more).
+    [Fact]
+    public async Task Paddle_names_items_windows_left_unread_and_changes_none_windows_named()
+    {
+        var folder = Fixtures(Path.Combine("desk", "session"));
+        var truths = Directory.Exists(folder)
+            ? Directory.GetFiles(folder, "truth-*.txt").Order(StringComparer.Ordinal)
+                .Select(path => (Picture: Path.Combine(folder, Path.GetFileNameWithoutExtension(path)["truth-".Length..] + ".png"), Truth: path))
+                .Where(t => File.Exists(t.Picture)).ToList()
+            : [];
+        if (truths.Count == 0)
+            Assert.Skip("Real screenshots stay out of the repository: the layout round's test set isn't on this PC (tests\\fixtures\\ocr\\desk\\session).");
+        if (Paddle is null)
+            Assert.Skip(@"No PaddleOCR model beside the tests: the build puts it in ocr\ (eng\paddle-model.ps1).");
+        var (data, catalogue) = await CatalogueAsync();
+        if (DeskReader.Create("en") is not { } windows || DeskReader.Create("en", Paddle) is not { } both)
+        {
+            Assert.Skip("This Windows has no text recognition language installed.");
+            return;
+        }
+        int items = 0, namedAlone = 0, namedBoth = 0, wrong = 0;
+        var changed = new List<string>();
+        foreach (var (picture, truthPath) in truths)
+        {
+            using var bitmap = SKBitmap.Decode(await File.ReadAllBytesAsync(picture, TestContext.Current.CancellationToken));
+            using var bgra = bitmap.Copy(SKColorType.Bgra8888);
+            var at = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var alone = (await windows.ReadAsync(bgra, catalogue, at, TestContext.Current.CancellationToken)).Page;
+            var withPaddle = (await both.ReadAsync(bgra, catalogue, at, TestContext.Current.CancellationToken)).Page;
+            foreach (var line in Lines(truthPath))
+            {
+                var parts = line.Split(' ', 3);
+                var first = Names(alone, parts[0], parts[1], data);
+                var second = Names(withPaddle, parts[0], parts[1], data);
+                items++;
+                if (first.Contains(parts[2]))
+                    namedAlone++;
+                if (second.Contains(parts[2]))
+                    namedBoth++;
+                else if (second.Count == 1)
+                    wrong++;
+                if (first.Count == 1 && !first.SequenceEqual(second))
+                    changed.Add($"{Path.GetFileName(picture)} {parts[0]} {parts[1]}");
+            }
+        }
+        Assert.Empty(changed);
+        Assert.Equal(0, wrong);
+        Assert.True(namedBoth >= namedAlone + 3, $"{namedAlone} of {items} said right (alone or among N) by Windows' recognition alone, {namedBoth} with PaddleOCR's");
+    }
+
+    // The short names a page gives a truth's place ("backpack 1,0", "loadout [earpiece]"): none where no cell stands there.
+    private static List<string> Names(DeskPage? page, string region, string place, GameData data)
+    {
+        var r = page?.Region(region);
+        DeskCell? cell;
+        if (place.StartsWith('['))
+            cell = r?.Cells.FirstOrDefault(c => c.Slot == place.Trim('[', ']'));
+        else
+        {
+            var at = place.Split(',');
+            cell = r?.Cells.FirstOrDefault(c => !c.IsSlot && c.Rect.Contains(new DeskRect(int.Parse(at[0]), int.Parse(at[1]), 1, 1)));
+        }
+        return cell?.Ids.Select(data.ItemShortName).ToList() ?? [];
     }
 
     // A truth file's lines, "#" a comment.

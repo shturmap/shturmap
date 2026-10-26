@@ -277,7 +277,7 @@ public static class ReadingLog
 
     private static string TimeLeft(TaskRow row) =>
         row.TimeLeft is not { } left ? $"unread{(row.TimeText is { } t ? $" (\"{t}\")" : "")}"
-        : string.Create(CultureInfo.InvariantCulture, $"{Quoted(row.TimeText)} = {TaskTable.Hms(left)} {Votes(row.TimeVotes)}");
+        : string.Create(CultureInfo.InvariantCulture, $"{Quoted(row.TimeText)} = {TaskTable.Hms(left)} {(row.TimeByPaddle ? "(PaddleOCR; no way of Windows' recognition read it)" : Votes(row.TimeVotes))}");
 
     private static string Progress(TaskRow row) =>
         row.Progress is not { } p ? $"unread{(row.ProgressText is { } t ? $" (\"{t}\")" : "")}"
@@ -424,7 +424,8 @@ public static class ReadingLog
 
     private static string Label(DeskCellLook look) =>
         look.Label is null ? "no label read"
-        : string.Create(CultureInfo.InvariantCulture, $"label \"{look.Label}\", fit {look.Fit:0.00}{(look.Contradicted ? ", its footprint contradicts it" : "")}");
+        : string.Create(CultureInfo.InvariantCulture, $"label \"{look.Label}\"{(look.ByPaddle ? " (PaddleOCR; Windows' recognition read none that fit)" : "")}, " +
+                                                      $"fit {look.Fit:0.00}{(look.Contradicted ? ", its footprint contradicts it" : "")}");
 
     private static string Matched(ReadingLogEntry entry, DeskCell cell, string? label, bool contradicted) => cell.Ids.Count switch
     {

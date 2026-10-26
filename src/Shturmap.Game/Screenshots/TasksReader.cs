@@ -22,27 +22,36 @@ namespace Shturmap.Game.Screenshots;
 /// are ever read there: the header line's, for the task's location and status, and one per objective line under
 /// "Objective(s)", for its words and its count by vote (the traders' row with the player's name and money stands above
 /// the header, the task's text between the header and the objectives, its rewards below them: none of it in a band).
-/// The file is opened for reading only, shared with the game that may still be writing it, and nothing of the picture
-/// is kept or written anywhere.
+/// A countdown band no way read is read once more by PaddleOCR's recognition where the reader has it (owner, 2026-10-26,
+/// decision 1; <see cref="PaddleReader"/>; the orange countdowns under an hour, which no way reads), its text through the
+/// same parse; never a progress, a count or the page's words. The file is opened for reading only, shared with the game
+/// that may still be writing it, and nothing of the picture is kept or written anywhere.
 /// </summary>
 public sealed class TasksReader
 {
     private readonly OcrEngine _engine;
+    private readonly ILineReader? _paddle;
 
-    private TasksReader(OcrEngine engine) => _engine = engine;
+    private TasksReader(OcrEngine engine, ILineReader? paddle)
+    {
+        _engine = engine;
+        _paddle = paddle;
+    }
 
     /// <summary>The language the table is read in ("en-US").</summary>
     public string LanguageTag => _engine.RecognizerLanguage.LanguageTag;
 
     /// <summary>A reader for English (the table's words are the English game's; the German game's are unknown), null
     /// when this Windows has no English recognition.</summary>
-    public static TasksReader? Create()
+    /// <param name="paddle">The second reader of a countdown band no way read, or null for Windows' recognition
+    /// alone.</param>
+    public static TasksReader? Create(ILineReader? paddle = null)
     {
         try
         {
             var english = OcrEngine.AvailableRecognizerLanguages.FirstOrDefault(l => l.LanguageTag.StartsWith("en", StringComparison.OrdinalIgnoreCase));
             var engine = english is null ? null : OcrEngine.TryCreateFromLanguage(new Language(english.LanguageTag));
-            return engine is null ? null : new TasksReader(engine);
+            return engine is null ? null : new TasksReader(engine, paddle);
         }
         catch (Exception e) when (e is not OutOfMemoryException)
         {
@@ -86,9 +95,13 @@ public sealed class TasksReader
     /// <summary>The table read from a picture: the page's words, the rows from them, then each row's countdown and
     /// progress from their bands, by vote (only for the operational table: a page that isn't one asks nothing more of
     /// the recognition). <paramref name="note"/> hears each band's votes.</summary>
-    public async Task<TaskPage> ReadPageAsync(SKBitmap picture, double zoom = 1, Action<string>? note = null, CancellationToken ct = default)
+    public async Task<TaskPage> ReadPageAsync(SKBitmap picture, double zoom = 1, Action<string>? note = null, CancellationToken ct = default) =>
+        await ReadPageAsync(picture, await ReadWordsAsync(picture, zoom, ct), note, ct);
+
+    /// <summary>The same from the page's words as given (a test lays them out by hand), the bands read from the
+    /// picture.</summary>
+    internal async Task<TaskPage> ReadPageAsync(SKBitmap picture, IReadOnlyList<TaskWord> words, Action<string>? note, CancellationToken ct)
     {
-        var words = await ReadWordsAsync(picture, zoom, ct);
         var page = TaskTable.Read(words, picture.Width, picture.Height);
         if (page.Screen == TaskScreen.TraderScreen)
             return await ReadTraderAsync(picture, page, note, ct);
@@ -178,10 +191,42 @@ public sealed class TasksReader
                     (text, votes) = ($"{days.Key} day(s) {time}", timeVotes);
             }
         }
+        if (text is null && await PaddleCountdownAsync(picture, row.TimeBand, note, ct) is { } read &&
+            (days is null || days.Count() * 2 < Ways.Count || TaskTable.DaysOf(read) == days.Key))
+        {
+            // Where no way read the countdown (the orange ones under an hour, 2026-10-25), PaddleOCR's reading of the band,
+            // through the same parse; never against the days most ways read. It is no vote: on a disagreement with another
+            // row (OperationalChecks) it never wins.
+            (text, votes) = (read, 0);
+            row.TimeByPaddle = true;
+        }
         if (text is not null)
             TaskTable.TakeTime(row, text);
         row.TimeVotes = votes;
     }
+
+    /// <summary>A countdown band read by PaddleOCR's recognition at its own size, in a narrow margin of the band's own
+    /// colour (the spike of 2026-10-25): its text when it parses as a countdown, else null; null without the reader.</summary>
+    private async Task<string?> PaddleCountdownAsync(SKBitmap picture, TaskBand band, Action<string>? note, CancellationToken ct)
+    {
+        if (_paddle is null)
+            return null;
+        var rect = SKRectI.Intersect(SKRectI.Create(band.X, band.Y, band.W, band.H), SKRectI.Create(0, 0, picture.Width, picture.Height));
+        if (rect.Width < 4 || rect.Height < 4)
+            return null;
+        string? text;
+        using (var part = StashPicture.Block(picture, rect, rect.Width, rect.Height))
+        using (var framed = StashPicture.Framed(part, PaddleMargin, part.GetPixel(1, 1)))
+            text = await _paddle.ReadAsync(framed, ct);
+        if (text is null)
+            return null;
+        var left = TaskTable.TimeLeft(text);
+        note?.Invoke($"time band {band.X},{band.Y}: PaddleOCR \"{text}\"" + (left is { } t ? $" = {TaskTable.Hms(t)}" : ", no countdown"));
+        return left is null ? null : text;
+    }
+
+    // The margin round a band PaddleOCR reads: a few pixels, as the spike measured it.
+    private const int PaddleMargin = 4;
 
     /// <summary>The words of one band, read as it is at its own size (the header's location and status, white and
     /// orange on the header's bar, in the picture's pixels).</summary>

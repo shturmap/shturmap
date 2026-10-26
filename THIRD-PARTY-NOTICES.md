@@ -24,6 +24,8 @@ downloads at runtime are not part of a build; they are credited in the [README](
 | System.Numerics.Tensors 9.0.0 | MIT | .NET Foundation and Contributors |
 | Sentry 6.12.0 (only its report format; reports are sent by Shturmap's own code, see PRIVACY.md) | MIT | Sentry |
 | Velopack 1.2.161 (the Setup, Update.exe and the update library) | MIT | Velopack Ltd, Caelan Sayler, Kevin Bost |
+| ONNX Runtime 1.30.0 (Microsoft.ML.OnnxRuntime, its CPU build: PaddleOCR's recognition runs in it) | MIT | Microsoft Corporation |
+| PaddleOCR's PP-OCRv5 latin mobile text-line recognition model and its dictionary (`ocr\`), as RapidOCR exports the model to ONNX, unmodified | Apache License 2.0 | PaddlePaddle Authors; RapidOCR Authors |
 | Phosphor Icons (eight icons, the quest types' glyphs and the hand-over's arrow, as path data in the code) | MIT | Phosphor Icons |
 
 The Windows App SDK runtime files in a build are licensed by Microsoft under the terms in
@@ -33,7 +35,16 @@ own code sends nothing unless the player sends a report or allows crash reports 
 
 Microsoft.Windows.AI.MachineLearning 2.1.74 (ONNX Runtime and DirectML, which the Windows App SDK brings along) is
 referenced by the app only to keep it out: none of its files is in a build. Its licence texts are in the `licenses`
-folder all the same, since `eng\notices.ps1` gathers them from every package the app references.
+folder all the same, since `eng\notices.ps1` gathers them from every package the app references. The ONNX Runtime a
+build carries is the CPU package above (`onnxruntime.dll`), whose own licence and third-party notices are in
+`licenses\Microsoft.ML.OnnxRuntime`; Shturmap switches its telemetry events off before it loads anything.
+
+PaddleOCR's recognition model and its dictionary (owner, 2026-10-26: read where Windows' own text recognition reads
+nothing; docs/DESIGN.md §2) are PaddlePaddle's PaddleOCR (<https://github.com/PaddlePaddle/PaddleOCR>, Copyright (c)
+2016 PaddlePaddle Authors), the model as RapidOCR exports it to ONNX (<https://github.com/RapidAI/RapidOCR>, Copyright
+(c) 2021 RapidOCR Authors), both under the Apache License 2.0 (`licenses\Apache-2.0.txt`), and are carried unmodified
+in the build's `ocr` folder; where they come from and their SHA-256 are in `licenses\PaddleOCR-NOTICE.txt`. They are
+not in the repository: the build fetches them (`eng\paddle-model.ps1`).
 
 The native Skia, HarfBuzz and ANGLE libraries contain further open-source code (FreeType, libjpeg-turbo, libpng,
 libwebp, zlib, expat, ICU and others), listed with their licences in

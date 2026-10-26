@@ -138,6 +138,71 @@ on its cell".) Decision 3 was left out of this step by the owner's later call; n
   named that part, as before; `ocr-compare --fallback` (`OcrFallback`, decision 1's measuring) matches labels without the
   preset rule.
 
+**Built (2026-10-26: decision 1).** (Binding: DESIGN.md §2, "Where Windows' recognition reads nothing"; §3, "PaddleOCR's
+recognition model is bundled"; §8, "Distribution" and "Continuous integration"; CLAUDE.md's screenshot sentence, PRIVACY.md
+and the README say it.)
+
+- The reader (`PaddleReader`, Shturmap.Game): PP-OCRv5 latin mobile recognition, RapidOCR's ONNX export, through ONNX
+  Runtime 1.30.0's CPU package (the spike's version; 1.31.0 is the next, a minor), one thread, recognition only, the
+  spike's preprocessing and decoding; ONNX Runtime's telemetry events off before anything loads (`SafetyTests` holds every
+  file that loads a model to it). One for the session, shared by the menus' and the raid's readers; its model loaded at
+  the first band that needs it (104–113 ms here), off the reading's thread; one that can't be loaded is said once (WARN)
+  and never asked again, the readings then Windows' alone. No setting.
+- Where: `TasksReader` on a countdown band no way read (after the 14-way vote and the days split), through
+  `TaskTable.TimeLeft`, never against the days most ways read, as no vote (`TaskRow.TimeByPaddle`, votes 0);
+  `DeskReader` on a slot whose label no reading fit or that read none (not one under a window), and, in the cells' last
+  pass, on an item in its settled place whose label no reading fit (not a footprint contradiction, not an odd shape),
+  through the same match (the slot's kind, the footprint, the preset rule; the icons settle a "one of N" as ever). Never a
+  count, a progress, the page's words, a heading, a title, the extract list or `StashReader`. Not as first built: asked on
+  every label read, the probes that settle where items stand among them, it read an SMG's magazine in a joined rectangle's
+  piece as "T" and split the gun into "?"s and a "one of 4" cartridge pack (the stash page 2026-10-11 16:32 (5), no truth:
+  a wrong by the bar), and moved a claim (an EC the Grand juice's label had taken, right that time). So only settled
+  places, as the spike measured it; then nothing but cells that said nothing changed.
+- Shipping: `eng\paddle-model.ps1`, run by Shturmap.Game's build, fetches
+  `https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile.onnx`
+  (SHA-256 B20BD37C…5F5A, the hash RapidOCR's own model list of v3.10.0 gives, the spike's file) and
+  `…/v3.10.0/paddle/PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile/ppocrv5_latin_dict.txt` (SHA-256 3C0A8A79…13FF, pinned here: the
+  list gives none), keeps them in `%LOCALAPPDATA%\Shturmap-build\ocr\v3.10.0` only when the hash matches, and puts them
+  into `obj\ocr`; every output that references Shturmap.Game gets `ocr\` (the app's publish, `eng\publish.ps1`,
+  `release.ps1`, `dev.ps1`, the tests, the CLI). A PowerShell script, not MSBuild's DownloadFile: the hub's file host
+  answers 403 to a request without a User-Agent. CI caches the folder (keyed by the script, which checks it again); the
+  Release workflow fetches afresh. Nothing binary in the repository. Licences: two rows of THIRD-PARTY-NOTICES.md and
+  its paragraph, `eng\licenses\PaddleOCR-NOTICE.txt` (copyrights, URLs, hashes; Apache-2.0.txt was there), ONNX Runtime's
+  LICENSE and ThirdPartyNotices from its packages (`eng\notices.ps1`); the README's credits. The published folder drops
+  ONNX Runtime's import libraries (.lib).
+- Measured with `shturmap-cli desk` and `tasks` (`--no-paddle` for Windows' alone; the counts of a run on main's a0721f3
+  are the same), back to back on one build, cache only: the desk truths' 444 items (the GEAR tab of 2026-10-19 34, the
+  Keys page 72, the session's five 338) right 417 → 421 (Apple and TC-2002 on the GEAR page, the F-1 in the rig of 17,
+  WZ in the pouch of 09), "one of N" with the truth among them 14 → 16 (PS in the rigs of 12 and 17), nothing
+  said 11 → 5, no cell 2 → 2, wrong 0 → 0; the stash truths' 148 (142, 3, 3) and the session's regions (93 of 95)
+  unchanged; the countdowns 33 → 35 of 35 (skier-weekly-a's entry and skier-weekly-b's row, the orange under an hour), 0
+  wrong. Over the four desk sets and the 22 raid screenshots (86 pictures) it named 127 cells that said nothing, 29
+  kinds (Trooper 35 and ScavBP in backpack slots, WZ, PS, SP, F-1, GP, EC, PM magazines, the PB in a body's holster, Alu
+  splint under a quick slot's plate, RB-AK, Analgin, Hot Rod, the 590A1 in the WEAPONS window, AVS, Caiman, STRIKE …),
+  each looked at on its picture: all right; no other cell changed. The spike's Beta 2 in 13's backpack slot stays unread:
+  its box lies under the Keys window by more than a quarter, which the desk never reads (the spike read it regardless).
+- Cost: on the desk truths' 28 pictures PaddleOCR read 156 bands (5.6 a picture; the stash set 5.4, the raid set 4.0),
+  21 ms each on one thread, 118 and 121 ms more a picture in two rounds over about 2 s, 53 and 52 ms on four threads
+  (9.5 ms a band); whole pictures timed 2088 / 1941 / 2004 ms (Windows alone / one thread / four) in one round and 1852 /
+  1960 / 1953 in the other: the PC's noise is as large as the cost (CLI Debug build, as the spikes'). The app folder
+  (`eng\publish.ps1`) 249.6 → 274.4 MB, 595 → 607 files (`onnxruntime.dll` 16.5 MB, the model 7.9 MB, the managed
+  library 0.9 MB, the notices).
+- Tests: `PaddleReaderTests` (a model that can't load reads nothing, said once; cancellation; the bundled model reads a
+  drawn label), `DeskReaderTests` (only the unread label band goes to it, once, never a named one or a count; its text
+  matched as Windows' is; a text that names nothing leaves the cell; a model that can't load leaves the reading Windows'
+  alone), `TaskTableTests` (only the countdown bands no way read, never a page's countdown, a progress or a count; no
+  vote; a non-countdown or a failed model leaves them unread; every real countdown read and right),
+  `DeskRealPictureTests` (the real pictures read as the app reads; on the session's truths nothing Windows named changes,
+  none wrong, 3 more said right at the least), `SafetyTests` (telemetry).
+- Texts: the menu screenshots' setting note (`SettingsReadStashNote`) in English and German names PaddleOCR's
+  recognition, for the senior translator and the UI QA pass (a longer note in settings).
+- Noticed, left alone: a countdown PaddleOCR reads with a digit lost still parses leniently (the spike's "05:55:4" alone
+  read 00:55:54; on the fixtures the fallback never met one): a stricter parse of its text (two digits a group) would
+  guard it, not built since the decision said the same parse; the icon rule now settles newly named cartridges (PS, SP) to
+  one calibre by its own thresholds, plausible on the crops but not sure by eye at that size; ONNX Runtime's managed and
+  native packages each bring the same 344 KB ThirdPartyNotices into `licenses`; `ocr-compare` keeps its own copy of the
+  recognition behind `-p:OcrSpike=true`.
+
 ## 2026-10-25: the layout round: a steady desk, the reading's faults, the trader's task view
 
 **The ask** (owner, 2026-10-25, after the test of 2026-10-19): "From the last testing session it is clear that we have to

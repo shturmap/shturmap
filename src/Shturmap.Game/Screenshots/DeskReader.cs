@@ -25,6 +25,9 @@ internal sealed record DeskCellLook(string Region, SKRectI Pixels, DeskCell Cell
 {
     /// <summary>For a cell whose label fit several items, each one's likeness to its picture (<see cref="DeskIcons"/>).</summary>
     public IReadOnlyList<DeskIconScore> Icons { get; init; } = [];
+
+    /// <summary>Whether the label is PaddleOCR's reading of a band Windows' recognition left unread (2026-10-26).</summary>
+    public bool ByPaddle { get; init; }
 }
 
 /// <summary>Everything one look saw: the layout, the cells, the page, the odd shapes and the cells left covered.</summary>
@@ -37,9 +40,11 @@ internal sealed record DeskLook(int Width, int Height, int Pitch, DeskLayoutFoun
 /// read once over the whole picture, and the compartments' frames (<see cref="DeskLayout"/>); each cell's label is read
 /// enlarged as the stash reader reads it (<see cref="StashReader"/>, Windows' own recognition, on the PC) and named only
 /// when it fits a short name at 0.9 (<see cref="DeskMatch"/>); a label that fits several items alike is "one of N", the
-/// item file's footprint leaving those of the cell's size (either way round); a slot has no footprint. Counts, a printed
-/// condition ("46/50") and the found-in-raid mark are read as the stash reader reads them. What a window or a toast covers
-/// isn't read. Nothing of the picture is kept: the page holds item ids.
+/// item file's footprint leaving those of the cell's size (either way round); a slot has no footprint. A cell or a slot
+/// whose label no reading fit is read once more, at the end, by PaddleOCR's recognition where the reader has it (owner,
+/// 2026-10-26; <see cref="PaddleReader"/>), through the same match. Counts, a printed condition ("46/50") and the
+/// found-in-raid mark are read as the stash reader reads them, by Windows' recognition alone. What a window or a toast
+/// covers isn't read. Nothing of the picture is kept: the page holds item ids.
 /// </summary>
 public sealed class DeskReader
 {
@@ -47,11 +52,19 @@ public sealed class DeskReader
     private const int LeastHeight = 720;
 
     private readonly StashReader _labels;
+    private readonly ILineReader? _paddle;
 
-    public DeskReader(StashReader labels) => _labels = labels;
+    /// <param name="paddle">The second reader of a label band Windows' recognition left unread, or null for Windows'
+    /// alone.</param>
+    public DeskReader(StashReader labels, ILineReader? paddle = null)
+    {
+        _labels = labels;
+        _paddle = paddle;
+    }
 
     /// <summary>A reader in the game's language (as the stash reader's), or null when Windows has no recognition.</summary>
-    public static DeskReader? Create(string? gameLanguage) => StashReader.Create(gameLanguage) is { } labels ? new DeskReader(labels) : null;
+    public static DeskReader? Create(string? gameLanguage, ILineReader? paddle = null) =>
+        StashReader.Create(gameLanguage) is { } labels ? new DeskReader(labels, paddle) : null;
 
     public string LanguageTag => _labels.LanguageTag;
 
@@ -306,8 +319,15 @@ public sealed class DeskReader
     // bottom right; no footprint. Null for an empty slot (no label read).
     private async Task<DeskCellLook?> SlotAsync(SKBitmap bitmap, SKRectI box, int pitch, DeskCatalogue catalogue, DeskSlotKind kind, CancellationToken ct)
     {
-        var (label, fit, best) = OrPreset(await _labels.ReadLabelAsync(bitmap, LabelRect(bitmap, box, pitch, reach: 6), pitch,
-            text => catalogue.Match.Match(text, (int)Math.Round(box.Width / (double)pitch), kind), DeskMatch.Enough, ct), catalogue, kind);
+        var rect = LabelRect(bitmap, box, pitch, reach: 6);
+        var cells = (int)Math.Round(box.Width / (double)pitch);
+        var (label, fit, best) = OrPreset(await _labels.ReadLabelAsync(bitmap, rect, pitch, text => catalogue.Match.Match(text, cells, kind), DeskMatch.Enough, ct),
+            catalogue, kind);
+        var byPaddle = false;
+        // A slot whose label no reading fit, or that read none (an empty slot's box, or a label the recognition missed: the
+        // backpack slots' "Trooper 35" and "ScavBP" of 2026-10-19): PaddleOCR's reading of its band (owner, 2026-10-26).
+        if (fit < DeskMatch.Enough && await PaddleAsync(bitmap, rect, pitch, text => catalogue.Match.Match(text, cells, kind), catalogue, kind, false, ct) is { } paddle)
+            (label, fit, best, byPaddle) = (paddle.Label, paddle.Fit, paddle.Best, true);
         if (label is null || (fit < DeskMatch.Enough && label.Count(char.IsLetterOrDigit) < 3))
             return null;
         var ids = fit >= DeskMatch.Enough && best is not null ? best : [];
@@ -319,7 +339,28 @@ public sealed class DeskReader
             Print = print,
             Holds = HoldsOf(ids),
         };
-        return new DeskCellLook("", box, cell, label, fit, false, countText) { Icons = icons };
+        return new DeskCellLook("", box, cell, label, fit, false, countText) { Icons = icons, ByPaddle = byPaddle };
+    }
+
+    /// <summary>
+    /// A label band Windows' recognition left unread in every way it tries, read once more by PaddleOCR's recognition at the
+    /// picture's own size (owner, 2026-10-26, decision 1; <see cref="PaddleReader"/>): its text through the same match and
+    /// preset rule as Windows' (<paramref name="match"/>, <see cref="OrPreset"/>); null where it names nothing, reads
+    /// nothing, or the reader isn't there. Asked only once a cell's place is settled, so its reading never moves a cell.
+    /// </summary>
+    private async Task<(string Label, double Fit, List<DeskCandidate> Best)?> PaddleAsync(SKBitmap bitmap, SKRectI rect, int pitch,
+        Func<string, (double Fit, List<DeskCandidate> Best)> match, DeskCatalogue catalogue, DeskSlotKind kind, bool cutAtStart, CancellationToken ct)
+    {
+        if (_paddle is null || StashReader.LabelLine(bitmap, rect, pitch) is not { } line)
+            return null;
+        string? text;
+        using (line)
+            text = await _paddle.ReadAsync(line, ct);
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+        var (fit, best) = match(text);
+        var read = OrPreset((text, fit, best), catalogue, kind, cutAtStart);
+        return read.Fit >= DeskMatch.Enough && read.Best is { Count: > 0 } named ? (text, read.Fit, named) : null;
     }
 
     // A region's compartments: each a grid of its own, placed side by side in the region's units (gaps closed), its cells
@@ -625,6 +666,17 @@ public sealed class DeskReader
             }
             var pixels = Pixels(at.I, at.J, at.W, at.H);
             var contradicted = fitting.Count > 0 && sized.Count == 0;
+            // An item in its place whose label no reading fit (owner, 2026-10-26, decision 1): PaddleOCR's reading of its
+            // band, matched as Windows' is, at the cell's footprint. Never where a reading fit and the footprint contradicted
+            // it (Windows read that label), never an odd shape's cells, never a probe that settles where cells stand.
+            var byPaddle = false;
+            if (fitting.Count == 0 && !rect.Odd)
+            {
+                var cut = quickSlots && QuickSlotNumber(bitmap, pixels, pitch);
+                if (await PaddleAsync(bitmap, LabelRect(bitmap, pixels, pitch), pitch, text => catalogue.Match.Match(text, at.W, kind, cut), catalogue, kind, cut, ct) is { } paddle &&
+                    (footprints ? Sized(paddle.Best, at.W, at.H) : paddle.Best) is { Count: > 0 } named)
+                    (sized, label, fit, byPaddle) = (named, paddle.Label, paddle.Fit, true);
+            }
             // A label several items of the cell's footprint share: the picture against their grid images (owner, 2026-10-25).
             (sized, var icons) = catalogue.Icons.Settle(bitmap, pixels, pitch, sized, footprints ? DeskIconPlace.Footprint : DeskIconPlace.Fitted, at.W, at.H);
             var ids = sized.Select(c => c.ItemId).Distinct(StringComparer.Ordinal).ToList();
@@ -645,7 +697,7 @@ public sealed class DeskReader
             if (ids.Count == 0)
                 unread += at.W * at.H;
             cells.Add(cell);
-            looks.Add(new DeskCellLook(region, pixels, cell, label, fit, contradicted, countText) { Icons = icons });
+            looks.Add(new DeskCellLook(region, pixels, cell, label, fit, contradicted, countText) { Icons = icons, ByPaddle = byPaddle });
         }
         return (cells.OrderBy(c => c.J).ThenBy(c => c.I).ToList(), covered, odd, unread);
     }

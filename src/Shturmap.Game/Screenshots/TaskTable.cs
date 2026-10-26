@@ -74,6 +74,10 @@ public sealed class TaskRow
     public int TimeVotes { get; set; }
     public int ProgressVotes { get; set; }
 
+    /// <summary>Whether the countdown is PaddleOCR's reading of its band, which no way of Windows' recognition read
+    /// (2026-10-26; <see cref="TasksReader"/>); its votes are then 0.</summary>
+    public bool TimeByPaddle { get; set; }
+
     /// <summary>The row's middle (the task name's): the bands are measured from it.</summary>
     public double Cy { get; init; }
 

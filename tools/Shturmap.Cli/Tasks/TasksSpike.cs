@@ -61,15 +61,17 @@ internal static class TasksSpike
                 case "--ways": TasksReader.Ways = TasksReader.ParseWays(args[++i]); break;
                 case "--dump": TasksReader.Dump = Directory.CreateDirectory(args[++i]).FullName; break;
                 case "--raw": TasksReader.Raw = printBands = true; break;
+                case var _ when Ocr.PaddleUse.IsOption(args, ref i): break;
                 default: inputs.Add(args[i]); break;
             }
         }
         if (inputs.Count == 0)
         {
-            Console.WriteLine("Use: shturmap-cli tasks <png or folder>... [--bands] [--raw] [--words] [--ways plain@1,binary@2,...] [--zoom <page zoom>] [--dump <folder>]");
+            Console.WriteLine("Use: shturmap-cli tasks <png or folder>... [--bands] [--raw] [--words] [--ways plain@1,binary@2,...] [--zoom <page zoom>] [--dump <folder>] " + Ocr.PaddleUse.Usage);
             return;
         }
-        var ocr = TasksReader.Create();
+        var paddle = Ocr.PaddleUse.From(args);
+        var ocr = TasksReader.Create(paddle);
         if (ocr is null)
         {
             Console.WriteLine("This Windows has no English text recognition: no reading.");
@@ -123,6 +125,8 @@ internal static class TasksSpike
             Console.WriteLine($"  entry      {tally.Entry}");
             Console.WriteLine($"  its time   {tally.EntryTime}");
         }
+        if (paddle is not null)
+            Console.WriteLine(paddle.Summary(files.Count));
     }
 
     private static void Print(string file, TaskPage page, long ms)
@@ -152,7 +156,7 @@ internal static class TasksSpike
         }
         foreach (var (row, index) in page.Rows.Select((r, i) => (r, i)))
         {
-            var left = row.TimeLeft is { } t ? $"{TaskTable.Hms(t)} ({row.TimeVotes} votes)" : "?";
+            var left = row.TimeLeft is { } t ? $"{TaskTable.Hms(t)} ({(row.TimeByPaddle ? "PaddleOCR" : $"{row.TimeVotes} votes")})" : "?";
             var progress = row.Progress is { } p ? $"{p}% ({row.ProgressVotes} votes)" : "?";
             var expiry = row.TimeLeft is null ? "?"
                 : kept[index] is { } l ? (taken + l).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
@@ -168,7 +172,7 @@ internal static class TasksSpike
     // with its countdown, the selected one its task's, the others refreshing a kept task of their name in the app.
     private static void PrintTrader(TaskPage page, DateTime taken, IReadOnlyList<TimeSpan?> kept)
     {
-        string Left(TaskRow row) => row.TimeLeft is { } t ? $"{row.TimeText} = {TaskTable.Hms(t)} ({row.TimeVotes} votes)" : "unread";
+        string Left(TaskRow row) => row.TimeLeft is { } t ? $"{row.TimeText} = {TaskTable.Hms(t)} ({(row.TimeByPaddle ? "PaddleOCR" : $"{row.TimeVotes} votes")})" : "unread";
         string Expiry(int index) => page.Rows[index].TimeLeft is null ? "?"
             : kept[index] is { } l ? (taken + l).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
             : "none (fails the checks)";

@@ -23,7 +23,10 @@ out. Of a screenshot of a trader's TASKS tab with a daily or weekly selected, it
 task's name and the time left of each daily and weekly in the trader's list, and of the right third only the header's
 line, for the task's location and status, and each objective's line, for its words and count (never the trader's row
 with your name and money above the header, the task's text between it and the objectives, nor the rewards below
-them), and keeps them in the same file. All of it happens on your PC; nothing of a picture is kept or sent, and unticking "Read the extract list from
+them), and keeps them in the same file. Where Windows' recognition reads an item's name or a task's time left not at
+all, Shturmap reads that one line of the picture once more with PaddleOCR's text recognition, a model that comes with
+Shturmap and runs on your PC as well (ONNX Runtime runs it, its telemetry switched off): nothing is downloaded or sent
+for it, and it reads nothing else. All of it happens on your PC; nothing of a picture is kept or sent, and unticking "Read the extract list from
 screenshots" or "Read your stash, gear and tasks from menu screenshots, and loot in a raid" in settings stops each.
 Nothing about you leaves your PC, with two exceptions that you control; and it asks GitHub for new versions of itself
 (3) and downloads public data and pictures (4).
