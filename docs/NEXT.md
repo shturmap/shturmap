@@ -77,6 +77,38 @@ a raid screenshot told as the GEAR tab no glance. Open: the player's own backpac
 on past the column's foot) is left out by the glance's rule for a cut region, as before; no real-picture test of the raid
 set exists (the CLI scores the truth).
 
+**The UI QA re-check of 2026-10-26 (prices, foot, glance)**, on 2468c36, by someone who made none of the three (the
+folder build, the developer build and the Debug build of that commit; headless, every run with a data folder of its
+own): **PASS**, no finding. *Prices*: `tools\qa\desk-prices.devscript` in English and German at the default window
+(2560×1392) and at 900×560. `desk probe 3` and each `desk prices` drew every picture in the frame before and the first
+frame after, 52 of 52 at the default window (4 of 4, the first screen, at 900×560), and `desk probe 2` 43 of 43 with its 9
+coming in; ON YOU's total rose 4.60 M → 4.91 M → 5.24 M → 5.64 M over the three re-pricings, the reading the same. The
+stills `before` and `priced` hold the same page, its figures a tenth up where the flea is the better sale ("~74k" →
+"~81k", "~15k+" → "~17k+"), the head line's totals up, nothing glowing or coming in, every picture there, no layout
+problem in either language or size. The settings note's price sentence ("tarkov.dev's prices, fetched again every five
+minutes while the desk is on screen"; "alle fünf Minuten neu geladen, solange der Desk angezeigt wird") whole in
+`settings.png` at 1600×900 in both languages; at 900×560 it stands below the panel's fold, where the layout check (plan,
+en-US and de-DE, 900×560 and 1600×900: PASSED) finds it neither overflowing nor trimmed. *Foot*: "Click one: the tour
+shows it." and "Klick auf eine Zeile: Die Tour zeigt sie." in one line under 0.7.0's five tour lines, in
+`tools\qa\whatsnew-lines.devscript` in English and German at the default window and at 900×560 (each tap opening its
+chapter, 2, 1, 7, 6 and 5; the layout files without a problem) and in a developer `--whats-new` snapshot at 1600×900; at
+900×560 the foot is below the rail's fold, the rail as wide as at the default window, where it is one line. *Glance*: no
+developer path feeds a real screenshot into a fake raid, and a `--snapshot` run keeps the raid's cue up for its picture,
+so a real reading waits behind it and the still has no plate. Drafted in the pass, not added: a `--dev-view` script of a
+Scav raid on Streets, and a driver that moves the first of the owner's two pictures (dated now, under a made-up name) into
+the view's fake game's Screenshots folder 6 s after the raid's start. The app read it (5 regions, a LOOT pane, 27 cells,
+24 named, 3 one of several) and put up the plate: at 1600×900 (room 1136×276 DIP) FROM YOUR SCREENSHOT, "LOOT 129k+ ₽"
+(the cells' nets after the fee, *The stash desk*, so under their listing figures' sum), "ON YOU 537k+ ₽", WEAPON BOX
+and its 6×6 grid at 40 DIP with the six items where the game has them (AC-858, AKS-74UN, the MK46K grip, the AEM-5 turned
+a quarter, the Tarzan, the Titan QRTC), each with its figure, nothing cut; at 900×560 (room 436×106 DIP) the grid cut
+short at its top two rows, "WEAPON BOX · MORE BELOW +", the Tarzan and the Titan QRTC under the fold, as *Sizes* has it.
+`shturmap-cli desk --raid --plate` with those two rooms lays it out the same. The app log names each raid screenshot by
+its date, minute and number alone: a fake raid's world screenshot "not taken for the in-raid glance: not an inventory
+screen", its empty ones "read nothing (the picture couldn't be opened)", the box "Inventory read from raid screenshot …";
+no position in any of the pass's 25 app logs, no ERROR or WARN, every window off every monitor, the 12 popups drawn. Not
+pictured: the desk's page below its first screen at 900×560 (a script's still takes one screen), and the foot and the
+settings note below their folds at 900×560 (the rail and settings aren't taken in screens yet, docs/QA.md).
+
 ## 2026-10-26: a grid on the map, for squads
 
 **The ask** (owner, 2026-10-26): a spec for a "tactical map grid" (100 m squares lettered A to Z without I and O, rows
