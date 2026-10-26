@@ -156,6 +156,109 @@ public class GridTests
     }
 
     [Fact]
+    public void The_sheets_caption_stands_whole_under_the_readout_where_this_lies_over_its_corner()
+    {
+        // UI QA pass of the squad grid, F3: on a sheet with a position the readout covered "NO ARTWO" of the caption.
+        var (camera, scene) = Gridded();
+        scene.Player = new PlayerFix(InD5Top, null, Now);
+        // The sheet's corner under the readout: the view moved 40 px right and down.
+        camera.Pan(40, 40);
+        var you = MapRenderer.Layout(camera, scene, 1, Now).Grid!.You!;
+        var caption = MapRenderer.SheetCaption(camera, scene, 1, you);
+        Assert.False(caption.Box.IntersectsWith(you.Box), $"the caption at {caption.Box} under the readout at {you.Box}");
+        Assert.Equal(40 + 10, caption.At.X, 1);
+        Assert.True(caption.At.Y > you.Box.Bottom);
+        // Without the readout, in its corner as before.
+        Assert.Equal(40 + 18, MapRenderer.SheetCaption(camera, scene, 1, null).At.Y, 1);
+    }
+
+    [Fact]
+    public void Under_a_plate_of_the_window_the_readout_isnt_drawn_and_keeps_its_room()
+    {
+        // UI QA pass of the squad grid, F5: the in-raid glance's plate left "YOU C" of the readout showing.
+        var (camera, scene) = Gridded();
+        scene.Player = new PlayerFix(InD5Top, null, Now);
+        SKColor At(SKPoint p)
+        {
+            using var surface = SKSurface.Create(new SKImageInfo(1000, 1000));
+            MapRenderer.Render(surface.Canvas, camera, scene, 1, null, Now);
+            using var image = surface.Snapshot();
+            using var bitmap = SKBitmap.FromImage(image);
+            return bitmap.GetPixel((int)p.X, (int)p.Y);
+        }
+        var you = MapRenderer.Layout(camera, scene, 1, Now).Grid!.You!;
+        // The readout's hairline at its left edge, then the sheet's panel there once a plate lies over part of it.
+        var edge = new SKPoint(you.Box.Left, you.Box.MidY);
+        var drawn = At(edge);
+        scene.PlateOver = SKRect.Create(you.Box.MidX, 0, 400, 300);
+        var covered = At(edge);
+        Assert.True(drawn.Red > covered.Red + 10, $"{drawn} against {covered}");
+        // Its room is still kept: no label is placed there while the plate stands.
+        Assert.NotNull(MapRenderer.LayoutOf(camera, scene, 1, Now).Grid!.You);
+        scene.PlateOver = null;
+        Assert.Equal(drawn, At(edge));
+    }
+
+    [Fact]
+    public void A_reference_keeps_a_labels_gap_from_what_stands_beside_it_and_keeps_off_the_windows_controls()
+    {
+        // UI QA pass of the squad grid, F7: "A8" stood 3 px before "Crash Site" on its line and read as part of it. E3's
+        // reference is written from x 404, its box 2 px around it.
+        var (camera, scene) = Gridded();
+        Assert.Contains("E3", MapRenderer.LayoutOf(camera, scene, 1, Now).Grid!.References.Select(r => r.Text));
+        using var font = new SKFont(SKTypeface.FromFamilyName("Bahnschrift", new SKFontStyle(SKFontStyleWeight.SemiBold, SKFontStyleWidth.SemiCondensed, SKFontStyleSlant.Upright)), 10.5f);
+        var end = 404 + font.MeasureText("E3");
+        // Something 3 px after it on its line (here a control of the window, which the references keep off too): left out.
+        scene.ControlsOver = [SKRect.Create(end + 3, 203, 60, 12)];
+        Assert.DoesNotContain("E3", MapRenderer.LayoutOf(camera, scene, 1, Now).Grid!.References.Select(r => r.Text));
+        // 12 px after it, beyond a label's gap from its box: it stays.
+        scene.ControlsOver = [SKRect.Create(end + 12, 203, 40, 12)];
+        Assert.Contains("E3", MapRenderer.LayoutOf(camera, scene, 1, Now).Grid!.References.Select(r => r.Text));
+    }
+
+    [Fact]
+    public void No_label_stands_under_the_windows_controls()
+    {
+        // UI QA pass of the squad grid, F2: inside the strips the credit ran over "Transit to Interchange". A quest whose name
+        // goes right of it, where a control of the window then stands: the name takes another side.
+        var (camera, scene) = Gridded(Quest("c", 0, -400, "Under the credit"));
+        var free = MapRenderer.LayoutOf(camera, scene, 1, Now).Labels.Single();
+        var control = SKRect.Inflate(free.Box, 4, 4);
+        scene.ControlsOver = [control];
+        var moved = MapRenderer.LayoutOf(camera, scene, 1, Now).Labels.Single();
+        Assert.False(moved.Box.IntersectsWith(control), $"{moved.Text} at {moved.Box} under the control at {control}");
+    }
+
+    [Fact]
+    public void A_view_frames_the_map_inside_the_strips()
+    {
+        // UI QA pass of the squad grid, F2: the map's controls stepped inside the strips, and the whole map with them, so at
+        // 900x560 the raised credit no longer runs over the names at its foot.
+        var (camera, scene) = Gridded();
+        camera.Inset = MapRenderer.GridInset(scene, 1);
+        camera.Fit(scene.Projection.WorldRect, 24, Camera.LabelRoom);
+        SKRect Shown(Shturmap.Core.Maps.MapRect rect)
+        {
+            var a = camera.ToScreen(new Shturmap.Core.Maps.MapPoint(rect.Left, rect.Top));
+            var b = camera.ToScreen(new Shturmap.Core.Maps.MapPoint(rect.Right, rect.Bottom));
+            return new SKRect(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Max(a.X, b.X), Math.Max(a.Y, b.Y));
+        }
+        var whole = Shown(scene.Projection.WorldRect);
+        Assert.True(whole.Left >= MapRenderer.GridStripWide + 24 - 0.5, $"{whole}");
+        Assert.True(whole.Top >= MapRenderer.GridStripHigh + 24 - 0.5 && whole.Bottom <= 1000 - MapRenderer.GridStripHigh - 24 + 0.5, $"{whole}");
+        Assert.True(whole.Right <= 1000 - MapRenderer.GridStripWide - Camera.LabelRoom + 0.5, $"{whole}");
+        // A framing with a foot shorter than the strip keeps the strip; with no grid, the view's edge as before.
+        var tall = new Shturmap.Core.Maps.MapRect(-100, -400, 100, 400);
+        var (center, zoom) = camera.FramingAbove(tall, 40, 10);
+        camera.Restore(center, zoom);
+        Assert.True(Shown(tall).Bottom <= 1000 - MapRenderer.GridStripHigh - 40 + 0.5, $"{Shown(tall)}");
+        camera.Inset = SKSize.Empty;
+        (center, zoom) = camera.FramingAbove(tall, 40, 10);
+        camera.Restore(center, zoom);
+        Assert.Equal(1000 - 10 - 40, Shown(tall).Bottom, 1);
+    }
+
+    [Fact]
     public void A_frame_with_the_grid_draws_its_lines_lighter_than_the_ground_and_its_strips()
     {
         var (camera, scene) = Gridded();

@@ -79,6 +79,7 @@ public sealed partial class MainWindow : Window
         _cards = new CardStack(root, CreateCard, CardRoom);
         InstallDesk();
         InstallGlance();
+        InstallControlsOverMap();
         // Rows open their cards in their window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
         // A row unloaded under the pointer can't say which window it was in: every stack hears it, its own takes it.
@@ -152,6 +153,9 @@ public sealed partial class MainWindow : Window
         // And while the in-raid glance's plate stands (the panel's C: "the floor picker steps aside as for any cue"; at
         // 900×560 the plate's right end lay over it).
         RaidGlancePlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ShowFloors());
+        // And while the crash question stands (UI QA pass of the squad grid, F1: at 900×560 inside the grid's strips a
+        // six-floor map's list lay over the box's lower right corner).
+        CrashPlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ShowFloors());
         // What's New's plate keeps clear of the notes at the map's top and of its foot (PlaceWhatsNewPlate), from the moment
         // it shows: a plate of the size it last had changes no size as it comes back.
         WhatsNewPlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) =>
@@ -1365,12 +1369,13 @@ public sealed partial class MainWindow : Window
 
     // The floor picker is the shown map's: while another map is previewed it steps aside, and the shown map's scene
     // puts it back when the preview ends (review of 2026-10-10: a tour chapter staged on Customs showed Streets' floors).
-    // It steps aside the same way while a cue or What's New's plate shows, and is back when that goes (QA pass of
-    // 2026-10-15: at 900×560 it lay over the end of SEEN IN YOUR STASH's and RAID LOADING's titles, and over the right
-    // edge of the item card on the plate).
+    // It steps aside the same way while a cue, What's New's plate, the in-raid glance's plate or the crash question shows,
+    // and is back when that goes (QA pass of 2026-10-15: at 900×560 it lay over the end of SEEN IN YOUR STASH's and RAID
+    // LOADING's titles, and over the right edge of the item card on the plate; UI QA pass of the squad grid, 2026-10-26,
+    // F1: over the crash question's box).
     private void ShowFloors() =>
         ViewModel.Floors = _previewing is not null || CuePanel.Visibility == Visibility.Visible || WhatsNewPlate.Visibility == Visibility.Visible
-            || RaidGlancePlate.Visibility == Visibility.Visible
+            || RaidGlancePlate.Visibility == Visibility.Visible || CrashPlate.Visibility == Visibility.Visible
             ? [] : _floorChoices;
 
     private void EndPreview(bool restore)

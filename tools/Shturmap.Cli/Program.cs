@@ -718,7 +718,8 @@ static async Task Render(string mapName, string output, List<string> screenshots
     // "-ping": a new position pinging, 0.6 s in; "-edge": the same with the player out of view (the edge arrow).
     foreach (var (suffix, zoomIn, ping, away) in new[] { ("", 1.0, false, 0f), ("-close", 3.0, false, 0f), ("-ping", 3.0, true, 0f), ("-edge", 3.0, true, 1100f) })
     {
-        var camera = new Shturmap.Map.Camera();
+        // The whole map inside the grid's strips, as the app fits it (Camera.Inset).
+        var camera = new Shturmap.Map.Camera { Inset = Shturmap.Map.MapRenderer.GridInset(scene, 1) };
         camera.Resize(new SkiaSharp.SKSize(1600, 1000));
         camera.Fit(scene.Projection.WorldRect, 24, Shturmap.Map.Camera.LabelRoom);
         if (zoomIn > 1 && scene.Player is { } p)
@@ -761,8 +762,8 @@ static async Task Render(string mapName, string output, List<string> screenshots
 
 // The squad grid's lines against the same view without them: how much lighter (CIE L*) each kind's pixels are inside the
 // strips, over the map's artwork or sheet (pixels the plain picture has at L* 8 or less, the ground around the map, left
-// out), and how many references the frame placed and left out. The panel's E measured a median ΔL* of about 21 for the
-// 100 m lines on Streets at its view 3 (docs/DESIGN.md "Map drawing", *The grid*).
+// out), in all and on dark and light ground, and how many references the frame placed and left out. The panel's E
+// measured a median ΔL* of about 21 for the 100 m lines on Streets at its view 3 (docs/DESIGN.md "Map drawing", *The grid*).
 static void GridContrast(Shturmap.Map.Camera camera, Shturmap.Map.MapScene scene, Shturmap.Map.MapRenderer.GridLayout grid, SkiaSharp.SKImage withGrid)
 {
     var (w, h) = ((int)camera.Viewport.Width, (int)camera.Viewport.Height);
@@ -780,9 +781,13 @@ static void GridContrast(Shturmap.Map.Camera camera, Shturmap.Map.MapScene scene
         return y > 216.0 / 24389 ? 116 * Math.Cbrt(y) - 16 : y * 24389.0 / 27;
     }
     var inner = grid.Inner;
+    // Each kind's median also on dark ground (L* over 8 to 32) and on light (over 40), where the overlay steps a line up
+    // least and most (UI QA pass of the squad grid, F6: the keypad's lines on Factory's dark ground).
+    static string Median(List<double> steps) => steps.Count == 0 ? "none" : FormattableString.Invariant($"{steps.Order().ElementAt(steps.Count / 2):0.0}");
     string Measure(IEnumerable<float> xs, IEnumerable<float> ys)
     {
         var steps = new List<double>();
+        var (dark, light) = (new List<double>(), new List<double>());
         void At(int x, int y)
         {
             if (x < inner.Left + 2 || x > inner.Right - 3 || y < inner.Top + 2 || y > inner.Bottom - 3)
@@ -790,7 +795,12 @@ static void GridContrast(Shturmap.Map.Camera camera, Shturmap.Map.MapScene scene
             var before = Lstar(plain.GetPixel(x, y));
             if (before <= 8)
                 return;
-            steps.Add(Lstar(lit.GetPixel(x, y)) - before);
+            var step = Lstar(lit.GetPixel(x, y)) - before;
+            steps.Add(step);
+            if (before <= 32)
+                dark.Add(step);
+            else if (before > 40)
+                light.Add(step);
         }
         foreach (var x in xs)
         {
@@ -805,7 +815,8 @@ static void GridContrast(Shturmap.Map.Camera camera, Shturmap.Map.MapScene scene
         if (steps.Count == 0)
             return "none in view";
         steps.Sort();
-        return FormattableString.Invariant($"median ΔL* {steps[steps.Count / 2]:0.0} (10–90 % {steps[steps.Count / 10]:0.0} to {steps[steps.Count * 9 / 10]:0.0}, {steps.Count} px)");
+        return FormattableString.Invariant($"median ΔL* {steps[steps.Count / 2]:0.0} (10–90 % {steps[steps.Count / 10]:0.0} to {steps[steps.Count * 9 / 10]:0.0}, {steps.Count} px; ") +
+               FormattableString.Invariant($"dark ground {Median(dark)} of {dark.Count} px, light {Median(light)} of {light.Count} px)");
     }
     Console.WriteLine($"  grid: 100 m lines {Measure(grid.Verticals, grid.Horizontals)}; keypad lines at {grid.Keypad:0.00} {Measure(grid.ThirdVerticals, grid.ThirdHorizontals)}" +
                       $"; {grid.References.Count} references, {grid.LeftOut} left out; squares {(grid.Verticals.Length > 1 ? grid.Verticals[1] - grid.Verticals[0] : grid.Extent.Width):0} px wide");

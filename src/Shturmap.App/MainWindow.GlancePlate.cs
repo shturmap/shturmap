@@ -62,6 +62,22 @@ public sealed partial class MainWindow
         // A new room, or notes that come or go at the map's top: the plate laid out anew where it stands.
         Map.SizeChanged += (_, _) => RefitGlance();
         MapNotes.SizeChanged += (_, _) => RefitGlance();
+        // Where it stands, the map knows: the player's reference at its top left isn't drawn under it.
+        RaidGlancePlate.SizeChanged += (_, _) => PlateOverMap();
+        RaidGlancePlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => PlateOverMap());
+    }
+
+    // The plate over the map, for the map's drawing: at the smallest window it lies over the player's reference at the map's
+    // top left for its 6 s, and the cut reference ("YOU C") read as broken, so the map leaves it out under the plate while
+    // the marker's tag says it (UI QA pass of the squad grid, 2026-10-26, F5). Looked at again as the plate shows, goes,
+    // changes its size or is placed anew.
+    private void PlateOverMap()
+    {
+        Windows.Foundation.Rect? over = null;
+        if (!_stopped && GlanceUp && RaidGlancePlate.ActualWidth >= 1 && RaidGlancePlate.ActualHeight >= 1)
+            over = RaidGlancePlate.TransformToVisual(Map).TransformBounds(new Windows.Foundation.Rect(0, 0, RaidGlancePlate.ActualWidth, RaidGlancePlate.ActualHeight));
+        if (over != Map.PlateOver)
+            Map.PlateOver = over;
     }
 
     // Each snapshot: a new reading in a raid puts the plate up, or waits for a cue; out of a raid it goes.
@@ -152,6 +168,8 @@ public sealed partial class MainWindow
         var height = Math.Max(120, Map.ActualHeight * GlancePlateRules.HeightShare);
         RaidGlancePlate.Margin = new Thickness(GlancePlateRules.Margin, GlanceTop(), GlancePlateRules.Margin, 0);
         RaidGlancePlate.Show(glance, width, height);
+        // Placed anew at the same size (the notes went): where it stands, after the layout pass.
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, PlateOverMap);
     }
 
     // DIPs from the map's top: under the notes there and 8 more, or the notes' own margin while they show nothing.

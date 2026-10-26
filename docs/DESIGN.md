@@ -843,7 +843,9 @@ quoting it anywhere new.
   **The 10 m grid gives way to the squad grid** (owner, confirmed 2026-10-26: one grid in the app; §4, "Map drawing",
   *The grid*): while the grid is on (settings, on by default) the sheet draws no 10 m lines but the squad grid's 100 m
   ones, its corner says "NO ARTWORK FOR THIS MAP · GRID 100 M", the credit line "grid 100 m", and the notices "a grid
-  stands in" without its spacing; with the grid turned off, the 10 m grid as above.
+  stands in" without its spacing; with the grid turned off, the 10 m grid as above. Where the player's reference at the
+  map's top left stands over the sheet's corner (a sheet seen with a position), the caption stands in its corner under
+  the reference, whole (UI QA pass of the squad grid, 2026-10-26, F3: the reference covered "NO ARTWO").
   A sheet that stands in for a render that couldn't be had gives way by itself (the review of 2026-10-04: The Lab
   opened offline stayed a sheet until the app was started again): the tiles the view needs are asked for again
   every 30 s, each tile once a round, whether or not the map is touched meanwhile, and the sheet stays until the
@@ -2212,7 +2214,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   60 + 22 clear of the buttons on each side, the tour's band 68 + 22 from the right, and the glance's plate stands 16 + 18
   from the top while no note shows. What the map draws itself steps inside them too: the scale bar 18 + 22 from the left
   and 66 + 18 from the foot, the edge badge and its words and the chevrons their insets from the strips' inner edges (a
-  place under a strip counts as out of view). Without the grid everything stands where it did.
+  place under a strip counts as out of view). Every framing keeps its padding inside the strips too, so what a view
+  frames keeps from the controls what it kept before (`Camera.Inset`), and no label, map name or square's reference is
+  placed under a control (UI QA pass of the squad grid, 2026-10-26, F2; "Map drawing", *The grid*). Without the grid
+  everything stands where it did.
 - **Follow my position** (owner, 2026-10-03: "It should be a toggle in the map view and the camera should smooth
   scroll to the updated player position"; it replaces 2026-10-01's "a new fix never moves the view", principle 8):
   a toggle at the top of the map controls, the same 36 px square-cornered frame, its own symbol `E759`, the tooltip
@@ -3054,7 +3059,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **After a crash**: one question under the notices, until answered: SEND · DON'T SEND · ALWAYS SEND · WHAT'S SENT;
   closing it asks again at the next start; once sent, ADD A NOTE opens the Report dialog. It lies over the map and
   waits for a click, so it is shown outside raids only: while a raid loads or runs it steps aside, unanswered, and
-  is back when the raid is over (`WhileInRaid`; review of 2026-10-04, H9).
+  is back when the raid is over (`WhileInRaid`; review of 2026-10-04, H9). The map's floor picker steps aside while it
+  stands, as for a cue (UI QA pass of the squad grid, 2026-10-26, F1: at 900×560, inside the grid's strips, a six-floor
+  map's list lay over the box's lower right corner, 15 DIP in English and 35 in German); answering it brings the list back.
 
 ### Map drawing
 
@@ -3602,7 +3609,8 @@ spawns below).
 - **Room for labels on the right** (owner, 2026-10-09). The map writes a symbol's label to its right, so the whole map
   (a new map, a Plan row's preview, 0 and the button) and every framing (What's New's and the tour's previews, the raid
   replay) keep 150 DIP between what they show and the view's right edge (`Camera.LabelRoom`); the other sides keep
-  their padding (24 DIP for the whole map, 40 for a preview or replay, 90 for the tour). Until then the right side had
+  their padding (24 DIP for the whole map, 40 for a preview or replay, 90 for the tour; with the squad grid, inside its
+  strips: *The grid*). Until then the right side had
   only the padding, and on a wide map the rightmost names ran off the window (Customs: "Transit to I…", "Crossr…"; the
   tour's picked quest past its 90 DIP). The room is at most a fifth of the view's width (`Camera.LabelRoomShare`): at
   the smallest window, the map about 500 DIP wide, 150 would shrink a wide map by more than a quarter; 100 shrink it by
@@ -3730,7 +3738,8 @@ spawns below).
     empty ground around a map; visible on purpose from a second monitor. Measured with `shturmap-cli render` (its
     contrast line: the grid's pixels against the same view without it, inside the strips, the ground around the map left
     out): the 100 m lines' median ΔL* 19.5 on Streets' whole view at 1600 × 1000 and 23.6 at three times (the panel's E:
-    about 21; the quiet grid B had 11), Woods 14.7 and 13.0, Factory 14.9 to 17.3, Icebreaker 21 to 27. On the sheet
+    about 21; the quiet grid B had 11), Woods 14.6 and 13.0, Factory 14.9 to 17.3, Icebreaker 21 to 27; the CLI gives each
+    kind's median on dark ground (L* 8 to 32) and on light (over 40) too: Streets at three times 8.9 and 25.0. On the sheet
     (SheetPanel, L* about 6) the overlay steps a line up by about 4, so there the step is added instead: Ink at 19 % in the
     plus blend, about ΔL* 19 over the panel. The lines break under the map's names and the markers' labels (each box
     2 DIP larger) and run through nothing else; their runs are laid out with the frame's layout (`MapRenderer.GridOf`),
@@ -3738,10 +3747,19 @@ spawns below).
     12 to 20 px (below the whole map's view of the widest maps at the smallest window).
   - *The keypad*: at the overview a tick at each third of every 100 m line, 4 DIP each way and as strong as the line,
     the line's own pixel left alone; as the player zooms in, where a third of a square is 45 to 60 px (times the text
-    size), the ticks fade out and the thirds' lines fade in, Ink at 35 % in the overlay (ΔL* 7.7 on Streets at three
-    times, 5.2 on Woods: a step below the 100 m lines); nothing else moves. In a 1.2 s glide from Streets' whole view to
-    three times (`shturmap-cli frames streets-of-tarkov --scene plan --fix 40 2.5 120 --glide`) the fade takes frames 4
-    to 6, at 100 ms a frame.
+    size), the ticks fade out and the thirds' lines fade in, Ink at 35 % in the overlay and, on the artwork's drawn map,
+    a floor of lightening added: Ink at 7 of 255 in the plus blend, about six levels lighter whatever the ground, where the
+    overlay steps a dark ground up least (UI QA pass of the squad grid, 2026-10-26, F6). Median ΔL* with the floor (before
+    it), Streets and Woods at three times, Factory's whole view (its keypad in whole) with one quest's zones: Streets 9.9
+    (7.7), on its dark blocks 6.6 (3.7) and its light streets 11.9 (9.6); Woods 8.8 (6.2); Factory 11.9 (9.6), on its dark
+    ground 6.6 (3.7). A step below the 100 m lines on every ground (Streets 23.6, its dark blocks 8.9; Woods 13.0; Factory
+    23.6, its dark ground 8.9). Not on the empty ground around a map (the artwork's ground keeps it, as it keeps a
+    hazard's hatch), where the grid all but vanishes by design and the floor would draw the keypad as strong as the 100 m
+    lines; nor on tiles or the sheet. The pass's "Factory's dark floor" (ΔL* 1.0, 100 m lines 2.7) is that empty ground,
+    under the fills of every quest's zones (the CLI's example there activates every quest), and stays so. Nothing else
+    moves. In a 1.2 s glide from Streets' whole view to three times (`shturmap-cli frames streets-of-tarkov --scene plan
+    --fix 40 2.5 120 --glide`) the fade takes frames 5 and 6 (0.38, 1.00), at 100 ms a frame (frames 4 to 6 while the
+    whole map's view still reached under the strips).
   - *The strips*, pinned to the view while it pans, over everything the map draws: 22 DIP at the left and right with
     the rows' numbers, 18 at the top and bottom with the columns' letters, times the text size; the ground at 88 %, a
     `Line` hairline at their inner edge, and a `LineStrong` mark 5 DIP into them where each 100 m line meets them. Each
@@ -3751,9 +3769,13 @@ spawns below).
     square whose corner is out of view keeps its reference at the strip), semibold 10.5 in ink at 47 % on a dark halo,
     so it reads where it is looked for and otherwise stays back; a heard reference is found by reading, not counting.
     It is left out where anything placed lies under it (a symbol and its badges, a leader, a label, a map name, the
-    guide's plate, the scale bar, a chevron, the player's ring and tag, the readout, the sheet's caption) and in a square
-    shown less than 30 px either way. Woods' whole view at 1600 × 1000: 145 shown, 65 left out (the panel: 146 and 64);
-    Streets' 50 and 13.
+    guide's plate, the scale bar, a chevron, the player's ring and tag, the readout, the sheet's caption) or stands
+    close beside it, within a label's gap on its line (8 px; 3 above and below: UI QA pass of the squad grid, 2026-10-26,
+    F7, "A8" 3 px before "Crash Site" read as part of it), under the window's own controls (the WIKI MAP link with the
+    credit, the buttons with the floor list; the same pass: the link stood over "A9"), and in a square shown less than
+    30 px either way. Woods' whole view at 1600 × 1000, inside the strips: 132 shown, 93 left out; Streets' 46 and 17
+    (the panel: 146 and 64; the whole view as it was before it stepped inside the strips, without the gap 143 and 67, with
+    it 120 and 90).
   - *The player's reference*, only while a position is shown (a raid's, or the tour's example raid's; out of a raid
     there is no "you", and the replay's positions have none): on the marker's tag from the first moment, "D5-8" in the
     small dark tag, and with the age once it has one by principle 8, "D5-8 · 2 MIN OLD", larger and framed in sand from
@@ -3761,9 +3783,20 @@ spawns below).
     (owner, confirmed 2026-10-26: in sand, as the marker): "YOU" small in muted ink, the reference in the glance's large
     figure size (22) in sand, the age small, muted, and in sand once stale ("YOU D5-8 · 2 MIN OLD"), on a ground plate
     with a `LineStrong` hairline. Labels keep off it; a symbol under it is covered, the place being fixed. The repel
-    keeps symbols off the tag, as off the age tag before.
+    keeps symbols off the tag, as off the age tag before. While the in-raid glance's plate lies over it (at the smallest
+    window, for the plate's 6 s) it isn't drawn, its room still kept, and the marker's tag says the reference (UI QA pass
+    of the squad grid, 2026-10-26, F5: the plate's edge left "YOU C" showing, which read as broken; `MapScene.PlateOver`).
   - *The map's controls step inside the strips* (owner, confirmed 2026-10-26; "Screen anatomy", the map): the scale bar,
     the credit and the wiki link, the buttons and the floor list, the notes, the edge badge and its words, the chevrons.
+    And every framing with them (`Camera.Inset`; UI QA pass of the squad grid, 2026-10-26, F2: at 900×560 the raised
+    credit ran over "Transit to Interchange" at the whole map's foot, which the whole map's 24 DIP of padding had kept
+    clear of it before): the whole map's view, the previews, the replay's, the tour's and the roll call's keep their
+    padding and label room inside the strips, a head or foot of their own that reaches further taken as it is. The whole
+    map is so a little smaller in its view (Streets at 900×560 about 8 %). And no label, map name or plate is placed under
+    the window's controls while the grid shows (the WIKI MAP link with the credit, the buttons, the floor list, whose place
+    is kept while it steps aside so nothing moves as it goes and comes; `MapScene.ControlsOver`): in Plan at 900×560
+    "Transit to Interchange", written under its diamond, ran under the credit in the whole map's view too. Without the
+    grid, as before.
   - *The sheet's 10 m grid gives way* (owner, confirmed 2026-10-26: one grid in the app; §3, "The sheet").
   - *One setting*, "Grid on the map", on unless unticked ("Screen anatomy", settings); help says how a reference is read
     and said, and the legend has a row for it.

@@ -275,10 +275,12 @@ public sealed partial class DeskCardView : UserControl
         var stepper = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
         Button Step(string glyph, int by, string tip)
         {
+            // At least 24 high, and as high as its glyph at a larger text size (UI QA pass of the squad grid, F8: at 150 %
+            // the glyph took 24 DIP of 22).
             var button = new Button
             {
                 Width = 26,
-                Height = 24,
+                MinHeight = 24,
                 Padding = new Thickness(0),
                 Content = new TextBlock { Text = glyph, FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center },
             };

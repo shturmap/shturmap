@@ -9,7 +9,8 @@ namespace Shturmap.App;
 // settings' one tick, on unless unticked, and the map's own controls stepping inside its strips while it shows (the
 // buttons and the floor list, the notes, the wiki link and the credit, the replay's band), so no letter or number of the
 // strips lies under a control. The renderer keeps what it draws itself inside them (the scale bar, the edge badge, the
-// chevrons).
+// chevrons), frames every view inside them (Camera.Inset) and keeps its names and the squares' references off the
+// controls (ControlsOverMap).
 public sealed partial class MainWindow
 {
     private bool _gridLoaded;
@@ -62,5 +63,61 @@ public sealed partial class MainWindow
         ReplayBand.Margin = new Thickness(strips.Left, 0, 68 + strips.Right, 46 + strips.Bottom);
         if (TourOpen)
             PlaceTour();
+        // Where they now stand, after the layout pass.
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, ControlsOverMap);
+    }
+
+    // Watched for the map's drawing: as they change their size, show or go, and as the map changes its own.
+    private void InstallControlsOverMap()
+    {
+        MapFoot.SizeChanged += (_, _) => ControlsOverMap();
+        MapControls.SizeChanged += (_, _) => ControlsOverMap();
+        Map.SizeChanged += (_, _) => ControlsOverMap();
+        MapFoot.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ControlsOverMap());
+        MapControls.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ControlsOverMap());
+    }
+
+    // The floor list's place while it stands, for while it steps aside (a cue, a plate, the crash question): the names keep
+    // off it all the same, so they don't move as it goes and comes back.
+    private (Windows.Foundation.Rect Over, int Floors)? _floorsOver;
+
+    // The map's own controls over the map while the grid shows, for its drawing: its names and labels keep off the WIKI MAP
+    // link with the credit, the buttons and the floor list, and the squares' references are left out under them (UI QA pass
+    // of the squad grid, 2026-10-26, F2: inside the strips the credit ran over "Transit to Interchange" and the link stood
+    // over "A9"; MapView.ControlsOver). Without the grid, none: everything stands where it did.
+    private void ControlsOverMap()
+    {
+        if (_stopped)
+            return;
+        var over = new List<Windows.Foundation.Rect>();
+        if (Map.ShowGrid)
+        {
+            Windows.Foundation.Rect Of(FrameworkElement control) =>
+                control.TransformToVisual(Map).TransformBounds(new Windows.Foundation.Rect(0, 0, control.ActualWidth, control.ActualHeight));
+            bool Shows(FrameworkElement control) => control.Visibility == Visibility.Visible && control.ActualWidth >= 1 && control.ActualHeight >= 1;
+            // The link and the credit each on its own: right of the link, above the credit, a name may stand.
+            if (MapFoot.Visibility == Visibility.Visible)
+                over.AddRange(MapFoot.Children.OfType<FrameworkElement>().Where(Shows).Select(Of));
+            if (MapControls.Visibility == Visibility.Visible)
+            {
+                // Each of the column's parts on its own: the floor list is wider than the buttons.
+                foreach (var control in MapControls.Children.OfType<FrameworkElement>())
+                {
+                    if (control is Microsoft.UI.Xaml.Controls.ItemsControl floors)
+                    {
+                        if (Shows(floors))
+                            _floorsOver = (Of(floors), _floorChoices.Count);
+                        if (_floorChoices.Count > 0 && _floorsOver is { } kept && kept.Floors == _floorChoices.Count)
+                            over.Add(kept.Over);
+                    }
+                    else if (Shows(control))
+                    {
+                        over.Add(Of(control));
+                    }
+                }
+            }
+        }
+        if (!over.SequenceEqual(Map.ControlsOver))
+            Map.ControlsOver = over;
     }
 }
