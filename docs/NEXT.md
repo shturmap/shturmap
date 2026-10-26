@@ -131,6 +131,59 @@ folder of its own, on fcdd49c (its pictures outside the repository): FAIL (0 blo
   words: right, the example tag inside the cut-out shows the square while the readout stays dimmed; the file's name gives
   the position and Shturmap the square, a fair shorthand.
 
+**Fixed (2026-10-26, 0d9383e).** F1, F2, F3, F5, F6, F7 and F8, on 3978552; F4 (states not run) and F9 (the
+owner's) not taken. DESIGN.md says each where its rule lives. Checked with the pass's repro runs (folder build,
+`-Window 900x560` and `1600x900`, each run with a data folder of its own; the CLI's renders), pictures outside the
+repository:
+
+- F1: the floor list steps aside while the crash question stands, as for a cue, What's New's plate and the glance's
+  (`ShowFloors`); answering brings it back. Hiding over keeping the box clear: the design's rule for everything that
+  stands over the map's top for a while, and a narrower box would wrap again. `--show-crash` at 900×560, English and
+  German: no list over the box.
+- F2: every framing works inside the grid's strips (`Camera.Inset`, `MapRenderer.GridInset`; MapView and the CLI set
+  it): the whole map's view, the previews, the replay's, the tour's and the roll call's keep their padding and label room
+  inside the strips, a head or foot of their own that reaches further taken as it is. So the whole map keeps from the
+  raised credit what its 24 DIP kept from the window's edge before, and is a little smaller (Streets at 900×560 about
+  8 %, at the CLI's 1600 × 1000 its squares 111 px for 115). Before the grid nothing kept the map's names off the
+  window's controls but a framing's padding, so there were no keep-out areas to move, and the padding alone didn't do:
+  in Plan at 900×560 "Transit to Interchange", written under its diamond, still ran under the credit. So, while the grid
+  shows, no label, map name or plate is placed under the window's controls, and no square's reference (the WIKI MAP
+  link and the credit, each button, the floor list, whose place is kept while it steps aside so nothing moves as it
+  goes; `MapScene.ControlsOver`, from the window's `ControlsOverMap`; at the new view the link had stood over "A9");
+  without the grid, as before. `-Glance 1` and `2` at 900×560: "Transit to Interchange" and its diamond above the
+  credit, on the link's line about 9 px after its arrow (about 18 before the grid); "Kellereingang", cut by the buttons
+  before, left of its symbol; Plan: the transit's name dropped, no side free (pointing still names it); the raid's roll
+  call and the 1600×900 views clear of the foot.
+- F3: the sheet's caption stands under the player's reference where that lies over the sheet's corner, in its corner
+  otherwise (`SheetCaption`; DESIGN.md §3 says so). In The Lab's `--sheet` render at 1600 × 1000 the view inside the
+  strips leaves the corner clear of the reference, the caption whole in its place; `GridTests` puts the corner under it.
+- F5: under the glance's plate the readout isn't drawn, its room still kept, so nothing moves (`MapScene.PlateOver`, set
+  from where the plate stands; `PlateOverMap`); the marker's tag says the reference. Hiding over moving the plate: the
+  plate is the 6 s thing and has half the map's height at the smallest window, the tag carries the square meanwhile.
+  `-Glance 1` and `2` at 900×560 in English and German: no "YOU C", no "DU".
+- F6: on the artwork's drawn map the keypad's lines get a floor of lightening, Ink at 7 of 255 in the plus blend beside
+  the overlay, masked by the artwork's ground (as a hazard's hatch is), so not on the empty ground around a map, where
+  the grid all but vanishes by design. Median ΔL* before and after, `shturmap-cli render` at 1600 × 1000 (its grid line
+  now also gives each kind's median on dark ground, L* 8 to 32, and on light, over 40): Factory with one quest's zones
+  (`--pick "Black Swan"`), whole view, keypad 9.6 → 11.9, on its dark ground 3.7 → 6.6, on its light 9.6 → 11.9, the
+  100 m lines 23.6 (dark 8.9); Streets at three times 7.7 → 9.9, dark blocks 3.7 → 6.6, light 9.6 → 11.9, the 100 m
+  lines 23.6 (dark 8.9, light 25.0); Woods at three times 6.2 → 8.8 (dark 6.2 → 8.8, light 8.1 → 9.4), the 100 m lines
+  13.0 (dark 15.4, light 15.9). The pass's "Factory's dark floor" (the default render, every quest active there since
+  none of the example quests is on Factory) is the empty ground around the building, (11, 12, 11) without zones, under
+  the fills of some 38 quest zones: keypad 1.0 → 1.0, light floor 6.1 → 7.5, the 100 m lines 2.7 there; left so, as the
+  floor would have drawn the keypad stronger than the 100 m lines on it.
+- F7: a reference keeps a label's gap (8 px) from anything beside it on its line and 3 px above and below, and is left
+  out where something stands closer. Woods' overview at 1600 × 1000: 132 shown, 93 left out (with F2's view; at the old
+  view 120 and 90; the pass 143 and 67); Streets 46 and 17 (50 and 13). Plan at 1600×900: no reference before "Crash
+  Site".
+- F8: the flea price stepper's buttons are at least 24 high (`MinHeight` for `Height`), so at 150 % they grow with their
+  glyph: `--text-scale 1.5` at 900×765 on the developer build, settings' layout file without a problem.
+- Checked beside: the tour's chapter 5 and What's New at 900×560 (framings inside the strips, the cut-out's example
+  whole); the glide's keypad fade now takes frames 5 and 6; `GridTests` for the framing, the controls, the caption, the
+  plate and the gap; the suite passed (2668, 41 skipped); the layout check (`-States plan,raid,crash,glance`, 900x560
+  and 1600x900) passed in English, German and the pseudo-language, which flags only the glance's "BODY" (the game's word,
+  kept English). No text changed.
+
 ## 2026-10-26: the overnight run's five decisions
 
 **Decided** (owner, 2026-10-26, on the session's decision page; the page stays outside the repository). Each was found
