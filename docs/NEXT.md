@@ -305,6 +305,38 @@ the repository): FAIL (0 blocks, 3 should, 3 nits).
 - Proposed: the drafted replay of 0.7.0's What's New lines (`whatsnew 0.7.0 <n>`, a still, `whatsnew 0.7.0 click <n>`,
   a still, `tour end`, for each line) as `tools\qa\whatsnew-lines.devscript` with its `.md`.
 
+**Fixed (2026-10-26)**, for a re-check by someone else; F3 and F5 left to the next pass and the data refresh.
+F1: chapter 1's WHAT IT READS gains a line, "Your inventory and loot in a raid screenshot" („Inventar und Loot in einem
+Raid-Screenshot“), in `docs/tour.md` and `docs/tour.de.md`, and 0.7.0's notes say so; looked at in both languages at
+900×560, 1600×900 and the default window (`-PlanOnly -Tour 1`): the plate whole above the band at each.
+F2: the cause is the step's length, not a second app (run alone on the Debug build, the replay failed the same way at
+t1 and t3 in one run of two, and had no `cue.png` there in the other). With the PC busy, as in the pass, each picture waited
+some 0.3 to 0.5 s for a frame, and the developer view's two tabs made a `snapshot` step about 3 s at both sizes, so t1 and t3 began
+at 6.0 s after the list, past the title's fade (5.8 s): a cue whose fade has ended but which hasn't gone yet is drawn
+with no pixel (t3's empty `cue.png`), and when the fade's end collapses the cue during the render, RenderTargetBitmap
+throws "Value does not fall within the expected range" (t1); the element is 2160×291 px, far under the bitmap's limits.
+The open point of 2026-10-16 (`--snapshot` failing so under three runs at once) may be the same race, renders slowed
+by the load: a guess, not checked. Now the step ends with the window's pictures and the view's tabs follow while the
+script goes on (`exit` waits for them); a cue drawn empty isn't written and one gone while drawn is a log line, not a
+failed step (`MainWindow.Dev`, `RenderToPngAsync`). The step now takes 0.15 to 1.4 s (a small window on a quiet PC to
+the default one on a busy PC), so no fixed wait puts a still at one moment: the roll call's waits are 2.8, 0.9 and 2.5,
+and its t1 and t3 came at 3.9 to 5.0 s in the runs, each with its `cue.png`, in English and German; the `.md` says how
+to judge one that comes early or late. The shorter step moved the other replays' stills earlier: `update-ready` (waits
+1.4 and 3.7), `whatsnew-tour-line` (3 and 5) and `operational-feedback` (`wait 1` before `cue`) were retimed and run
+again, their `.md`s with the moments measured; the update band's gold copy (`UpdateBandGlow`) is a layer for the
+layout check now, as a glow's copy is (a still in its glow reported text over text).
+F4: the pinned line's name is `Fit.MayTrim` (`DeskCardView`); the desk replay's `pinmore` has no problem in German.
+F6: `update-ready.md` names "<next> · <NAME>" and how to read it; `whatsnew-tour-line.md` and `extract-roll-call.md`
+"n OF m", m all of Customs' PMC extracts, as the rail says.
+The drafted replay is `tools\qa\whatsnew-lines.devscript` with its `.md`: the newest card's lines (up to five), no
+version named; run in both languages and at 900×560 on 0.7.0, each tap opened its chapter (2, 1, 7, 6, 5), no layout
+problem.
+Noticed: the desk replay's stills now catch the copy notice standing over STASH (its text over the region's head, six
+layout files a language: the pass's "notices over the desk, which the design draws so"); `operational-feedback`'s t0
+once had its decoding title as an "overflow" (scrambled glyphs measured in two lines, drawn in one), not its timing's
+doing. Proposed: a script step that waits until a moment after a mark (`mark`, then `at <s>`) would put each still
+at its moment whatever the step's length.
+
 ## 2026-10-25: the layout round: a steady desk, the reading's faults, the trader's task view
 
 **The ask** (owner, 2026-10-25, after the test of 2026-10-19): "From the last testing session it is clear that we have to

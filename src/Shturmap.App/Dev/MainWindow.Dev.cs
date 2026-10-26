@@ -268,9 +268,9 @@ public sealed partial class MainWindow
     /// <summary>
     /// The window and the map as PNGs (as "--snapshot" does), the cue alone while one is up, and the developer view's two
     /// tabs when it is open. The step ends with the window's pictures: the view's tabs are taken after them while the
-    /// script goes on (release UI QA pass of 0.7.0, F2: each picture waits about 0.3 to 0.5 s for a frame in a quiet run,
-    /// so the tabs made a step of about 3 s, and a still after another inside a motion, the roll call's t1 and t3, came
-    /// after the cue had gone).
+    /// script goes on (release UI QA pass of 0.7.0, F2: with the PC busy each picture waited some 0.3 to 0.5 s for a
+    /// frame, so the tabs made a step of about 3 s, and a still after another inside a motion, the roll call's t1 and
+    /// t3, came after the cue had gone).
     /// </summary>
     internal async Task DevSnapshotAsync(string folder)
     {
