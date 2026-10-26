@@ -36,6 +36,9 @@ switch (command)
     case "frames":
         await Shturmap.Cli.Frames.RunAsync(args.Skip(1).ToList());
         break;
+    case "grid":
+        await Grid();
+        break;
     case "watch":
         await Watch(int.TryParse(args.ElementAtOrDefault(1), out var seconds) ? seconds : 20);
         break;
@@ -88,10 +91,11 @@ switch (command)
                                             --pick <quest name> picks that quest (with the locks of its keys
                                             and the bosses it targets); --point-exit <extract name> draws it as
                                             pointing at that extract does (a gated one lights its switches, with
-                                            the guide to the first)
+                                            the guide to the first); --no-grid without the squad grid; --age <minutes>
+                                            the last position that old (its tag and the grid's readout)
             shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout|plan] [--every <ms>]
                                 [--count <n>] [--fix <x> <y> <z>] [--glide [ms] | --notch [ms] | --step <factor> [ms]
-                                | --sway [n]] [--toward <name>] [--viewport <W>x<H>]
+                                | --sway [n]] [--toward <name>] [--viewport <W>x<H>] [--grid off] [--quests all]
                                             draw a map's animations headless, frame by frame: an extract list just
                                             read (list-read: every other extract lit, two "??:??:??", the rest struck
                                             out, at a PMC spawn or --fix; whatsnew-extracts: What's New's preview, no
@@ -111,7 +115,13 @@ switch (command)
                                             says how far off its place a symbol stood each time; --toward: glide and
                                             turn the wheel at that symbol's place instead of the position;
                                             --viewport: the view's size instead of 1600x1000 (500x481: the map at
-                                            the smallest window, 900x560)
+                                            the smallest window, 900x560); --grid off: without the squad grid;
+                                            --quests all: every quest active; summary.txt ends with the frames'
+                                            drawing times
+            shturmap-cli grid                every map's squad grid: its A1 as the app fixes it (GridOrigins) and as the data's
+                                            bounds would put it, its squares across and down, flagged NEW (no entry: it
+                                            starts at its bounds, add one), MOVED (the bounds now start elsewhere), WIDE
+                                            (more than 24 columns), TURNED (a rotation not a multiple of 90°)
             shturmap-cli watch [seconds]     run the companion headless and print what it sees
             shturmap-cli simulate            play a scripted Streets raid against a temporary fake game folder
             shturmap-cli quests [mode]       list active quests with every stored observation behind them
@@ -650,12 +660,24 @@ static async Task Render(string mapName, string output, List<string> screenshots
         content = Shturmap.Map.MapContentBuilder.Build(data, map.Id, data.Tasks.Keys.ToList(), new HashSet<string>());
     var scene = new Shturmap.Map.MapScene(definition, artwork, tiles) { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers };
 
+    // The squad grid as the app starts, on ("--no-grid": the setting unticked).
+    scene.ShowGrid = !screenshots.Remove("--no-grid");
+    // "--age <minutes>": the last position that old when drawn (its tag and the grid's readout say it), not the
+    // screenshot name's own time.
+    double? ageMinutes = null;
+    if (screenshots.IndexOf("--age") is var ag and >= 0 && ag + 1 < screenshots.Count)
+    {
+        ageMinutes = double.Parse(screenshots[ag + 1], System.Globalization.CultureInfo.InvariantCulture);
+        screenshots.RemoveRange(ag, 2);
+    }
     var fixes = screenshots.Select(s => Shturmap.Core.Screenshots.ScreenshotName.TryParse(s, out var info) ? info : null)
         .Where(i => i?.Position is not null).ToList();
     if (fixes.Count > 0)
     {
         var last = fixes[^1]!;
-        scene.Player = new Shturmap.Map.PlayerFix(last.Position!.Value, last.YawDegrees, last.TakenAt);
+        scene.Player = new Shturmap.Map.PlayerFix(last.Position!.Value, last.YawDegrees, ageMinutes is { } minutes ? DateTime.Now - TimeSpan.FromMinutes(minutes) : last.TakenAt);
+        if (scene.ShowGrid && scene.Grid.At(last.Position.Value) is { } reference)
+            Console.WriteLine($"Position ({last.Position.Value.X:0.#}, {last.Position.Value.Z:0.#}): grid {reference}");
         scene.Trail = fixes.SkipLast(1).Select(f => f!.Position!.Value).ToList();
         scene.Floor = Shturmap.Core.Maps.FloorResolver.LayerFor(definition, last.Position.Value);
     }
@@ -730,9 +752,93 @@ static async Task Render(string mapName, string output, List<string> screenshots
         using var png = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 90);
         await File.WriteAllBytesAsync(path, png.ToArray());
         Console.WriteLine($"{path}: drawn in {drawMs:0.0} ms (CPU raster)");
+        if (scene.GridShown is { } grid)
+            GridContrast(camera, scene, grid, image);
     }
     Console.WriteLine($"{content.Markers.Count} markers, {content.Zones.Count} zones; objectives here: " +
                       string.Join("; ", content.Objectives.Select(o => $"{o.Quest.Name}: {o.Objective.Description} ({o.Places.Count} places)")));
+}
+
+// The squad grid's lines against the same view without them: how much lighter (CIE L*) each kind's pixels are inside the
+// strips, over the map's artwork or sheet (pixels the plain picture has at L* 8 or less, the ground around the map, left
+// out), and how many references the frame placed and left out. The panel's E measured a median ΔL* of about 21 for the
+// 100 m lines on Streets at its view 3 (docs/DESIGN.md "Map drawing", *The grid*).
+static void GridContrast(Shturmap.Map.Camera camera, Shturmap.Map.MapScene scene, Shturmap.Map.MapRenderer.GridLayout grid, SkiaSharp.SKImage withGrid)
+{
+    var (w, h) = ((int)camera.Viewport.Width, (int)camera.Viewport.Height);
+    using var plainSurface = SkiaSharp.SKSurface.Create(new SkiaSharp.SKImageInfo(w, h));
+    scene.ShowGrid = false;
+    Shturmap.Map.MapRenderer.Render(plainSurface.Canvas, camera, scene);
+    using var plainImage = plainSurface.Snapshot();
+    scene.ShowGrid = true;
+    using var plain = SkiaSharp.SKBitmap.FromImage(plainImage);
+    using var lit = SkiaSharp.SKBitmap.FromImage(withGrid);
+    static double Lstar(SkiaSharp.SKColor c)
+    {
+        static double Lin(byte v) { var s = v / 255.0; return s <= 0.04045 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4); }
+        var y = 0.2126 * Lin(c.Red) + 0.7152 * Lin(c.Green) + 0.0722 * Lin(c.Blue);
+        return y > 216.0 / 24389 ? 116 * Math.Cbrt(y) - 16 : y * 24389.0 / 27;
+    }
+    var inner = grid.Inner;
+    string Measure(IEnumerable<float> xs, IEnumerable<float> ys)
+    {
+        var steps = new List<double>();
+        void At(int x, int y)
+        {
+            if (x < inner.Left + 2 || x > inner.Right - 3 || y < inner.Top + 2 || y > inner.Bottom - 3)
+                return;
+            var before = Lstar(plain.GetPixel(x, y));
+            if (before <= 8)
+                return;
+            steps.Add(Lstar(lit.GetPixel(x, y)) - before);
+        }
+        foreach (var x in xs)
+        {
+            for (var y = (int)Math.Max(grid.Extent.Top, 0); y < Math.Min(grid.Extent.Bottom, h); y += 2)
+                At((int)x, y);
+        }
+        foreach (var y in ys)
+        {
+            for (var x = (int)Math.Max(grid.Extent.Left, 0); x < Math.Min(grid.Extent.Right, w); x += 2)
+                At(x, (int)y);
+        }
+        if (steps.Count == 0)
+            return "none in view";
+        steps.Sort();
+        return FormattableString.Invariant($"median ΔL* {steps[steps.Count / 2]:0.0} (10–90 % {steps[steps.Count / 10]:0.0} to {steps[steps.Count * 9 / 10]:0.0}, {steps.Count} px)");
+    }
+    Console.WriteLine($"  grid: 100 m lines {Measure(grid.Verticals, grid.Horizontals)}; keypad lines at {grid.Keypad:0.00} {Measure(grid.ThirdVerticals, grid.ThirdHorizontals)}" +
+                      $"; {grid.References.Count} references, {grid.LeftOut} left out; squares {(grid.Verticals.Length > 1 ? grid.Verticals[1] - grid.Verticals[0] : grid.Extent.Width):0} px wide");
+}
+
+// The squad grid's audit (docs/UPDATES.md): each map's A1 as the app fixes it and as the data's bounds would put it, so a
+// new map or bounds that moved are seen after a tarkov.dev update. A new map gets its entry in GridOrigins (the corner
+// printed here) and in GridOriginsTests.
+static async Task Grid()
+{
+    var http = new CachedHttp(CachedHttp.CreateClient(), Shturmap.Session.AppPaths.Default.DataCache);
+    var data = await new GameDataLoader(http).LoadAsync(GameMode.Pve, "en");
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+    foreach (var definition in data.MapDefinitions.OrderBy(d => d.Key, StringComparer.Ordinal))
+    {
+        var grid = Shturmap.Core.Maps.SquadGrid.For(definition);
+        var bounds = Shturmap.Core.Maps.SquadGrid.FromBounds(definition);
+        var flags = new List<string>();
+        if (!grid.Fixed)
+            flags.Add("NEW");
+        else if (grid.Corner != bounds.Corner)
+            flags.Add("MOVED");
+        if (grid.Columns > Shturmap.Core.Maps.SquadGrid.Letters.Length)
+            flags.Add("WIDE");
+        if (definition.CoordinateRotation % 90 != 0)
+            flags.Add("TURNED");
+        var kind = definition.SvgPath is not null ? "svg" : definition.TilePath is not null ? "tiles" : "sheet";
+        var also = definition.AltKeys.Count > 0 ? "; also " + string.Join(", ", definition.AltKeys) : "";
+        var flagged = flags.Count > 0 ? "  " + string.Join(" ", flags) : "";
+        var last = Shturmap.Core.Maps.SquadGrid.Letter(grid.Columns - 1);
+        Console.WriteLine(string.Create(inv,
+            $"{definition.Key,-22} rot {definition.CoordinateRotation,3} {kind,-5} A1 at x {grid.Corner.X,6:0}, z {grid.Corner.Z,6:0} (bounds: x {bounds.Corner.X,6:0}, z {bounds.Corner.Z,6:0}); {grid.Columns} x {grid.Rows} squares, A to {last}, 1 to {grid.Rows}{also}{flagged}"));
+    }
 }
 
 static async Task Data(string mode, string language)

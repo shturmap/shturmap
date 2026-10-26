@@ -213,7 +213,7 @@ public sealed partial class MainWindow
     private const double RollTriangleWidth = 20;
 
     // DIPs the rows keep from each side of the map's column: the map's buttons and 8 more.
-    private const double RollClearOfButtons = 60;
+    private double RollClearOfButtons => 60 + GridStrips.Right;
 
     // A name's line at most, in DIPs, and the width the names now break at (FitRollRows).
     private const double RollNameMost = 320;

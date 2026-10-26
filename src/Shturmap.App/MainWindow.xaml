@@ -371,6 +371,11 @@
                 <TextBlock TextWrapping="Wrap">
                   <Run Text="{x:Bind local:ViewTexts.HelpExit}" /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="raid" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="{x:Bind local:ViewTexts.HelpShowMe}" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
+                <!-- The squad grid (owner, 2026-10-26): how a reference is read and said; SHOW ME opens the chapter whose example
+                     position shows YOU with its square. -->
+                <TextBlock TextWrapping="Wrap">
+                  <Run Text="{x:Bind local:ViewTexts.HelpGrid}" /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="key" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="{x:Bind local:ViewTexts.HelpShowMe}" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="{x:Bind local:ViewTexts.HelpQuestOrder}" />
                 <TextBlock TextWrapping="Wrap">
                   <Run Text="{x:Bind local:ViewTexts.HelpPointAtQuest}" /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="pick" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="{x:Bind local:ViewTexts.HelpShowMe}" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
@@ -539,6 +544,24 @@
                     </HyperlinkButton>
                   </controls:WrapRow>
                 </Grid>
+                <!-- The squad grid on the map (owner, 2026-10-26: one setting, on by default; docs/DESIGN.md §4, "Map drawing",
+                     *The grid*): a choice applies at once (MainWindow.Grid). -->
+                <ToggleButton IsChecked="{x:Bind ViewModel.MapGrid, Mode=OneWay}" Click="OnMapGridClick" Margin="0,6,0,0"
+                              Style="{StaticResource TickToggle}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsMapGrid}">
+                  <Grid ColumnSpacing="9">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                            Background="{x:Bind StudyBoxBrush(ViewModel.MapGrid), Mode=OneWay}">
+                      <FontIcon Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}"
+                                Visibility="{x:Bind ShownIfTrue(ViewModel.MapGrid), Mode=OneWay}" />
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{x:Bind local:ViewTexts.SettingsMapGrid}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  </Grid>
+                </ToggleButton>
+                <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind MapGridNote}" />
                 <!-- Screenshots deleted once read (owner, 2026-10-04: "a mode that auto-deletes screenshots after a couple
                      of seconds grace period"; menu screenshots too since 2026-10-14). Off unless ticked: it is the one
                      thing Shturmap changes outside its own folders (docs/DESIGN.md §2). -->
@@ -1750,7 +1773,9 @@
             <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Top" Margin="0,7,0,0" />
             <StackPanel Grid.Column="1" Spacing="6">
               <TextBlock Text="{x:Bind ViewModel.CrashQuestion, Mode=OneWay}" TextWrapping="Wrap" />
-              <StackPanel Orientation="Horizontal" Spacing="18" Visibility="{x:Bind ShownIfTrue(ViewModel.CrashAsking), Mode=OneWay}">
+              <!-- The four answers wrap where the notes' room is short (the smallest window inside the grid's strips, German:
+                   WAS GESENDET WIRD ran 12 DIP past it; layout check of 2026-10-26). -->
+              <controls:WrapRow HorizontalSpacing="18" VerticalSpacing="4" Visibility="{x:Bind ShownIfTrue(ViewModel.CrashAsking), Mode=OneWay}">
                 <HyperlinkButton Padding="0" Click="OnCrashSendClick">
                   <TextBlock Text="{x:Bind local:ViewTexts.CrashSend}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                 </HyperlinkButton>
@@ -1763,7 +1788,7 @@
                 <HyperlinkButton Padding="0" Click="OnCrashDetailsClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.CrashWhatsSentTip}">
                   <TextBlock Text="{x:Bind local:ViewTexts.CrashWhatsSent}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
-              </StackPanel>
+              </controls:WrapRow>
               <HyperlinkButton Padding="0" Click="OnCrashNoteClick" Visibility="{x:Bind ShownIfTrue(ViewModel.CrashSent), Mode=OneWay}"
                                ToolTipService.ToolTip="{x:Bind local:ViewTexts.CrashAddNoteTip}">
                 <TextBlock Text="{x:Bind local:ViewTexts.CrashAddNote}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
@@ -1800,7 +1825,8 @@
         </Border>
         </StackPanel>
 
-        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16" Spacing="4" Visibility="{x:Bind ShownIfNot(ViewModel.DeskUp), Mode=OneWay}">
+        <!-- Inside the grid's strips while the grid shows, as the notes and the foot are (MainWindow.Grid, PlaceInsideGrid). -->
+        <StackPanel x:Name="MapControls" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16" Spacing="4" Visibility="{x:Bind ShownIfNot(ViewModel.DeskUp), Mode=OneWay}">
           <!-- Floors, top first. Shturmap shows yours (dot) from each screenshot; a pick here holds until the next one. -->
           <ItemsControl ItemsSource="{x:Bind ViewModel.Floors, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,0,12"
                         ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapFloorsTip}">

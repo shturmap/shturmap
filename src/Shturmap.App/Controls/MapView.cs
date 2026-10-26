@@ -147,9 +147,39 @@ public sealed partial class MapView : Grid
 
     private bool BreathEffects() => !_staticHighlight && (AlwaysAnimate || new Windows.UI.ViewManagement.UISettings().AnimationsEnabled);
 
+    /// <summary>
+    /// The squad grid on every scene this view shows (owner, 2026-10-26; settings' "Grid on the map", on unless unticked;
+    /// docs/DESIGN.md §4, "Map drawing", *The grid*); a change redraws the scene shown at once.
+    /// </summary>
+    public bool ShowGrid
+    {
+        get => _showGrid;
+        set
+        {
+            _showGrid = value;
+            if (_scene is not null)
+            {
+                _scene.ShowGrid = value;
+                Redraw();
+            }
+        }
+    }
+
+    private bool _showGrid = true;
+
+    // The maps whose grid starts at tarkov.dev's bounds for want of a fixed A1 (a map added since; GridOrigins), said once
+    // each in the app log.
+    private readonly HashSet<string> _gridUnfixedSaid = [];
+
     /// <summary>Shows a new map, fitted to the window, or at a view saved earlier with <see cref="View"/>.</summary>
     public void SetScene(MapScene? scene, (Shturmap.Core.Maps.MapPoint Center, double Zoom)? view = null)
     {
+        if (scene is not null)
+        {
+            scene.ShowGrid = _showGrid;
+            if (!scene.Grid.Fixed && _gridUnfixedSaid.Add(scene.Definition.Key))
+                Shturmap.Session.AppLog.Warn($"Map grid: no fixed A1 for the map '{scene.Definition.Key}'; its grid starts at tarkov.dev's bounds until it gets one (GridOrigins)");
+        }
         // A tile render redraws as its tiles arrive (they load in the background).
         if (_scene?.Tiles is { } before)
             before.Changed -= OnTilesChanged;

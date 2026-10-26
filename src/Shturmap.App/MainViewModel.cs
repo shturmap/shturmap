@@ -546,6 +546,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial bool StudyLogOn { get; set; }
 
+    /// <summary>"Grid on the map" in settings: the squad grid, on unless the player unticked it (owner, 2026-10-26).</summary>
+    [ObservableProperty] public partial bool MapGrid { get; set; } = true;
+
     /// <summary>"Delete screenshots after reading" in settings: off unless the player ticked it.</summary>
     [ObservableProperty] public partial bool DeleteScreenshots { get; set; }
 

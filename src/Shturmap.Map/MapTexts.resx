@@ -148,9 +148,13 @@
     <value>Loot containers, on a map without artwork: faint dots.</value>
     <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
   </data>
+  <data name="LegendGrid" xml:space="preserve">
+    <value>The grid: 100 m squares, lettered across and numbered down, each named in its corner; thirds as on a number pad (D5-8 is the top middle of D5).</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. The squad grid: lines 100 m apart, the columns' letters A to Z (no I or O) along the top and bottom, the rows' numbers along the sides, each square's name (D5) at its top-left corner; each square cut in thirds each way, its nine parts numbered as on a computer's number pad (7 8 9 on top). D5-8 must stay as it is.</comment>
+  </data>
   <data name="LegendSheet" xml:space="preserve">
-    <value>No artwork for this map: a sheet with a 10 m grid, from data only.</value>
-    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+    <value>No artwork for this map: a sheet from data only, with its grid.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. The grid is the squad grid's 100 m, or with the grid turned off in settings the sheet's own 10 m.</comment>
   </data>
   <data name="MarkerExtract" xml:space="preserve">
     <value>Extract</value>
@@ -202,11 +206,11 @@
   </data>
   <data name="MapSheetCaption" xml:space="preserve">
     <value>NO ARTWORK FOR THIS MAP · GRID {spacing} M</value>
-    <comment>Map, top left, on a map without artwork, drawn as a sheet from the data. {spacing}: the grid's spacing in metres, 10.</comment>
+    <comment>Map, top left, on a map without artwork, drawn as a sheet from the data. {spacing}: the grid's spacing in metres, 100 (the squad grid) or 10 (the sheet's own, with the grid turned off).</comment>
   </data>
   <data name="MapSheetCaptionNoFloors" xml:space="preserve">
     <value>NO ARTWORK FOR THIS MAP · GRID {spacing} M · NO FLOOR DATA</value>
-    <comment>As MapSheetCaption, on a map whose data has no floors either (every marker is drawn on one plane). {spacing}: the grid's spacing in metres, 10.</comment>
+    <comment>As MapSheetCaption, on a map whose data has no floors either (every marker is drawn on one plane). {spacing}: the grid's spacing in metres, 100 or 10.</comment>
   </data>
   <data name="MapSniperZone" xml:space="preserve">
     <value>SNIPER ZONE</value>
@@ -239,6 +243,18 @@
   <data name="PlayerAgeHoursOld" xml:space="preserve">
     <value>{hours} H OLD</value>
     <comment>Map: a small tag in capitals beside a marker; short. As PlayerAgeMinutesOld, from an hour on. {hours}: whole hours.</comment>
+  </data>
+  <data name="PlayerTagMinutesOld" xml:space="preserve">
+    <value>{reference} · {minutes} MIN OLD</value>
+    <comment>Map: a small tag in capitals beside the player's position, with the grid on, once the position is a minute old: the grid square and how old the position is; short. {reference}: the square and its ninth, as players say it, D5-8 (the same in every language). {minutes}: whole minutes. As PlayerAgeMinutesOld with the reference before it.</comment>
+  </data>
+  <data name="PlayerTagHoursOld" xml:space="preserve">
+    <value>{reference} · {hours} H OLD</value>
+    <comment>As PlayerTagMinutesOld, from an hour on. {reference}: D5-8. {hours}: whole hours.</comment>
+  </data>
+  <data name="MapGridYou" xml:space="preserve">
+    <value>YOU</value>
+    <comment>Map, top left, with the grid on, while your position is shown: the small label before your grid square in large type ("YOU D5-8 · 2 MIN OLD"), so a squad can be told where you are. Capitals; one short word.</comment>
   </data>
   <data name="ReplayMinute" xml:space="preserve">
     <value>{minute} MIN IN</value>

@@ -54,6 +54,7 @@ public sealed partial class MainWindow
         FitStatusBar();
         FitGlance();
         Map.Redraw();
+        PlaceInsideGrid();
         ApplySmallestSize();
     }
 

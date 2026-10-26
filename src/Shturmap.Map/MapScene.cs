@@ -152,6 +152,10 @@ public sealed class MapScene
     /// in once the view is still (MapView), and the frames tool records where it stood.</summary>
     public MapRenderer.ScaleBar? ScaleBarShown => LastLayout?.Layout.Scale;
 
+    /// <summary>The squad grid as the last frame drew it (null before one, or without the grid): its lines, words and the
+    /// player's readout, for the tests and the developer tools that measure it.</summary>
+    public MapRenderer.GridLayout? GridShown => LastLayout?.Layout.Grid;
+
     /// <summary>How the last frame placed the symbols set apart on leaders (null before one): afresh, going on from the
     /// frame before while the view only moved, or as the frame before (its layout or its repel's placement held); the
     /// frames tool records it.</summary>
@@ -186,6 +190,31 @@ public sealed class MapScene
     }
 
     private PlayerFix? _player;
+
+    /// <summary>
+    /// Whether the squad grid is drawn (owner, 2026-10-26, from a panel of five: E; settings' "Grid on the map", on unless
+    /// unticked; docs/DESIGN.md §4, "Map drawing", *The grid*): its lines, the strips of letters and numbers at the view's
+    /// edges, a reference in each square, and the player's reference beside the marker and at the map's top left. The
+    /// window sets it on every scene it shows (MapView); off in one nobody set it on (a test, a legend's swatch).
+    /// </summary>
+    public bool ShowGrid
+    {
+        get => _showGrid;
+        set
+        {
+            if (_showGrid == value)
+                return;
+            _showGrid = value;
+            LayoutVersion++;
+        }
+    }
+
+    private bool _showGrid;
+
+    /// <summary>The map's squad grid, its A1 the app's own (<see cref="SquadGrid.For"/>).</summary>
+    public SquadGrid Grid => _grid ??= SquadGrid.For(Definition);
+
+    private SquadGrid? _grid;
 
     /// <summary>Earlier fixes in this raid, oldest first.</summary>
     public IReadOnlyList<WorldPoint> Trail { get; set; } = [];

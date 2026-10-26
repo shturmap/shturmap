@@ -54,6 +54,24 @@ Confirmed the same day (owner, in the chat): the fixed reference drawn in sand (
 marker); the map's own controls (the scale bar, the credit, the buttons, the floor list, the edge badge) step inside the
 four strips, so no label is under a control; the sheet's 10 m grid gives way to the squad grid, one grid in the app.
 
+**Built (2026-10-26: the squad grid).** As decided, in four commits (DESIGN.md §4, "Map drawing", *The grid*, with
+every number): the geometry in Core (`SquadGrid`: A to Z without I and O, rows from 1, the keypad as a number pad;
+`SquadGridTests`); each map's A1 frozen (`GridOrigins`, 13 maps from that day's maps.json, the widest Shoreline at 17
+columns, none past 24; a map without one starts at its bounds, the app log says so once; `GridOriginsTests`;
+`shturmap-cli grid` and a step in docs/UPDATES.md); the drawing (the 100 m lines a lighter step of the ground, median
+ΔL* 19.5 on Streets' whole view and 23.6 at 3×; ticks, then the keypad's lines from 45 to 60 px a third; the strips;
+"D3" in each square, 145 shown and 65 left out on Woods' overview; on the sheet the step added instead of the overlay,
+the sheet's caption "GRID 100 M"); the player's reference on the tag ("D5-8", "D5-8 · 2 MIN OLD") and "YOU D5-8 · 2 MIN
+OLD" at the map's top left; the map's own controls inside the strips; the setting "Grid on the map", on by default;
+help's paragraph with SHOW ME, a legend row, the tour's chapter 5 naming the square, What's New's fifth 0.7.0 line
+(`tour:5`), the README, the release notes. Frame times on Customs with every quest, the roll call's zoom out: +0.2 and
++1.9 % at 1600 × 1000, +3 and +5 % at the smallest window's map. Left for the owner: with the grid turned off, the sheet
+keeps its 10 m grid (the decision said "gives way to the squad grid"; with no squad grid there was nothing to give way
+to); the keypad's lines measured a ΔL* of 5 to 8 (Woods to Streets), the panel's strength, a step below the 100 m lines
+by design; the glance's plate, centred at the map's top, covers the readout for its 6 s; Icebreaker's bounds in
+tarkov.dev's data are Factory's numbers, so its grid is 2 × 2 around the ship. The German words (Raster, Planquadrat,
+Numpad, DU) are the builder's, for the senior translator.
+
 ## 2026-10-26: the overnight run's five decisions
 
 **Decided** (owner, 2026-10-26, on the session's decision page; the page stays outside the repository). Each was found

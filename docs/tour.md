@@ -49,7 +49,7 @@ Point at anything: every place it appears lights up.
 
 ## key · Map
 YOUR SCREENSHOT KEY
-In a raid, press it now and then: the file's name says where you are.
+In a raid, press it now and then: the file's name says where you are, and in which grid square.
 Open the extract list first (O twice): Shturmap shows which extracts are yours, and where.
 - list · IN THE GAME: O TWICE, THEN {key}
 - read · YOUR LIST THIS RAID: {n} OF {all} EXTRACTS
