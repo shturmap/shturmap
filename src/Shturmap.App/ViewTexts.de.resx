@@ -84,6 +84,10 @@
     <value>EXTRACT: der nächste Extract für deine Seite, aber pro Raid sind nur einige offen. Mach einen Screenshot der Extract-Liste (beim Raid-Start oder zweimal O): Deine leuchten auf, die übrigen werden durchgestrichen, und ODER ist dein nächster, der nichts braucht. </value>
     <comment>en: EXIT: the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice): yours light up, the rest are struck out, and OR is your nearest that needs nothing. </comment>
   </data>
+  <data name="HelpGrid" xml:space="preserve">
+    <value>Das Raster: 100-m-Planquadrate, quer mit Buchstaben (ohne I und O), nach unten mit Zahlen. Sag den Buchstaben, die Zahl, dann die Stelle im Planquadrat wie auf dem Numpad, 7 oben links bis 3 unten rechts: D5-8 ist oben in der Mitte von D5. DU, oben links, ist dein Planquadrat; Teammates lesen ihres im selben Raster in ihrem Shturmap. </value>
+    <comment>en: The grid: 100 m squares, lettered across (no I or O), numbered down. Say the letter, the number, then where in the square as on a number pad, 7 top left to 3 bottom right: D5-8 is the top middle of D5. YOU, top left, is your square; teammates read theirs off the same grid in their Shturmap. </comment>
+  </data>
   <data name="HelpQuestOrder" xml:space="preserve">
     <value>Reihenfolge der Quests: erst irgendwo hingehen, dann finden oder überleben, dann kämpfen; das Einfachste zuerst.</value>
     <comment>en: Quest order: go somewhere, then find or survive, then fight; simplest first.</comment>
@@ -171,6 +175,10 @@
   <data name="SettingsReadExits" xml:space="preserve">
     <value>Extract-Liste aus Screenshots lesen</value>
     <comment>en: Read the extract list from screenshots</comment>
+  </data>
+  <data name="SettingsMapGrid" xml:space="preserve">
+    <value>Raster auf der Map</value>
+    <comment>en: Grid on the map</comment>
   </data>
   <data name="SettingsCrashReports" xml:space="preserve">
     <value>Absturzberichte</value>

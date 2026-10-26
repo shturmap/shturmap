@@ -156,7 +156,7 @@ public sealed partial class MainWindow
 
     // DIPs from the map's top: under the notes there and 8 more, or the notes' own margin while they show nothing.
     private double GlanceTop() =>
-        MapNotes.ActualHeight >= 1 && Shown(MapNotes) ? MapNotes.Margin.Top + MapNotes.ActualHeight + GlancePlateRules.UnderNotes : GlancePlateRules.Margin;
+        MapNotes.ActualHeight >= 1 && Shown(MapNotes) ? MapNotes.Margin.Top + MapNotes.ActualHeight + GlancePlateRules.UnderNotes : GlancePlateRules.Margin + GridStrips.Top;
 
     // The map's size or the notes changed while the plate stands: laid out anew, after the layout pass that brought it.
     private void RefitGlance()

@@ -84,6 +84,10 @@
     <value>EXIT: the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice): yours light up, the rest are struck out, and OR is your nearest that needs nothing. </value>
     <comment>Help: paragraph about the raid card's way out. EXIT and OR are the raid card's labels (RaidExitLabel, RaidOrLabel); "O twice" is the game's key. Keep the space at the end: the SHOW ME link (HelpShowMe) follows on the same line.</comment>
   </data>
+  <data name="HelpGrid" xml:space="preserve">
+    <value>The grid: 100 m squares, lettered across (no I or O), numbered down. Say the letter, the number, then where in the square as on a number pad, 7 top left to 3 bottom right: D5-8 is the top middle of D5. YOU, top left, is your square; teammates read theirs off the same grid in their Shturmap. </value>
+    <comment>Help: paragraph about the squad grid on the map and how a reference is read and said. D5-8 stays as it is in every language. "As on a number pad": a computer keyboard's number pad (7 8 9 on its top row), not a phone's. YOU is the label at the map's top left (MapGridYou). Keep the space at the end: the SHOW ME link (HelpShowMe) follows on the same line.</comment>
+  </data>
   <data name="HelpQuestOrder" xml:space="preserve">
     <value>Quest order: go somewhere, then find or survive, then fight; simplest first.</value>
     <comment>Help: paragraph: the order the quests are listed in.</comment>
@@ -171,6 +175,10 @@
   <data name="SettingsReadExits" xml:space="preserve">
     <value>Read the extract list from screenshots</value>
     <comment>Settings: a tick box's words, and its name for screen readers: read the game's extract list from a screenshot that shows it.</comment>
+  </data>
+  <data name="SettingsMapGrid" xml:space="preserve">
+    <value>Grid on the map</value>
+    <comment>Settings: a tick box's words, and its name for screen readers: draw the squad grid (100 m squares, lettered and numbered) on the map.</comment>
   </data>
   <data name="SettingsCrashReports" xml:space="preserve">
     <value>Crash reports</value>

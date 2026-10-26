@@ -990,7 +990,7 @@ public sealed partial class MainWindow
             return;
         var map = MapRect();
         TourBand.Margin = new Thickness(map.X + 16, 0, 0, 46);
-        TourBand.Width = Math.Max(320, map.Width - 16 - 68);
+        TourBand.Width = Math.Max(320, map.Width - 16 - 68 - GridStrips.Right);
         var band = TourBand.ActualHeight > 0 ? TourBand.ActualHeight : 140;
         TourStage.Margin = new Thickness(map.X, map.Y, 0, 0);
         TourStage.Width = map.Width;

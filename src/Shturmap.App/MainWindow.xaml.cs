@@ -630,6 +630,7 @@ public sealed partial class MainWindow : Window
         UpdatePlan(s);
         UpdateRaidLists(s);
         LoadFollowOnce();
+        LoadGridOnce();
         UpdateMap(s);
         _cards.Refresh(UpdateCard);
         ShowTourWhenDue(s);
@@ -1208,7 +1209,7 @@ public sealed partial class MainWindow : Window
         { SvgPath: not null, Author: { } author } => AppTexts.MapCreditArtwork(author: author),
         { SvgPath: null } when _session.Artwork?.TilesFor(definition) is { Status: not TileStatus.Unavailable } =>
             AppTexts.MapCreditRender(author: definition.Author ?? "tarkov.dev"),
-        { SvgPath: null } => AppTexts.MapCreditSheet,
+        { SvgPath: null } => AppTexts.MapCreditSheet(spacing: Map.ShowGrid ? 100 : 10),
         _ => AppTexts.MapCreditData,
     };
 

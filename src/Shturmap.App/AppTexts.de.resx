@@ -124,6 +124,10 @@
     <value>Liest die Extract-Liste oben rechts in jedem Raid-Screenshot, mit der Texterkennung von Windows. Nur auf diesem PC; vom Bild wird nichts behalten oder gesendet. Ohne Haken wird kein Bild geöffnet.</value>
     <comment>en: Reads the extract list in each raid screenshot's top right corner, with Windows' own text recognition. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.</comment>
   </data>
+  <data name="SettingsMapGridNote" xml:space="preserve">
+    <value>100-m-Planquadrate, um deinem Squad zu sagen, wo du bist, etwa D5-8; die Hilfe sagt, wie man sie liest. Nichts wird gesendet: Deine Teammates sehen dasselbe Raster in ihrem eigenen Shturmap.</value>
+    <comment>en: 100 m squares to tell your squad where you are, as D5-8; help says how to read one. Nothing is sent: teammates see the same grid in their own Shturmap.</comment>
+  </data>
   <data name="StatusDataOffline" xml:space="preserve">
     <value>Gespeicherte Kopie der Daten von tarkov.dev vom {time}: tarkov.dev war nicht erreichbar.</value>
     <comment>en: A saved copy of tarkov.dev's data from {time}: tarkov.dev couldn't be reached.</comment>
@@ -281,8 +285,8 @@
     <comment>en: {metres} m down</comment>
   </data>
   <data name="NoticeNoArtwork" xml:space="preserve">
-    <value>Keine Map-Grafik für {map}: stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
-    <comment>en: No map artwork for {map}: a 10 m grid stands in, with your position, objectives and extracts.</comment>
+    <value>Keine Map-Grafik für {map}: stattdessen ein Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map artwork for {map}: a grid stands in, with your position, objectives and extracts.</comment>
   </data>
   <data name="MapCreditArtwork" xml:space="preserve">
     <value>Map © {author} und Mitwirkende, CC BY-NC-SA 4.0 · Daten tarkov.dev</value>
@@ -293,32 +297,32 @@
     <comment>en: Map: {author} · data tarkov.dev</comment>
   </data>
   <data name="MapCreditSheet" xml:space="preserve">
-    <value>Keine Map-Grafik · Raster 10 m · Daten tarkov.dev</value>
-    <comment>en: No map artwork · grid 10 m · data tarkov.dev</comment>
+    <value>Keine Map-Grafik · Raster {spacing} m · Daten tarkov.dev</value>
+    <comment>en: No map artwork · grid {spacing} m · data tarkov.dev</comment>
   </data>
   <data name="MapCreditData" xml:space="preserve">
     <value>Daten tarkov.dev</value>
     <comment>en: Data tarkov.dev</comment>
   </data>
   <data name="NoticeNoRender" xml:space="preserve">
-    <value>Kein Map-Render für {map}: Download fehlgeschlagen; prüf die Internetverbindung. Stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
-    <comment>en: No map render for {map}: couldn't download it; check the internet connection. A 10 m grid stands in, with your position, objectives and extracts.</comment>
+    <value>Kein Map-Render für {map}: Download fehlgeschlagen; prüf die Internetverbindung. Stattdessen ein Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map render for {map}: couldn't download it; check the internet connection. A grid stands in, with your position, objectives and extracts.</comment>
   </data>
   <data name="NoticeArtworkOffline" xml:space="preserve">
-    <value>Keine Map-Grafik für {map}: Download fehlgeschlagen; prüf die Internetverbindung. Stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
-    <comment>en: No map artwork for {map}: couldn't download it; check the internet connection. A 10 m grid stands in, with your position, objectives and extracts.</comment>
+    <value>Keine Map-Grafik für {map}: Download fehlgeschlagen; prüf die Internetverbindung. Stattdessen ein Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map artwork for {map}: couldn't download it; check the internet connection. A grid stands in, with your position, objectives and extracts.</comment>
   </data>
   <data name="NoticeArtworkRefused" xml:space="preserve">
-    <value>Keine Map-Grafik für {map}: Der Server antwortete mit {status}. Stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
-    <comment>en: No map artwork for {map}: its server answered {status}. A 10 m grid stands in, with your position, objectives and extracts.</comment>
+    <value>Keine Map-Grafik für {map}: Der Server antwortete mit {status}. Stattdessen ein Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map artwork for {map}: its server answered {status}. A grid stands in, with your position, objectives and extracts.</comment>
   </data>
   <data name="NoticeArtworkDisk" xml:space="preserve">
-    <value>Keine Map-Grafik für {map}: Speichern auf diesem PC fehlgeschlagen; prüf den freien Speicherplatz. Stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
-    <comment>en: No map artwork for {map}: couldn't save it on this PC; check the free disk space. A 10 m grid stands in, with your position, objectives and extracts.</comment>
+    <value>Keine Map-Grafik für {map}: Speichern auf diesem PC fehlgeschlagen; prüf den freien Speicherplatz. Stattdessen ein Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map artwork for {map}: couldn't save it on this PC; check the free disk space. A grid stands in, with your position, objectives and extracts.</comment>
   </data>
   <data name="NoticeArtworkUnreadable" xml:space="preserve">
-    <value>Keine Map-Grafik für {map}: Lesen fehlgeschlagen. Stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
-    <comment>en: No map artwork for {map}: couldn't read it. A 10 m grid stands in, with your position, objectives and extracts.</comment>
+    <value>Keine Map-Grafik für {map}: Lesen fehlgeschlagen. Stattdessen ein Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map artwork for {map}: couldn't read it. A grid stands in, with your position, objectives and extracts.</comment>
   </data>
   <data name="PreviewMap" xml:space="preserve">
     <value>VORSCHAU · {map}</value>

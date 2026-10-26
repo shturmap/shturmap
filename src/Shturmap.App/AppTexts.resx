@@ -124,6 +124,10 @@
     <value>Reads the extract list in each raid screenshot's top right corner, with Windows' own text recognition. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.</value>
     <comment>Settings, the note under "Read the extract list from screenshots".</comment>
   </data>
+  <data name="SettingsMapGridNote" xml:space="preserve">
+    <value>100 m squares to tell your squad where you are, as D5-8; help says how to read one. Nothing is sent: teammates see the same grid in their own Shturmap.</value>
+    <comment>Settings, the note under "Grid on the map" (SettingsMapGrid). D5-8 is a grid reference, the same in every language: column D, row 5, the top middle ninth as on a number pad. Shturmap sends no position to anyone; each teammate's own Shturmap draws the same grid.</comment>
+  </data>
   <data name="StatusDataOffline" xml:space="preserve">
     <value>A saved copy of tarkov.dev's data from {time}: tarkov.dev couldn't be reached.</value>
     <comment>Status bar, the DATA light's tooltip when tarkov.dev couldn't be reached and a saved copy is used. {time}: when that copy was checked, date and time in the language's short format.</comment>
@@ -281,7 +285,7 @@
     <comment>Raid card and quest card: how far below you an objective is. {metres}: whole metres.</comment>
   </data>
   <data name="NoticeNoArtwork" xml:space="preserve">
-    <value>No map artwork for {map}: a 10 m grid stands in, with your position, objectives and extracts.</value>
+    <value>No map artwork for {map}: a grid stands in, with your position, objectives and extracts.</value>
     <comment>Notice when a map has no drawing to show. {map}: the map's name.</comment>
   </data>
   <data name="MapCreditArtwork" xml:space="preserve">
@@ -293,31 +297,31 @@
     <comment>The map's credit line for a map shown as a render. {author}: who made the render (tarkov.dev, TarkovBOT.eu).</comment>
   </data>
   <data name="MapCreditSheet" xml:space="preserve">
-    <value>No map artwork · grid 10 m · data tarkov.dev</value>
-    <comment>The map's credit line when a 10 m grid stands in for the map.</comment>
+    <value>No map artwork · grid {spacing} m · data tarkov.dev</value>
+    <comment>The map's credit line when a grid sheet stands in for the map. {spacing}: the grid's spacing in metres, 100 (the squad grid) or 10 (the sheet's own, with the grid turned off in settings).</comment>
   </data>
   <data name="MapCreditData" xml:space="preserve">
     <value>Data tarkov.dev</value>
     <comment>The map's credit line before a map is drawn.</comment>
   </data>
   <data name="NoticeNoRender" xml:space="preserve">
-    <value>No map render for {map}: couldn't download it; check the internet connection. A 10 m grid stands in, with your position, objectives and extracts.</value>
+    <value>No map render for {map}: couldn't download it; check the internet connection. A grid stands in, with your position, objectives and extracts.</value>
     <comment>Notice when a map's render couldn't be downloaded. {map}: the map's name.</comment>
   </data>
   <data name="NoticeArtworkOffline" xml:space="preserve">
-    <value>No map artwork for {map}: couldn't download it; check the internet connection. A 10 m grid stands in, with your position, objectives and extracts.</value>
+    <value>No map artwork for {map}: couldn't download it; check the internet connection. A grid stands in, with your position, objectives and extracts.</value>
     <comment>Notice when a map's drawing couldn't be downloaded. {map}: the map's name.</comment>
   </data>
   <data name="NoticeArtworkRefused" xml:space="preserve">
-    <value>No map artwork for {map}: its server answered {status}. A 10 m grid stands in, with your position, objectives and extracts.</value>
+    <value>No map artwork for {map}: its server answered {status}. A grid stands in, with your position, objectives and extracts.</value>
     <comment>Notice when the server of a map's drawing refused it. {map}: the map's name; {status}: the HTTP status, 503.</comment>
   </data>
   <data name="NoticeArtworkDisk" xml:space="preserve">
-    <value>No map artwork for {map}: couldn't save it on this PC; check the free disk space. A 10 m grid stands in, with your position, objectives and extracts.</value>
+    <value>No map artwork for {map}: couldn't save it on this PC; check the free disk space. A grid stands in, with your position, objectives and extracts.</value>
     <comment>Notice when a map's drawing couldn't be saved on the PC. {map}: the map's name.</comment>
   </data>
   <data name="NoticeArtworkUnreadable" xml:space="preserve">
-    <value>No map artwork for {map}: couldn't read it. A 10 m grid stands in, with your position, objectives and extracts.</value>
+    <value>No map artwork for {map}: couldn't read it. A grid stands in, with your position, objectives and extracts.</value>
     <comment>Notice when a map's drawing couldn't be read. {map}: the map's name.</comment>
   </data>
   <data name="PreviewMap" xml:space="preserve">
