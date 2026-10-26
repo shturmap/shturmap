@@ -73,8 +73,8 @@ Shturmap works only from files the game writes for you and from public community
   them says "Seen in your stash" with the date. A screenshot of your stash or your gear is also read against every
   item, for the stash desk: a view beside the plan that mirrors it with what each item is worth on the flea and at
   traders, from tarkov.dev's prices. Nothing of the picture is kept or sent; what was seen stays on your PC as item
-  ids, with their counts and, for the desk, where each lay. Where Windows' recognition reads an item's name (or, on the
-  Tasks screen below, a time left) not at all, that one line is read once more with
+  ids, with their counts and, for the desk, where each lay. Where Windows' recognition can't read an item's name (or, on the
+  Tasks screen below, a task's time left) at all, that one line is read once more with
   [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)'s text recognition, a model that comes with Shturmap and runs
   on your PC too;
 - of a screenshot you take of the game's Tasks screen, on its OPERATIONAL tab, **the table of your daily and weekly
@@ -273,7 +273,7 @@ Segoe Fluent Icons font for the glyphs.
   licensors. Trader portraits and item icons are Battlestate's art, shown from tarkov.dev at runtime and never
   bundled.
 - The quest types' icons: [Phosphor Icons](https://phosphoricons.com), MIT licence.
-- Text recognition where Windows' reads nothing: PaddlePaddle's [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)
+- Text recognition where Windows' own reads nothing: PaddlePaddle's [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)
   PP-OCRv5 latin recognition model, as [RapidOCR](https://github.com/RapidAI/RapidOCR) exports it, Apache License 2.0,
   run with [ONNX Runtime](https://github.com/microsoft/onnxruntime) (MIT); bundled.
 - Bundled libraries and their licences: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
