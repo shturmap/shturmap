@@ -330,7 +330,8 @@ day, for the in-raid glance: "Which pictures", below):
   item's short name and, where it has one, its condition ("46/50"); a middle column, POCKETS, SPECIAL SLOTS and the
   equipped BACKPACK, TACTICAL RIG and POUCH, each a slot's item with its grid inline; and the stash's grid at the right.
   The middle column and the stash scroll each on its own, so a screenshot holds one page of each. In a grid a condition
-  ("147/147", "1469/1800") stands where a stack's count does, and is read as the count is. A label no reading of Windows'
+  ("147/147", "1469/1800") stands where a stack's count does, and is read as the count is; a magazine's or gun's rounds
+  stand there too ("60/60", "10/10"), read the same and no condition (§4, *The cell*). A label no reading of Windows'
   recognition fits is read once more by PaddleOCR's once its cell's place is settled (2026-10-26; below, "Where Windows'
   recognition reads nothing"). **Nested containers** (owner,
   2026-10-19: "keep in mind of stackable things, like a bag stashed in a bag that contains additional items"): a
@@ -2494,7 +2495,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       the click copies the scaled price (*The click*). A model: a straight share is a guess (traders' pay for meds
       tracks the resource, armour's less simply), and whether tarkov.dev's last low is for full condition only is
       unchecked. The plain "~" on the full figure (Db) was not taken: a 1/4 Analgin would read as a full one, and ON YOU
-      would swell after every raid. A magazine's "60/60", printed where a condition is, is its rounds, not a condition.
+      would swell after every raid. A magazine's "60/60", printed where a condition is, is its rounds, not a condition,
+      and so is a gun's: its magazine's rounds ("10/10" on a DVL-10, "0/17" on an M9A3), the figure the bare gun's with
+      its "~" and "+" whatever they are (written down 2026-10-26, when a "10/10" was taken for a condition; the figure
+      had left them out since step B).
     - **A cell that fits several items**: the "?" plate at its upper left, as the map draws it, the art at half
       strength, and the candidates' price range as its figure ("63–307k"); its card says "One of 3". A slot shows no
       footprint, so a slot's short name shared by variants stays a "?" (4 of the 7 filled slots on the owner's

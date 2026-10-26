@@ -524,6 +524,39 @@ public sealed class DeskReaderTests : IDisposable
         Assert.Empty(In(reading.Page!, "stash", c => c.J == 4).Ids);
     }
 
+    // A gun's cell prints its magazine's rounds where a condition stands (the owner's screenshots: "10/10" on the DVL-10,
+    // "0/17" on an M9A3): read as the game prints it, never a condition (docs/DESIGN.md §4, *The cell*, "~"): the figure is
+    // the bare gun's, "~" and "+", at "5/10" as at none. An armour's condition beside it still scales its figure.
+    [Fact]
+    public async Task A_guns_rounds_are_no_condition_and_an_armours_condition_still_counts()
+    {
+        var page = new StashReaderTests.Page(2560, 1440).Start();
+        var (x, y) = page.StashOrigin;
+        page.Grid(x, y, 10, 12, 1);
+        page.Item(x, y, 1, 2, 1, 3, 1, "Varkel .45", "5/10");
+        page.Item(x, y, 1, 0, 4, 2, 2, "Brestag", "23/46");
+        using var picture = page.Bitmap.Copy();
+        var catalogue = new DeskCatalogue([.. Catalogue, Item(30, "Varkel .45", 3, 1, DeskHolds.Mods, slots: DeskSlotKind.Weapon), Item(31, "Brestag", 2, 2)]);
+        var reading = await Reader().ReadAsync(picture, catalogue, DateTimeOffset.MinValue, Ct);
+        var gun = In(reading.Page!, "stash", c => c.J == 1);
+        Assert.Equal([Id(30)], gun.Ids);
+        Assert.Equal((DeskHolds.Mods, new DeskPrint(5, 10)), (gun.Holds, gun.Print));
+        var armour = In(reading.Page!, "stash", c => c.J == 4);
+        Assert.Equal([Id(31)], armour.Ids);
+        Assert.Equal(new DeskPrint(23, 46), armour.Print);
+
+        var facts = new Dictionary<string, DeskItemFacts>
+        {
+            [Id(30)] = new(Id(30)) { W = 3, Kind = DeskItemKind.Gun, LastLow = 40_000, BasePrice = 20_000, Traders = [("trader-a", 9_000)] },
+            [Id(31)] = new(Id(31)) { W = 2, H = 2, Kind = DeskItemKind.Armour, LastLow = 60_000, BasePrice = 30_000, Traders = [("trader-a", 10_000)] },
+        };
+        var cells = DeskSheet.Of(reading.Page!, id => facts.GetValueOrDefault(id), new DeskFleaRules(0.05, 0.05)).Regions.Single(r => r.Region.Key == "stash").Cells;
+        var gunFigure = cells.Single(c => c.Cell.J == 1).Figure!;
+        Assert.Equal((40_000d, 40_000d, true, true), (gunFigure.Value, gunFigure.Full, gunFigure.Estimate, gunFigure.Plus));
+        var armourFigure = cells.Single(c => c.Cell.J == 4).Figure!;
+        Assert.Equal((30_000d, 60_000d, true), (armourFigure.Value, armourFigure.Full, armourFigure.Estimate));
+    }
+
     // ---- PaddleOCR where Windows' recognition reads nothing (owner, 2026-10-26, decision 1) ----
 
     /// <summary>A second reader that hands back one text, and keeps each line's size it was given.</summary>
