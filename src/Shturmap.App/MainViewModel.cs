@@ -674,6 +674,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial IReadOnlyList<WhatsNewBlock> WhatsNewBlocks { get; set; } = [];
 
+    /// <summary>The note at the card's foot: what its lines do when pointed at or clicked (Rules.WhatsNew.FootOf).</summary>
+    [ObservableProperty] public partial string WhatsNewFoot { get; set; } = "";
+
     /// <summary>Help's link that brings the card back ("WHAT'S NEW IN 0.4.0 · PRAETORIAN"), or empty.</summary>
     [ObservableProperty] public partial string WhatsNewHelp { get; set; } = "";
 

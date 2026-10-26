@@ -145,6 +145,35 @@ public class WhatsNewTests
         Assert.False(WhatsNew.ShowsPreview(hyena.Items[3].Preview));
     }
 
+    // The note at the card's foot says what its lines do (UI QA pass of the squad grid, F9, 2026-10-26: "Point at one: the
+    // map shows it." stood under 0.7.0's five tour lines, which preview nothing). A card with several versions counts the
+    // lines of all of them.
+    [Fact]
+    public void The_cards_foot_says_what_its_lines_do()
+    {
+        var sections = WhatsNew.Parse("""
+            ## 0.7.0
+
+            - tour:2 · The stash desk · DESK, top left.
+            - tour · The tour · Seven short chapters.
+
+            ## 0.6.2
+
+            - leaders · Bosses, stepped back · One name each.
+            - tour:3 · Plan by trader · Point to light their quests.
+
+            ## 0.6.1
+
+            - extracts · Your extracts, slower · One after the other.
+            - leaders · Above or below, bolder · A bold caret.
+            """);
+        WhatsNew.Section Version(string label) => sections.Single(s => s.Label == label);
+        Assert.Equal(WhatsNew.Foot.Click, WhatsNew.FootOf([Version("0.7.0")]));
+        Assert.Equal(WhatsNew.Foot.PointOrClick, WhatsNew.FootOf([Version("0.6.2")]));
+        Assert.Equal(WhatsNew.Foot.PointAt, WhatsNew.FootOf([Version("0.6.1")]));
+        Assert.Equal(WhatsNew.Foot.PointOrClick, WhatsNew.FootOf([Version("0.7.0"), Version("0.6.1")]));
+    }
+
     // What's New in another language (docs/DESIGN.md §8, "Texts"): docs/whats-new.<code>.md beside docs/whats-new.md, each
     // version's lines in the translation where it has them, else in English.
     [Fact]

@@ -131,6 +131,10 @@ folder of its own, on fcdd49c (its pictures outside the repository): FAIL (0 blo
   words: right, the example tag inside the cut-out shows the square while the readout stays dimmed; the file's name gives
   the position and Shturmap the square, a fair shorthand.
 
+Prepared (2026-10-26, the owner's to merge): F9 on the branch `whatsnew-foot-says-what-lines-do`, the card's foot says
+what its lines do: "Click one: the tour shows it." under 0.7.0's tour lines, "Point or click: the map or the tour shows
+it." under a mix, "Point at one: the map shows it." as before (DESIGN.md §4, *What's New*; `Rules.WhatsNew.FootOf`).
+
 ## 2026-10-26: the overnight run's five decisions
 
 **Decided** (owner, 2026-10-26, on the session's decision page; the page stays outside the repository). Each was found

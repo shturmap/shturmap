@@ -350,7 +350,15 @@
   </data>
   <data name="WhatsNewPointAt" xml:space="preserve">
     <value>Point at one: the map shows it.</value>
-    <comment>What's New card: note at its foot. Pointing at one of its lines previews it on the map.</comment>
+    <comment>What's New card: note at its foot when every line on it previews on the map: pointing at one of its lines previews it there. One line in the card.</comment>
+  </data>
+  <data name="WhatsNewClickOne" xml:space="preserve">
+    <value>Click one: the tour shows it.</value>
+    <comment>What's New card: note at its foot when every line on it is about the tour (its picture the tour's pointer): clicking one opens the tour at the chapter that shows it; pointing at one shows nothing. Said as "Point at one: the map shows it." is. One line in the card.</comment>
+  </data>
+  <data name="WhatsNewPointOrClick" xml:space="preserve">
+    <value>Point or click: the map or the tour shows it.</value>
+    <comment>What's New card: note at its foot when some of its lines preview on the map when pointed at, and others, about the tour (their picture the tour's pointer), open the tour when clicked. Pointing goes with the map, clicking with the tour, in that order. One line in the card.</comment>
   </data>
   <data name="WhatsNewCloseTip" xml:space="preserve">
     <value>Close. Help brings it back.</value>

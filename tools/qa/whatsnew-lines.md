@@ -52,8 +52,10 @@ Read the card's lines from docs/whats-new.md's newest section first (in German f
 preview, name and words.
 
 - **card**: the card at the top of Plan's rail, under MAP: NEW IN <version> · <NAME> (NEU IN …), its lines in the
-  section's order, each with its name and words, wrapped and never cut, the hint under them ("Point at one: the map shows
-  it."). The map is the player's own (Customs), with no PREVIEW label.
+  section's order, each with its name and words, wrapped and never cut, the note under them saying what its lines do
+  (DESIGN.md: "Point at one: the map shows it." where each previews, "Click one: the tour shows it." where each is a
+  `tour:N` line, "Point or click: the map or the tour shows it." where there are both; in German as `ViewTexts.de.resx`
+  has them), in one line. The map is the player's own (Customs), with no PREVIEW label.
 - **line-n** (the pointer on line n): for a line with a preview, the map shows its example under the label PREVIEW ·
   NEW IN <version> · <name> (and its hint where it has one); the line tinted as the one pointed at. For a `tour:N`
   line, nothing staged: no label, the map as in **card**, and the line without the linked tint.
