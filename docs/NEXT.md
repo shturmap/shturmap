@@ -21,6 +21,23 @@ recommendation:
 5. **The release:** main pushed, the Release workflow run with `test_only=true` first (its build fetches PaddleOCR's
    model on GitHub's runner for the first time), then with `draft=true` for the owner to review and publish.
 
+**Built (2026-10-26: the desk's prices every five minutes).** The owner: "When finding prices in the stash it's
+important that they are recent", picking from the coordinator's options the desk's prices at most five minutes old and
+asked for again every five minutes while the desk is on screen. `GameDataLoader.DeskPricesAge` is five minutes (ten
+before: tarkov.dev scans and caches every five, so sooner gains nothing). A reading still asks once the item file is that
+old; besides, while the desk is on screen (the Desk view up, out of a raid, the window not minimised:
+`DeskSwitch.OnScreen`, told by `MainWindow.TellDeskOnScreen` from the view switch and the window's changes to
+`GameSession.SetDeskOnScreen`), `GameSession.WatchDeskPricesAsync` asks each time the copy turns five minutes old, and at
+once when the desk comes back with older prices; nothing off screen, in a raid, minimised, or without a page. One request
+at a time; whatever comes of one (a failure, or the saved copy given back no newer when tarkov.dev isn't reached), the
+next is five minutes after it, each kind of trouble logged once until prices come in. New prices price the page again in
+place through the snapshot's new view (the same reading, so nothing comes in, glows or counts up), its open and pinned
+cards with it. The count (DESIGN.md §3): at most 12 requests an hour of desk on screen, about 1.4 MB compressed each
+when the file changed, which it does every few minutes, so about 17 MB an hour of steady desk on screen; a few hundred
+bytes when unchanged. The settings note under the menu screenshots' tick says it (`SettingsReadStashNote`, English and
+German), as do DESIGN.md §2, §3, §4 and §8, the 0.7.0 notes, the README, PRIVACY.md and docs\UPDATES.md. Tests:
+`DeskPricesSessionTests` (a clock and a loader of the test's own), `DeskSwitchTests`, `PriceHistoryTests`.
+
 ## 2026-10-26: a grid on the map, for squads
 
 **The ask** (owner, 2026-10-26): a spec for a "tactical map grid" (100 m squares lettered A to Z without I and O, rows

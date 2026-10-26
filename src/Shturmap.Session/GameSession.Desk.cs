@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Shturmap.Core.Desk;
 using Shturmap.Core.Logs;
+using Shturmap.Core.Raid;
 using Shturmap.Data.TarkovDev;
 using Shturmap.Game.Screenshots;
 
@@ -34,8 +35,16 @@ public sealed partial class GameSession
     private DeskView? _deskView;
     private (DeskPage? Page, ItemSources? Sources, DeskKeep? Keep, DeskChange? Change) _deskViewOf;
 
-    // A refresh of the item file for the desk's prices on its way.
+    // A refresh of the item file for the desk's prices on its way; the last one asked for, by mode (the next is never
+    // asked sooner than DeskPricesAge after it, whatever came of it); the troubles said since prices last came in.
     private bool _deskPricesLoading;
+    private (GameMode Mode, DateTimeOffset At)? _deskPricesAsked;
+    private readonly HashSet<string> _deskPricesSaid = [];
+
+    // Whether the desk is on screen (MainWindow says), and what wakes the watch over its prices when that changes or prices
+    // come in.
+    private volatile bool _deskOnScreen;
+    private readonly SemaphoreSlim _deskPricesWake = new(0, 1);
 
     private string DeskPath => Path.Combine(paths.Root, "desk.json");
 
@@ -70,8 +79,8 @@ public sealed partial class GameSession
     }
 
     // Under the gate: a desk reading taken into the mode's page (a newer reading replaces the regions it shows and keeps
-    // the others; DeskLedger), and the prices asked for when the item file is over ten minutes old. What the page did, for
-    // the readings log; null when the screen was none of the desk's.
+    // the others; DeskLedger), and the prices asked for when the item file is five minutes old. What the page did, for the
+    // readings log; null when the screen was none of the desk's.
     private DeskChange? TakeDesk(DeskReading reading, double ms)
     {
         if (reading.Page is not { } page)
@@ -111,31 +120,85 @@ public sealed partial class GameSession
         return change;
     }
 
-    // Under the gate. The desk's prices come per reading (docs/DESIGN.md §3, "The stash desk's prices come per reading"):
-    // json.tarkov.dev has no price file per item, so the item file (every item's prices, about 1.4 MB compressed) is asked
-    // for again with its ETag when a desk reading arrives and the saved copy is over ten minutes old (GameDataLoader.
-    // DeskPricesAge; an hour until 2026-10-19); an unchanged one costs a few hundred bytes. Never on a timer: a page left
-    // open isn't refreshed.
+    /// <summary>
+    /// Whether the desk is on screen: the window shows the Desk view and isn't minimised (MainWindow says so as that
+    /// changes). While it is, out of a raid and with a page in hand, the desk's prices are asked for again each time the item
+    /// file turns <see cref="GameDataLoader.DeskPricesAge"/> old, and at once when the desk comes on screen with older ones
+    /// (owner, 2026-10-26; docs/DESIGN.md §3, "The stash desk's prices come per reading").
+    /// </summary>
+    public void SetDeskOnScreen(bool onScreen)
+    {
+        _deskOnScreen = onScreen;
+        WakeDeskPrices();
+    }
+
+    /// <summary>The longest the watch over the desk's prices waits before it looks again (a test gives a shorter one): it
+    /// waits until the item file turns five minutes old, or until it is woken, but no longer than this, so a PC's sleep
+    /// doesn't hold it past the time.</summary>
+    public TimeSpan DeskPricesLook { get; init; } = TimeSpan.FromMinutes(1);
+
+    /// <summary>The item file asked for again for the desk's prices, by mode and data language, in place of the loader's
+    /// (tests); it may throw, as a download fails.</summary>
+    public Func<GameMode, string, CancellationToken, Task<ItemSources>>? GivenDeskPrices { get; init; }
+
+    private void WakeDeskPrices()
+    {
+        try
+        {
+            if (_deskPricesWake.CurrentCount == 0)
+                _deskPricesWake.Release();
+        }
+        catch (SemaphoreFullException)
+        {
+            // Woken already.
+        }
+    }
+
+    // The time for the desk's prices: the PC's clock unless a test gives its own (Clock).
+    private DateTimeOffset PricesNow() => new(Clock());
+
+    // What asks for the item file again: a test's own, else the loader's; none for a session given its item sources.
+    private Func<GameMode, string, CancellationToken, Task<ItemSources>>? DeskPricesLoad() =>
+        GivenDeskPrices ?? (GivenSources is null && _loader is { } loader
+            ? (mode, language, ct) => loader.LoadSourcesAsync(mode, language, GameDataLoader.DeskPricesAge, ct)
+            : null);
+
+    // Under the gate: when the desk's prices are due again: once the item file is DeskPricesAge old, and never sooner than
+    // DeskPricesAge after the last ask in this mode, whatever came of it (a failure, a saved copy no newer, waits for the
+    // next five minutes, never a tight loop).
+    private DateTimeOffset DeskPricesDue(ItemSources sources) =>
+        (_deskPricesAsked is { } asked && asked.Mode == _mode && asked.At > sources.PricesAt ? asked.At : sources.PricesAt) + GameDataLoader.DeskPricesAge;
+
+    // Under the gate. The desk's prices (docs/DESIGN.md §3, "The stash desk's prices come per reading"): json.tarkov.dev
+    // has no price file per item, so the item file (every item's prices, about 1.4 MB compressed) is asked for again with its
+    // ETag when it is five minutes old (GameDataLoader.DeskPricesAge; ten minutes until 2026-10-26, an hour until
+    // 2026-10-19), as a desk reading arrives and, while the desk is on screen, as it turns that old (WatchDeskPricesAsync);
+    // an unchanged one costs a few hundred bytes. One at a time; what comes in prices the page again (Publish: the view's
+    // reading stays, so nothing on it comes in or glows).
     private void RefreshDeskPrices()
     {
-        if (_sources is not { } sources || _deskPricesLoading || GivenSources is not null || _loader is null || _data is null)
+        if (_sources is not { } sources || _deskPricesLoading || _data is null || DeskPricesLoad() is not { } load)
             return;
-        if (DateTimeOffset.Now - sources.PricesAt < GameDataLoader.DeskPricesAge)
+        var now = PricesNow();
+        if (now < DeskPricesDue(sources))
             return;
         _deskPricesLoading = true;
+        _deskPricesAsked = (_mode, now);
         var mode = _mode;
         var language = _data.Language;
         var round = _sourcesRound;
+        var had = sources.PricesAt;
         _ = Task.Run(async () =>
         {
             ItemSources? fresh = null;
+            (string Kind, string Why)? trouble = null;
             try
             {
-                fresh = await _loader.LoadSourcesAsync(mode, language, GameDataLoader.DeskPricesAge, _stop.Token);
+                fresh = await load(mode, language, _stop.Token);
             }
             catch (Exception e) when (!_stop.IsCancellationRequested)
             {
-                AppLog.Warn($"Desk prices not refreshed ({LoadProblem.Explain(e).Kind}): {e.GetType().Name}");
+                trouble = (LoadProblem.Explain(e).Kind.ToString(), e.GetType().Name);
             }
             catch (OperationCanceledException)
             {
@@ -144,17 +207,81 @@ public sealed partial class GameSession
             try
             {
                 _deskPricesLoading = false;
+                // tarkov.dev not reached with a copy saved: the loader gives that copy back, no newer.
+                if (fresh is not null && fresh.PricesAt <= had)
+                    (fresh, trouble) = (null, ("SavedCopy", $"the copy of {had.ToLocalTime():HH:mm} kept"));
+                // Each kind of trouble said once until prices come in again; the next ask is five minutes on.
+                if (trouble is { } t && _deskPricesSaid.Add(t.Kind))
+                    AppLog.Warn($"Desk prices not refreshed ({t.Kind}): {t.Why}; asking again in {GameDataLoader.DeskPricesAge.TotalMinutes:0} min");
                 if (fresh is null || mode != _mode || round != _sourcesRound)
                     return;
+                _deskPricesSaid.Clear();
                 _sources = fresh;
+                AppLog.Debug($"Desk prices refreshed: the item file of {fresh.PricesAt.ToLocalTime():HH:mm:ss}");
                 Study.Game("desk.prices", ("age", (int)(DateTimeOffset.Now - fresh.PricesAt).TotalMinutes));
                 Publish();
             }
             finally
             {
                 _gate.Release();
+                WakeDeskPrices();
             }
         });
+    }
+
+    // While the desk is on screen, out of a raid and with a page in hand (owner, 2026-10-26: "When finding prices in the
+    // stash it's important that they are recent"): its prices asked for again as the item file turns five minutes old, so
+    // they are never much older than that and tarkov.dev's scan; nothing while it isn't, and at once when it comes back with
+    // older ones (SetDeskOnScreen wakes it).
+    private async Task WatchDeskPricesAsync()
+    {
+        while (!_stop.IsCancellationRequested)
+        {
+            var wait = DeskPricesLook;
+            try
+            {
+                await _gate.WaitAsync(_stop.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            try
+            {
+                wait = LookAtDeskPrices();
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                Failed("Looking at the desk's prices", e);
+            }
+            finally
+            {
+                _gate.Release();
+            }
+            try
+            {
+                await _deskPricesWake.WaitAsync(wait, _stop.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+        }
+    }
+
+    // Under the gate: the prices asked for if the desk is on screen and they are due; how long to wait before looking again
+    // (until woken while the desk isn't on screen).
+    private TimeSpan LookAtDeskPrices()
+    {
+        if (!_deskOnScreen)
+            return Timeout.InfiniteTimeSpan;
+        if (_tracker.State.Phase != RaidPhase.Menu || _desk.Page(_mode) is null)
+            return DeskPricesLook;
+        RefreshDeskPrices();
+        if (_deskPricesLoading || _sources is not { } sources)
+            return DeskPricesLook;
+        var wait = DeskPricesDue(sources) - PricesNow();
+        return wait <= TimeSpan.Zero || wait >= DeskPricesLook ? DeskPricesLook : wait + TimeSpan.FromMilliseconds(50);
     }
 
     // Under the gate, for the snapshot: the mode's page with its values, made again only when the page, the prices, the

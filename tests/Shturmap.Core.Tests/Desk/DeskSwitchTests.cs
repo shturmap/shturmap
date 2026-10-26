@@ -36,6 +36,17 @@ public class DeskSwitchTests
         Assert.Equal(WindowState.Plan, DeskSwitch.Shown(false, DeskSwitch.ChosenAfter(false, false, false, false)));
     }
 
+    // The desk's prices are asked for again while it is on screen (owner, 2026-10-26): the Desk view up, out of a raid, in a
+    // window that isn't minimised.
+    [Fact]
+    public void The_desk_is_on_screen_only_up_out_of_a_raid_in_a_window_not_minimised()
+    {
+        Assert.True(DeskSwitch.OnScreen(inRaid: false, deskChosen: true, minimised: false));
+        Assert.False(DeskSwitch.OnScreen(inRaid: false, deskChosen: true, minimised: true));
+        Assert.False(DeskSwitch.OnScreen(inRaid: false, deskChosen: false, minimised: false));
+        Assert.False(DeskSwitch.OnScreen(inRaid: true, deskChosen: true, minimised: false));
+    }
+
     [Fact]
     public void While_the_tour_is_up_a_reading_waits_on_the_switch()
     {

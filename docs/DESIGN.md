@@ -286,9 +286,10 @@ levels from the quest dependency tree, NOW (an active quest's BRING needs the it
 unlock needs it) and LATER (further down the tree), plus a hideout module's need, regardless of the hideout's progress
 (the logs don't say its level, and hideout tracking stays a not-goal, §1), each with its found-in-raid flag (owner,
 2026-10-19: the keep mark's levels, not a planner screen of their own; docs/NEXT.md). The page in hand is kept in
-`desk.json` and priced from tarkov.dev's item file, asked for again at most every ten minutes while the desk is used
-(owner, 2026-10-19: "Accept, once an hour"; then, after trying the desk the same day: "Maybe we need to fetch the prices
-more often then?"; §3). The boundary widens for the desk alone, and no further (and, decided the same
+`desk.json` and priced from tarkov.dev's item file, asked for again when it is five minutes old, as a reading arrives and
+every five minutes while the desk is on screen (owner, 2026-10-19: "Accept, once an hour"; then, after trying the desk the
+same day: "Maybe we need to fetch the prices more often then?"; 2026-10-26: "When finding prices in the stash it's
+important that they are recent"; §3). The boundary widens for the desk alone, and no further (and, decided the same
 day, for the in-raid glance: "Which pictures", below):
 
 - **Which pictures:** the stash's (above): a menu screenshot of the player's own stash or inventory, new, named
@@ -557,8 +558,8 @@ day, for the in-raid glance: "Which pictures", below):
 - **The player's say:** the menu screenshots' one tick, its words widened for the desk (2026-10-19, after step B part
   1; the desk's panel had left them out): "Read your stash, gear and tasks from menu screenshots" (the GEAR tab is the
   screen the desk adds; its prices aren't read from the picture, so the words don't name them). Its note adds that the
-  desk shows what each item is worth from tarkov.dev's prices, fetched again at most every ten minutes when a screenshot
-  is read (§3; once an hour until 2026-10-19), and that item ids, counts and places are kept, nothing of the picture. Unticked, no menu screenshot is
+  desk shows what each item is worth from tarkov.dev's prices, fetched again every five minutes while the desk is on
+  screen (§3; until 2026-10-26 at most every ten minutes, when a screenshot was read; once an hour until 2026-10-19), and that item ids, counts and places are kept, nothing of the picture. Unticked, no menu screenshot is
   opened, for the desk either. Its note, the README and PRIVACY.md say what the desk reads, keeps and fetches; help with
   the desk's view, the website when its media are next made.
 
@@ -737,19 +738,32 @@ quoting it anywhere new.
     day old. So, for the desk alone, the prices of the items a screenshot showed were to be asked for when it is read
     (those items, never the catalogue; the exception below took its place), and an item's price history
     (json.tarkov.dev's `/{mode}/prices/{id}`) when its card first shows it, each with its ETag, so an unchanged answer
-    costs a few hundred bytes. Still never on a timer: a page left open isn't refreshed, and the card says its prices'
-    age ("Prices 4 min old · tarkov.dev"), counted from tarkov.dev's scan of the item, the item file's `updated` (owner,
+    costs a few hundred bytes. Never on a timer then (a page left open wasn't refreshed until 2026-10-26, the exception
+    below), and the card says its prices' age ("Prices 4 min old · tarkov.dev"), counted from tarkov.dev's scan of the item, the item file's `updated` (owner,
     2026-10-19: the Dorm 104 key scanned 17:38, the file had at 18:14, the card said "8 min old" at 18:22; until then
     from when the file was had). Everything else keeps the ages above. Its requests and bytes per player are
     counted and said to the owner before it is built (the rule at the end of this list). **The exception: the item
-    file, at most every ten minutes while the desk is used** (owner, 2026-10-19: "Accept, once an hour", on the count
+    file, every five minutes while the desk is on screen** (owner, 2026-10-19: "Accept, once an hour", on the count
     below; built in step B part 1, `GameSession.RefreshDeskPrices`; then, after trying the desk the same day: "Maybe we
-    need to fetch the prices more often then?": tarkov.dev scans every 5 minutes and caches 5, so ten minutes). json.tarkov.dev has no price file per item (the GraphQL API that
-    answers per item was down all of 2026-10-19), so a desk reading asks for the whole item file again with its ETag
-    when the saved copy is over ten minutes old (`GameDataLoader.DeskPricesAge`; an hour until 2026-10-19): at most six
-    requests an hour of desk use, a few hundred bytes when unchanged, about 1.4 MB compressed when it changed (it changes
-    every few minutes, so in practice about 1.4 MB a reading ten minutes after the last, some 8 MB an hour of steady
-    use). Nothing is asked per item for a reading's prices, and no picture but the page's
+    need to fetch the prices more often then?": ten minutes, a reading's; then 2026-10-26, picked from the coordinator's
+    options: "When finding prices in the stash it's important that they are recent": five minutes, and on a timer while
+    the desk is on screen; tarkov.dev scans every 5 minutes and caches 5, so sooner gains nothing). json.tarkov.dev has
+    no price file per item (the GraphQL API that answers per item was down all of 2026-10-19), so the whole item file is
+    asked for again with its ETag once the saved copy is five minutes old (`GameDataLoader.DeskPricesAge`; ten minutes
+    from 2026-10-19, an hour before): when a desk reading arrives, and while the desk is on screen (the window shows the
+    Desk view, out of a raid, and isn't minimised: `DeskSwitch.OnScreen`, which `MainWindow.TellDeskOnScreen` tells
+    `GameSession.SetDeskOnScreen` as the view switches, a raid takes the window or it is minimised and restored) each
+    time the copy turns five minutes old (`GameSession.WatchDeskPricesAsync`), so the prices on screen are never much
+    older than five minutes and tarkov.dev's scan; the desk coming back on screen with older prices asks at once. Nothing
+    is asked while the desk isn't on screen (Plan, a raid, the window minimised) or holds no page. One request at a time;
+    whatever comes of one (a failure, or tarkov.dev not reached and the saved copy given back no newer), the next is five
+    minutes after it, never a tight loop, each kind of trouble logged once until prices come in again. What comes in
+    prices the page again where it stands, quietly (§4, *The stash desk*, *Fun*). **Its count** (2026-10-26), per player:
+    at most 12 requests an hour of desk on screen (a reading's included: never two within five minutes); a few hundred
+    bytes each when the file is unchanged, about 1.4 MB compressed when it changed, which it does every few minutes, so
+    about 17 MB an hour of steady desk on screen (some 8 MB an hour at ten minutes, before); nothing with the desk off
+    screen. Each answer is read again on the PC: the item file parsed off the window's thread, the page priced and drawn
+    anew. Nothing is asked per item for a reading's prices, and no picture but the page's
     cells' grid images, fetched and kept as BRING's are today (*Grid images*, below). **The history is built** (step C,
     2026-10-19; `GameDataLoader.LoadPriceHistoryAsync`, `GameSession.DeskHistoryAsync`): asked for when a card first
     shows the item, one file per item from json.tarkov.dev (`{"data":[{priceMin, price, offerCount, timestamp}, …]}`, a
@@ -1267,7 +1281,8 @@ the app shows and hides without motion, and following jumps to the position, the
 the wheel's zoom to its notch.
 **The stash desk** (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2; "Screen anatomy", *The stash desk*) moves three
 ways and no more: a page just read comes in cell by cell, 50 ms apart, as the kit's pictures do; its totals count up
-once; a copied cell's frame flashes gold once and its figure decodes, as a cue's title does. With the effects off the
+once; a copied cell's frame flashes gold once and its figure decodes, as a cue's title does. New prices move nothing:
+the page is priced again where it stands (2026-10-26; *The stash desk*, *Fun*). With the effects off the
 page stands at once. The first two are built (step B, 2026-10-19, part 2: the view): each cell's opacity from 0 over
 0.2 s, eased out, 50 ms after the one before in reading order (a region's cells row by row), only the regions the
 reading changed, where they stand (all on a first reading; until 2026-10-25 the regions it opened from the fold); a
@@ -2579,7 +2594,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     where they stand: every one on the mode's first reading, none on a reading that changed nothing; until 2026-10-25
     the regions it opened from the fold); its totals count up once (both built, step B, 2026-10-19, part 2:
     "Design system", *Motion*); a copy flashes and decodes (built, step C, 2026-10-19). Nothing else
-    moves. Colours keep their meanings ("Visual language"): no red or green for down and up, only arrows and signs.
+    moves: new prices (every five minutes while the desk is on screen, §3; 2026-10-26) price the page again where it
+    stands, the cells' figures, the regions' totals, the head line and an open or pinned card, with no motion (nothing
+    comes in, the totals don't count up: those are for what a reading changed); the card's prices' age counts from the
+    new scan, and a click copies by the new prices. Colours keep their meanings ("Visual language"): no red or green for down and up, only arrows and signs.
   - **As built** (step B, 2026-10-19, part 2: the view; the coordinator's rules where the panels left a choice, for the
     owner to judge with the dev build):
     - *The switch*, a primary control (owner, 2026-10-19: "The Plan/Desk switch is way to small, needs much bigger.";
@@ -5221,8 +5239,9 @@ what runs on under a window or a tooltip, and a shape of several items, by the l
 ledger (`GameSession.Desk`: `DeskLedger.Apply`, `desk.json`, the window's attachment; a region read too blank keeps the
 page's, one read in part keeps the page's rest, cut at the column's foot, under a window or not in view, and a window
 attached to nothing that three readings didn't show leaves the page, and the app log says each; 2026-10-25; a window
-with no cell read whose title names no container is never kept, the owner's second test of 2026-10-25), and a reading over ten minutes after the item file was fetched asks for it again
-(`RefreshDeskPrices`; an hour until 2026-10-19). Then, outside the gate, the readings log's file (`ReadingLog`;
+with no cell read whose title names no container is never kept, the owner's second test of 2026-10-25), and a reading five minutes or more after the item file was fetched asks for it again,
+as the desk on screen does each five minutes (`RefreshDeskPrices`, `WatchDeskPricesAsync`; §3; ten minutes, a reading's
+alone, until 2026-10-26; an hour until 2026-10-19). Then, outside the gate, the readings log's file (`ReadingLog`;
 "Developer aids", *Readings log*; 2026-10-25). A snapshot carries the mode's page with its values
 (`SessionSnapshot.Desk`: `DeskSheet.Of` over the item file's facts, `DeskData.Flea`, the keep levels `DeskData.Keep`
 from the quests' states and the hideout), made again only when the page, the prices or the quests change. A snapshot (`SessionSnapshot.Operational`, `OperationalPlans`) carries the mode's tasks with their

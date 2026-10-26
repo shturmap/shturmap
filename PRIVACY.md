@@ -64,9 +64,11 @@ Labyrinth, Icebreaker) are downloaded from tarkov.dev's services and from GitHub
 download cache on your PC. Those servers see your internet address, as with any download, and which files are asked
 for. Portraits, icons and the parts of those three maps are fetched when they are first shown, so the requests show
 which of them your Shturmap displayed. The stash desk draws the items on its page with their pictures, fetched the
-same way, so the first request for each shows tarkov.dev's image service an item your screenshots held. While you use
-the desk, the item file (every item's prices, about 1.4 MB) is asked for again when a screenshot is read for it and
-the saved copy is over ten minutes old: at most every ten minutes, the same file for everyone. No account, profile, quest list
+same way, so the first request for each shows tarkov.dev's image service an item your screenshots held. For the desk,
+the item file (every item's prices, about 1.4 MB) is asked for again once the saved copy is five minutes old: when a
+screenshot is read for it, and every five minutes while the desk is on screen (never while it isn't, nor with the window
+minimised), so the times of those requests show tarkov.dev when your desk was on screen; never more often, the same file
+for everyone. No account, profile, quest list
 or position is sent with them. On those
 three maps the part displayed in a raid is usually the part you are in, so the requests for its picture can show
 roughly where on the map that is, to tarkov.dev's image service and to no one else.

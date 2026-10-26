@@ -1,3 +1,4 @@
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -65,6 +66,24 @@ public sealed partial class MainWindow
         StashDesk.CellPinToggled += cell => ToggleDeskPin(cell.Key, "right-click");
         _deskRule = DeskCopyRule.Of(_session.GetSetting(DeskCopyRule.Setting));
         ShowCopyRuleSetting();
+        // Minimised or restored: the desk leaves the screen or comes back to it, for its prices.
+        AppWindow.Changed += (_, _) => TellDeskOnScreen();
+    }
+
+    // Whether the session was last told the desk is on screen.
+    private bool _deskOnScreenTold;
+
+    /// <summary>Tells the session whether the desk is on screen (<see cref="DeskSwitch.OnScreen"/>) when that changed: while
+    /// it is, the session asks for the desk's prices again as they turn five minutes old, and at once when it comes back
+    /// with older ones (owner, 2026-10-26; docs/DESIGN.md §3).</summary>
+    private void TellDeskOnScreen()
+    {
+        var minimised = AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized };
+        var on = DeskSwitch.OnScreen(ViewModel.InRaid, _deskChosen, minimised);
+        if (on == _deskOnScreenTold)
+            return;
+        _deskOnScreenTold = on;
+        _session.SetDeskOnScreen(on);
     }
 
     // Each snapshot: a new reading in the menus opens the desk, a raid takes the window, what a reading changed comes in.
@@ -128,6 +147,7 @@ public sealed partial class MainWindow
             _deskPointed = null;
         if (_deskChosen || !was)
             RenderDeskRail();
+        TellDeskOnScreen();
     }
 
     /// <summary>

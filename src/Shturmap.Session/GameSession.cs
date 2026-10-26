@@ -324,6 +324,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             _ = Task.Run(LookAgainAsync);
         _ = Task.Run(WatchOpenRaidAsync);
         _ = Task.Run(WatchOperationalAsync);
+        _ = Task.Run(WatchDeskPricesAsync);
     }
 
     // A new screenshot: its name's position, then its picture's extract list and inventory (in a raid) or item grids (in
@@ -1138,6 +1139,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 {
                     _gate.Release();
                 }
+                // The desk on screen asks for its prices at once if this copy is older than theirs may be.
+                WakeDeskPrices();
                 return;
             }
             catch (Exception e) when (!_stop.IsCancellationRequested)
@@ -1502,7 +1505,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>How often an open raid is looked at again: can it still be running?</summary>
     public TimeSpan OpenRaidCheck { get; init; } = TimeSpan.FromSeconds(30);
 
-    /// <summary>The time, for telling whether an open raid can still be running; the PC's clock unless a test gives its own.</summary>
+    /// <summary>The time, for telling whether an open raid can still be running and when the desk's prices are due again;
+    /// the PC's clock unless a test gives its own.</summary>
     public Func<DateTime> Clock { get; init; } = () => DateTime.Now;
 
     /// <summary>

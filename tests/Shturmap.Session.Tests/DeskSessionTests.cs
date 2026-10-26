@@ -13,7 +13,7 @@ namespace Shturmap.Session.Tests;
 // test's own: it says what a picture "shows" (tests\Shturmap.Game.Tests reads drawn ones).
 public class DeskSessionTests
 {
-    private const string Water = "000000000000000000000401", Wallet = "000000000000000000000402";
+    internal const string Water = "000000000000000000000401", Wallet = "000000000000000000000402";
 
     private static ItemSources Sources(GameMode _) => new()
     {
@@ -31,7 +31,7 @@ public class DeskSessionTests
         PricesAt = DateTimeOffset.Now,
     };
 
-    private static GameData Data(GameMode mode)
+    internal static GameData Data(GameMode mode)
     {
         var data = SessionRig.Data(mode);
         return new GameData
@@ -48,7 +48,7 @@ public class DeskSessionTests
         };
     }
 
-    private static DeskReading Shows(params DeskCell[] stash) =>
+    internal static DeskReading Shows(params DeskCell[] stash) =>
         new(DeskScreen.Stash, new DeskPage(DateTimeOffset.Now, [new DeskRegion("stash", DeskRegionKind.Stash, 10, 12, stash)]), 5);
 
     private static SessionRig Rig(Func<DeskReading?> shows, List<string>? asked = null, bool sources = true) =>
@@ -66,7 +66,7 @@ public class DeskSessionTests
     private static int _shots;
 
     // A screenshot the game names without a position: taken in the menus.
-    private static void MenuScreenshot(SessionRig rig)
+    internal static void MenuScreenshot(SessionRig rig)
     {
         var name = string.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd}[{0:HH-mm}] ({1}).png", DateTime.Now, Interlocked.Increment(ref _shots));
         File.WriteAllBytes(Path.Combine(rig.ScreenshotsFolder, name), []);
