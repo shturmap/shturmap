@@ -5525,7 +5525,9 @@ every issue goes through it, and the app's report is offered beside it.
   property, the project folder among them, into `Shturmap.dll`: `SentryDisableSourceGenerator` is on. And every
   DLL carried its PDB path, with the user name in it: `PathMap` in `Directory.Build.props` maps the repository to
   `/_/`. A release build's files were scanned on 2026-10-03 and none holds the user name; scan again after adding a
-  package (the release must carry nothing of the developer's machine).
+  package (the release must carry nothing of the developer's machine). Scanned again on 2026-10-26, with ONNX Runtime and
+  PaddleOCR's model in it (§2): no path under the user folder in any file, 8-bit or UTF-16; the name's letters alone
+  only as other people's names in third-party licence texts and inside a word of a .NET runtime DLL.
   **No address and no place.** Sentry sees the sender's internet address as any server does, and derives a town and
   country from it even with the project's "Prevent Storing of IP Addresses" on (its scrubbing docs; a report's "User
   Geography" showed the owner's town, 2026-10-09). So every report says `infer_ip: never` in its `sdk` and carries an

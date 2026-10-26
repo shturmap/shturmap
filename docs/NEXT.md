@@ -186,7 +186,11 @@ and the README say it.)
   (9.5 ms a band); whole pictures timed 2088 / 1941 / 2004 ms (Windows alone / one thread / four) in one round and 1852 /
   1960 / 1953 in the other: the PC's noise is as large as the cost (CLI Debug build, as the spikes'). The app folder
   (`eng\publish.ps1`) 249.6 → 274.4 MB, 595 → 607 files (`onnxruntime.dll` 16.5 MB, the model 7.9 MB, the managed
-  library 0.9 MB, the notices).
+  library 0.9 MB, the notices). A local release (`eng\release.ps1 -NoDelta`, no DSN): the Setup 121.4 MB, the full
+  package 114.3 MB. Its 614 files scanned for the Windows user name (8-bit and UTF-16, any case): no path under the user
+  folder anywhere; the bare name only as other people's names in third-party licence texts and inside a word of a .NET
+  runtime DLL, as in main's build, ONNX Runtime's two notices among them. `eng\audit-packages.ps1`: no known
+  vulnerabilities.
 - Tests: `PaddleReaderTests` (a model that can't load reads nothing, said once; cancellation; the bundled model reads a
   drawn label), `DeskReaderTests` (only the unread label band goes to it, once, never a named one or a count; its text
   matched as Windows' is; a text that names nothing leaves the cell; a model that can't load leaves the reading Windows'
