@@ -3,7 +3,7 @@
     <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
     <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
     <PackageVersion Include="Microsoft.Windows.AI.MachineLearning" Version="2.1.74" />
-    <!-- Only shturmap-cli ocr-compare built with -p:OcrSpike=true (tools/Shturmap.Cli/Ocr/OcrSpike.cs). -->
+    <!-- PaddleOCR's recognition where Windows' reads nothing (src/Shturmap.Game/Screenshots/PaddleReader.cs; 2026-10-26). -->
     <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.30.0" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageVersion Include="SkiaSharp" Version="4.153.1" />

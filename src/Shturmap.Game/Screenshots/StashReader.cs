@@ -457,6 +457,22 @@ public sealed class StashReader
     // How far below a cell's top the label's band starts: past the line.
     private const int LineGap = 3;
 
+    /// <summary>The label's band (as <see cref="ReadLabelBandAsync"/> cuts it) at the picture's own size, in a narrow
+    /// dark margin: the line PaddleOCR's recognition reads where Windows' left the label unread (<see cref="PaddleReader"/>;
+    /// the spike of 2026-10-25's "band native"). Null where nothing of it lies in the picture.</summary>
+    internal static SKBitmap? LabelLine(SKBitmap bitmap, SKRectI rect, int pitch)
+    {
+        var band = SKRectI.Intersect(SKRectI.Create(rect.Left + 2, rect.Top + LineGap, Math.Max(4, rect.Width - 4), (int)Math.Round(pitch * 0.2)),
+            SKRectI.Create(0, 0, bitmap.Width, bitmap.Height));
+        if (band.Width < 4 || band.Height < 4)
+            return null;
+        using var block = StashPicture.Block(bitmap, band, band.Width, band.Height, StashPicture.Sampling);
+        return StashPicture.Framed(block, LineMargin, MarginColour);
+    }
+
+    // The margin round a line PaddleOCR reads: a few pixels, as the spike measured it.
+    private const int LineMargin = 4;
+
     /// <summary>The number at the item's bottom right as read: a stack's count, or a magazine's load. The band is cut
     /// to the number's own height (at 1440p the digits stand 18 to 4 px over the bottom): the found-in-raid mark
     /// right above it read as a digit before it.</summary>

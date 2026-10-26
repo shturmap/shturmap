@@ -92,10 +92,11 @@
     </ItemGroup>
   </Target>
 
-  <!-- Native packages ship debug symbols (~250 MB) that end users never need. -->
+  <!-- Native packages ship debug symbols (~250 MB) that end users never need, and import libraries (ONNX Runtime's .lib,
+       for linking against it in C++). -->
   <Target Name="RemoveSymbolsFromPublish" AfterTargets="Publish">
     <ItemGroup>
-      <_PublishedSymbols Include="$(PublishDir)**\*.pdb" />
+      <_PublishedSymbols Include="$(PublishDir)**\*.pdb;$(PublishDir)*.lib" />
     </ItemGroup>
     <Delete Files="@(_PublishedSymbols)" />
   </Target>

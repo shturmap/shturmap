@@ -191,7 +191,8 @@ operational task, added to the set or updating it, and the list's countdowns ref
   countdown (STORY or SIDE, presumably) is told and not read.
 - **How much of it:** the picture's left two thirds (0.665 of its width: the right third carries the player's name
   and money on a trader's tab and the game's toasts with the screenshot's path), read with Windows' text recognition
-  in English (the table's words are the English game's; the German game's aren't known): per row the task's name,
+  in English (the table's words are the English game's; the German game's aren't known; a countdown no way reads, with
+  PaddleOCR's, below, "Where Windows' recognition reads nothing"): per row the task's name,
   location, status and time left; an expanded row's objective lines with their counts n/m. **Rewards are never read
   or kept**: the expanded row's rewards make no row. **On a trader's tab** (owner, 2026-10-25), of the same words: the
   header's task name (right of its glyph, on the line of COMPLETE | REPLACE) and the list's OPERATIONAL TASKS entries
@@ -329,7 +330,9 @@ day, for the in-raid glance: "Which pictures", below):
   item's short name and, where it has one, its condition ("46/50"); a middle column, POCKETS, SPECIAL SLOTS and the
   equipped BACKPACK, TACTICAL RIG and POUCH, each a slot's item with its grid inline; and the stash's grid at the right.
   The middle column and the stash scroll each on its own, so a screenshot holds one page of each. In a grid a condition
-  ("147/147", "1469/1800") stands where a stack's count does, and is read as the count is. **Nested containers** (owner,
+  ("147/147", "1469/1800") stands where a stack's count does, and is read as the count is. A label no reading of Windows'
+  recognition fits is read once more by PaddleOCR's once its cell's place is settled (2026-10-26; below, "Where Windows'
+  recognition reads nothing"). **Nested containers** (owner,
   2026-10-19: "keep in mind of stackable things, like a bag stashed in a bag that contains additional items"): a
   container in a grid (a Zhuk rig in the backpack) hides its contents, which the game shows only in a floating window
   titled with its name (with search, sort and close buttons) that the player places anywhere, over what lies under it.
@@ -558,6 +561,58 @@ day, for the in-raid glance: "Which pictures", below):
   opened, for the desk either. Its note, the README and PRIVACY.md say what the desk reads, keeps and fetches; help with
   the desk's view, the website when its media are next made.
 
+**Where Windows' recognition reads nothing, PaddleOCR's reads the band once more** (owner, 2026-10-26, decision 1 of the
+overnight run's page: A, build it; the spike of 2026-10-25 and the built paragraph, docs/NEXT.md; `PaddleReader`,
+`DeskReader`, `TasksReader`). Until then every word above was read with Windows' own recognition alone. It reads most
+labels and countdowns, but some in none of its ways: labels of two or three glyphs (PS, F-1, WZ, GP, PB), a label run
+into its art ("Appl", "TC-2ØØ"), an empty-looking slot's label (Trooper 35, ScavBP), and the orange countdowns under an
+hour. So a second recognition comes with the app, kept as narrow as the readings it serves:
+- **What:** PaddlePaddle's PaddleOCR, its PP-OCRv5 latin mobile text-line recognition (a CTC recogniser, 7.9 MB) as
+  RapidOCR exports it to ONNX, with its dictionary (Apache-2.0; §3), recognition only (the band is the line, no
+  detection), through ONNX Runtime 1.30 (MIT) on the CPU, one thread. On the PC: nothing is downloaded at runtime and
+  nothing sent; ONNX Runtime's telemetry events (ETW, its Windows build's) are switched off before anything is loaded
+  (`SafetyTests`).
+- **Where, and nowhere else:** a label band the desk reads (the stash desk's grid cells and slots, the in-raid glance's,
+  wherever `DeskReader` reads a label) and a countdown band the tasks reader reads (an OPERATIONAL table row's, a trader's
+  list entry's), once Windows' recognition left it unread in every way it tries (a label's nine readings, a countdown's
+  14-way vote and its days split). Never first; never on a count (stack counts, rounds, conditions, objective counts), a
+  progress, a heading, a title, the page's words, the extract list or What You Have's reading (`StashReader`). On the
+  desk only once a cell's place is settled: an item in its place whose label no reading fit (not one whose footprint
+  contradicted a label Windows read, not an odd shape's cells), and a slot whose label no reading fit or that read none
+  (not one under a window); never the probes that decide where items stand (a joined rectangle's pieces, a shape's
+  cells), so its reading never moves a cell. Built first on every label read, it read an SMG's magazine in a piece's band
+  as "T" and split the gun into "?"s and "one of 4" cartridges (the stash page of 2026-10-11 16:32, picture 5): hence
+  the settled places only, as the spike measured it.
+- **How:** the band at the picture's own size in a 4 px margin (a label's from 3 px under its cell's top, 0.2 of a cell
+  high, up to three pixels past its ink, as Windows' band reading cuts it; a countdown's band as the vote reads it), read
+  once; its text through the same match as Windows' (the whole catalogue at 0.9, the slot's kind, the cell's footprint,
+  the preset rule, then the cell's picture against its candidates' icons as any "one of N"; a countdown's parse, never
+  against the days most ways read), and taken only where it names an item or parses. A countdown it read is taken only
+  whole (`TaskTable.WholeTimeLeft`; coordinator, 2026-10-26, for the bar of 0 wrong): every group of its clock exactly two
+  digits, hh:mm:ss, its day part, if any, as Windows' text's is parsed; else it is unread. Where no way of Windows' read
+  the band, its reading is the only one, with nothing to outvote it, and a digit lost would be a wrong countdown
+  ("05:55:4", which Windows' lenient parse takes for 00:55:54; PaddleOCR alone read so on the spike's night). Windows'
+  text keeps its parse. Nor is it a vote (0): where two rows disagree (`OperationalChecks`) it never wins. Counts, conditions and marks of a cell it named are read
+  by Windows' recognition, as ever.
+- **The model** is loaded at the first band that needs it (about 110 ms), off the reading's thread, once a run. One that
+  can't be loaded (gone from beside the exe, damaged, the runtime's library refused) is said once in the app log (WARN)
+  and never asked again: the readings read as Windows' alone. The app log says when it loaded; the readings log marks
+  each label and countdown it read ("PaddleOCR").
+- **Shipped** in the app's `ocr` folder, never in the repository: the build fetches it at a pinned revision and checks
+  it against its SHA-256 (§3, §8 "Distribution").
+- **Measured** (2026-10-26, `shturmap-cli desk` and `tasks` with and without `--no-paddle`, back to back on one build;
+  docs/NEXT.md): the desk truths' 444 items (the GEAR tab of 2026-10-19 34, the Keys page 72, the session's five 338)
+  right 417 → 421, "one of N" with the truth among them 14 → 16, nothing said 11 → 5, no cell 2 → 2, wrong 0 → 0; the
+  stash truths' 148 unchanged (142, 3, 3), the session's regions unchanged (93 of 95); the countdowns 33 → 35 of 35 (the
+  two orange under an hour), 0 wrong. Over the four desk sets and the 22 raid screenshots (86 pictures) it named 127
+  cells that said nothing, 29 kinds, each checked by eye on the picture: all right; nothing else changed. Cost: on the
+  desk truths' 28 pictures PaddleOCR read 156 bands (5.6 a picture), 21 ms each on one thread: about 120 ms more a
+  picture over about 2 s (about 50 ms on four threads, 9.5 ms a band); the app folder 249.6 → 274.4 MB (onnxruntime.dll
+  16.5 MB, the model 7.9 MB).
+- **The player's say:** no setting of its own: the ticks that say whether a picture is read cover it.
+- Not taken: B (Windows' alone) and C (PaddleOCR first; it reads less alone: 345 of 444 against 361 on the spike's
+  night).
+
 Nothing else of a picture may be read without the owner deciding it anew: not the raid timer beside the list
 (Windows' recognition doesn't read the game's digits, and a reader of Shturmap's own was not built), not the Tasks
 screen's other tabs, a trader's tasks or a task's rewards, not the hideout, not another player's inventory in a group
@@ -648,6 +703,17 @@ quoting it anywhere new.
   project before every publish, gathers it, `LICENSE` and every package's own licence files into the build's
   `licenses` folder, which is installed with the app (§8, "Distribution"). The help
   panel's LICENCES link opens it. Update it in the same change as any package. Everything Shturmap uses but doesn't ship (data, artwork, ideas) is credited in the README.
+- **PaddleOCR's recognition model is bundled** (owner, 2026-10-26; §2, "Where Windows' recognition reads nothing"):
+  PaddlePaddle's PP-OCRv5 latin mobile text-line recognition model and its character dictionary (PaddleOCR, Apache-2.0,
+  Copyright (c) 2016 PaddlePaddle Authors), the model as RapidOCR exports it to ONNX (Apache-2.0, Copyright (c) 2021
+  RapidOCR Authors), unmodified in the build's `ocr` folder, with ONNX Runtime's CPU build (MIT, Microsoft) to run it: a
+  general model of Latin print, no game art or data. Not in the repository: `eng\paddle-model.ps1`, run by
+  `Shturmap.Game`'s build, fetches both files from RapidOCR's model hub on ModelScope at revision v3.10.0 and keeps them
+  only when their SHA-256 is the pinned one (the model's as RapidOCR's own model list of that revision gives it), in a
+  cache outside the repository (`%LOCALAPPDATA%\Shturmap-build\ocr\v3.10.0`). Their licences: THIRD-PARTY-NOTICES.md,
+  `licenses\Apache-2.0.txt` and `licenses\PaddleOCR-NOTICE.txt` (where they come from, their hashes); ONNX Runtime's own
+  licence and notices come from its package (`eng\notices.ps1`). Moving to another model is a change of the script's
+  URL and hash, the notice, and the measurement again (docs/UPDATES.md).
 - **Game data** (quests, maps, items, extracts, bosses) comes from tarkov.dev's public JSON service
   (`json.tarkov.dev`), run by The Hideout. Its API page says it is free with no rate limit; there are no written
   terms. Requests say who they are (User-Agent `Shturmap/<version>` with the project's address, the build's own
@@ -4581,7 +4647,10 @@ self-unpacking exe, without updates; they need the Setup once.
   gives; both are on the release, with Velopack's portable zip). It installs for the Windows user, without admin
   rights, into `%LOCALAPPDATA%\ShturmapApp`, with a Start-menu and a desktop shortcut and an entry under Windows
   Settings → Apps. Measured 2026-10-03: the Setup is 106 MB, the installed app 244 MB (precompiled, like the folder
-  build), a delta between two builds 1.7 MB.
+  build), a delta between two builds 1.7 MB. PaddleOCR's model and ONNX Runtime (2026-10-26; §2, §3) add 26 MB to the
+  app (the folder build 249.6 → 274.4 MB; `onnxruntime.dll` 16.5 MB, the model in `ocr\` 7.9 MB), fetched and checked
+  by the build (`eng\paddle-model.ps1`; CI keeps them between runs as it keeps the packages, the Release workflow fetches
+  them afresh).
 - **The install folder is not the data folder.** Velopack installs to `%LOCALAPPDATA%\<pack id>`, and an uninstall
   deletes that folder. So the pack id is `ShturmapApp` (`Distribution.PackId`; `eng\release.ps1` packs with the
   same, a test checks), never `Shturmap`: the database, logs, cache, outbox and crash records in
@@ -4897,7 +4966,9 @@ compile too) and runs the tests, then builds it in Release and runs them again, 
 (`.github/workflows/ci.yml`), with the same `eng\dotnet.ps1` as on the PC and the SDK global.json names. Release since
 2026-10-11 (owner): a release compiles the other side of `#if DEVTOOLS`, and its tests check what only a release does;
 they had never run, and one had failed unseen. The Release build takes the Debug build's restore (the packages are the
-same) and its tests run on what it built. Tests that need the owner's PC skip there: the tarkov.dev cache, the game's
+same) and its tests run on what it built. PaddleOCR's model (§2, §3) is fetched by the build there as on the PC, and
+kept between runs as the packages are (keyed by `eng\paddle-model.ps1`, which checks it again), so its tests run on CI
+too. Tests that need the owner's PC skip there: the tarkov.dev cache, the game's
 logs, real screenshots, a published build in `artifacts` (`DevToolsGuardTests` read it), the website beside the
 repository. The repository is public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A
 failed run comes as GitHub's own mail. The daily data check is designed in docs/NEXT.md, not built yet. The layout
@@ -5081,13 +5152,14 @@ that went wrong can be looked into afterwards, beside the screenshot where it wa
 reading went: the head (the screenshot's name and time, Shturmap's version and build as the app log's first line says
 them, the picture's size, the game mode, the menu screenshots' tick and "Delete screenshots after reading"); the Tasks
 screen told, each row or entry with its cells as read (name, location, status, time left and progress as read and as
-taken, and by the page's words or by how many of the 14 ways), an expanded row's or a trader's tab's objectives, each
+taken, and by the page's words, by how many of the 14 ways or by PaddleOCR where no way read it, §2), an expanded
+row's or a trader's tab's objectives, each
 band's votes as the reading heard them, and what the operational set did (rows taken, locations on no map the data
 knows, countdowns the checks didn't take, a trader's task added or updated, countdowns refreshed, a screenshot older
 than the last table left; the set after it); What You Have's items; the desk's screen and timings, its layout in pixels
 (the loadout's slot boxes, each region's slot box, compartments and a window's area, the stash's grid, the windows and
 toasts, under which nothing is read, the frames found and those under no region, the layout's notes), each cell's place
-in units and pixels, its label as the recognition read it, its fit and what it matched (an item's name and id, "one of
+in units and pixels, its label as the recognition read it (marked where PaddleOCR read it), its fit and what it matched (an item's name and id, "one of
 N" with their names, or nothing: a label that fits nothing, none read, the footprint contradicting the label), its count
 as read, condition and found-in-raid mark, each region's cells unread and covered; and what the page in hand did
 (changed, read too blank, kept in part and why, a window dropped, each window attached or not, the regions now). A
@@ -5558,7 +5630,9 @@ every issue goes through it, and the app's report is offered beside it.
   property, the project folder among them, into `Shturmap.dll`: `SentryDisableSourceGenerator` is on. And every
   DLL carried its PDB path, with the user name in it: `PathMap` in `Directory.Build.props` maps the repository to
   `/_/`. A release build's files were scanned on 2026-10-03 and none holds the user name; scan again after adding a
-  package (the release must carry nothing of the developer's machine).
+  package (the release must carry nothing of the developer's machine). Scanned again on 2026-10-26, with ONNX Runtime and
+  PaddleOCR's model in it (§2): no path under the user folder in any file, 8-bit or UTF-16; the name's letters alone
+  only as other people's names in third-party licence texts and inside a word of a .NET runtime DLL.
   **No address and no place.** Sentry sees the sender's internet address as any server does, and derives a town and
   country from it even with the project's "Prevent Storing of IP Addresses" on (its scrubbing docs; a report's "User
   Geography" showed the owner's town, 2026-10-09). So every report says `infer_ip: never` in its `sdk` and carries an

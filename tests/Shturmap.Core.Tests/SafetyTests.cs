@@ -141,6 +141,21 @@ public class SafetyTests
         Assert.True(Directory.Exists(Path.Combine(session, "Reporting")), "the reporting code moved: point this test at it");
     }
 
+    // PaddleOCR's recognition runs in ONNX Runtime, whose Windows build writes telemetry events unless told not to (owner,
+    // 2026-10-26, decision 1; docs/DESIGN.md §2, "Where Windows' recognition reads nothing"): every file that loads a model
+    // switches them off.
+    [Fact]
+    public void Onnx_runtimes_telemetry_is_switched_off_wherever_a_model_is_loaded()
+    {
+        var src = Path.Combine(RepositoryRoot(), "src");
+        var files = Lines(src).Where(l => l.Text.Contains("new InferenceSession(", StringComparison.Ordinal)).Select(l => l.File).Distinct().ToList();
+        Assert.True(files.Count > 0, "no model is loaded in src: point this test at PaddleOCR's reader");
+        var violations = files.Where(f => !Lines(src).Any(l => l.File == f && l.Text.Contains("DisableTelemetryEvents()", StringComparison.Ordinal)))
+            .Select(f => $"{Path.GetRelativePath(src, f)} loads a model without OrtEnv.Instance().DisableTelemetryEvents()")
+            .ToList();
+        Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
+    }
+
     // The shipped code's lines, comments left out.
     private static IEnumerable<(string File, int Line, string Text)> Lines(string src) =>
         Directory.EnumerateFiles(src, "*.cs", SearchOption.AllDirectories)

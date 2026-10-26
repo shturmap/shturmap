@@ -74,6 +74,10 @@ public sealed class TaskRow
     public int TimeVotes { get; set; }
     public int ProgressVotes { get; set; }
 
+    /// <summary>Whether the countdown is PaddleOCR's reading of its band, which no way of Windows' recognition read
+    /// (2026-10-26; <see cref="TasksReader"/>); its votes are then 0.</summary>
+    public bool TimeByPaddle { get; set; }
+
     /// <summary>The row's middle (the task name's): the bands are measured from it.</summary>
     public double Cy { get; init; }
 
@@ -570,6 +574,22 @@ public static class TaskTable
         if (days.Length != 1 || !char.IsAsciiDigit(days[0]) || Clock(d.Groups["time"].Value) is not { TotalHours: < 24 } time)
             return null;
         return TimeSpan.FromDays(days[0] - '0') + time;
+    }
+
+    // A clock read whole: three groups of exactly two digits, the separators as the game's colon reads.
+    private static readonly Regex WholeClock = new(@"^\d{2}[:.,;]\d{2}[:.,;]\d{2}$", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// A countdown as PaddleOCR reads it (2026-10-26; <see cref="TasksReader"/>), taken only whole: every group of its clock
+    /// exactly two digits, hh:mm:ss, and its day part, if any, as <see cref="TimeLeft"/> takes Windows' ("6 day(s)
+    /// 23:07:57"); else none. Where Windows' recognition read nothing PaddleOCR's reading is the only one, with no vote to
+    /// outvote it, so a digit lost ("05:55:4", which <see cref="TimeLeft"/> takes for 00:55:54) is no countdown.
+    /// </summary>
+    internal static TimeSpan? WholeTimeLeft(string text)
+    {
+        var trimmed = text.Trim().TrimEnd('>', '›', '»', ' ');
+        var clock = DaysPattern.Match(trimmed) is { Success: true } d ? d.Groups["time"].Value : trimmed;
+        return WholeClock.IsMatch(Digits(clock.Replace(" ", "", StringComparison.Ordinal))) ? TimeLeft(text) : null;
     }
 
     private static readonly Regex DaysStart = new(@"^(?<days>\S{1,2}?)\s*d\s*a\s*[yv]", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);

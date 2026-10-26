@@ -23,13 +23,11 @@
     <EmbeddedResource Include="..\..\src\Shturmap.App\Rules\*.resx" LinkBase="App" TextNamespace="Shturmap.App.Rules" />
   </ItemGroup>
 
-  <!-- ocr-compare's second engine (the spike of 2026-10-19): PaddleOCR's recognition models through ONNX Runtime (MIT) on
-       the CPU. Built only with -p:OcrSpike=true, so that every other build and CI don't restore ONNX Runtime's 157 MB
-       package for a measurement; the models are given at run time and never enter the repository. -->
+  <!-- ocr-compare's second engine (the spikes of 2026-10-19 and 2026-10-25): PaddleOCR's recognition models through ONNX
+       Runtime on the CPU, the models given at run time. Built only with -p:OcrSpike=true. ONNX Runtime itself comes with
+       Shturmap.Game since the app reads with PaddleOCR where Windows' recognition reads nothing (2026-10-26), and the desk
+       and tasks commands read as the app does, with the model the build put beside the CLI (Ocr\PaddleUse.cs). -->
   <PropertyGroup Condition="'$(OcrSpike)' == 'true'">
     <DefineConstants>$(DefineConstants);OCR_SPIKE</DefineConstants>
   </PropertyGroup>
-  <ItemGroup Condition="'$(OcrSpike)' == 'true'">
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
-  </ItemGroup>
 </Project>

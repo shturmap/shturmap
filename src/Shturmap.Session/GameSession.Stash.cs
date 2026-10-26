@@ -142,9 +142,10 @@ public sealed partial class GameSession
             return _menuReader;
         _stashReaderLooked = true;
         var stashReader = Shturmap.Game.Screenshots.StashReader.Create(_settings.Language);
-        var tasksReader = Shturmap.Game.Screenshots.TasksReader.Create();
+        // A countdown band and a desk label Windows' recognition leaves unread are read again by PaddleOCR's (2026-10-26).
+        var tasksReader = Shturmap.Game.Screenshots.TasksReader.Create(Paddle());
         // The desk reads the labels as the stash's reader does, in the game's language.
-        var deskReader = stashReader is null ? null : new Shturmap.Game.Screenshots.DeskReader(stashReader);
+        var deskReader = stashReader is null ? null : new Shturmap.Game.Screenshots.DeskReader(stashReader, Paddle());
         _stashReaderMissing = stashReader is null;
         if (stashReader is not null)
         {
@@ -163,6 +164,17 @@ public sealed partial class GameSession
         _menuReader = menu.ReadAsync;
         return _menuReader;
     }
+
+    // PaddleOCR's recognition, the second reader of a desk label or a countdown band Windows' recognition left unread
+    // (owner, 2026-10-26, decision 1; docs/DESIGN.md §2): one for the session, shared by the menus' and the raid's readers,
+    // made with the first of them (under the gate). Its model, beside the exe, is loaded at the first such band, off the
+    // reading's thread; a model that can't be loaded is said once and the readings read as Windows' alone does. It is not
+    // disposed with the session: a reading under way may still be in it, and the process ends with it.
+    private PaddleReader? _paddle;
+
+    private PaddleReader Paddle() => _paddle ??= PaddleReader.Bundled(
+        loaded: ms => AppLog.Info($"Text recognition: PaddleOCR's model loaded ({ms} ms), for the labels and countdowns Windows' recognition leaves unread"),
+        failed: why => AppLog.Warn($"Text recognition: PaddleOCR's model couldn't be loaded, so the readings use Windows' recognition alone ({why})"));
 
     // Under the gate: the items the active quests need brought, on any map (BRING's rows: keys, items, gear, mods;
     // not weapons, whose classes run to hundreds and which the reading doesn't tell apart). Each with the short
