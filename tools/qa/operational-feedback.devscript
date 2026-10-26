@@ -18,7 +18,9 @@ wait 3
 # Shoreline without a countdown, a line of no known kind on Woods; the file isn't written this run).
 tasks 5 ended
 snapshot %TEMP%\shturmap-qa\operational-feedback\t0
-# The cue whole: its title decoded, its six rows risen in, the one that ends soonest first.
+# The cue whole: its title decoded, its six rows risen in, the one that ends soonest first (from about 1.6 s; the wait
+# keeps to it with the snapshot step of 2026-10-26, the developer view's tabs taken while the script goes on).
+wait 1
 snapshot %TEMP%\shturmap-qa\operational-feedback\cue
 # The sixth task has run out by the next still, and the cue has gone.
 wait 4

@@ -12,6 +12,7 @@ Inoffizielles Fanprojekt, nicht von Battlestate Games gemacht oder gebilligt. Au
 - reads · Die Namen deiner Screenshots
 - reads · Die Extract-Liste in einem Screenshot
 - reads · Stash, Gear, Dailies und Weeklies in einem Menü-Screenshot, wenn du einen machst
+- reads · Inventar und Loot in einem Raid-Screenshot
 - never · Fasst das Spiel an
 - never · Sendet Tastendrücke oder Klicks
 - never · Nimmt deinen Bildschirm auf

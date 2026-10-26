@@ -695,7 +695,7 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 await window.DevSnapshotAsync(DevScript.Folder(step.Arg(0, System.IO.Path.Combine(System.IO.Path.GetTempPath(), "shturmap-devview-snapshot"))));
                 break;
             case "exit":
-                window.DevExit();
+                await window.DevExitAsync();
                 return false;
             case "note":
                 // A note on a quest, as the field on its card adds one ("note Dandies \"Behind the bar\"", then "show

@@ -49,7 +49,9 @@ $app.WaitForExit()
 
 ## When each still is taken
 
-A `snapshot` step saves `window.png` about 0.3 s after its step, and the step after it follows about 1 s later. In the
+A `snapshot` step saves `window.png` about 0.3 s after its step, and the step after it follows about 1 s later (about
+0.8 s since 2026-10-26, when the developer view's tabs left the step; `wait 1` before `cue` keeps that still after the
+cue's entrance: in a run on the Debug build that day t0 0.3, cue about 2.1 and t1 about 6.8 after `tasks`). In the
 QA pass's runs (2026-10-19, en-US and de-DE, 900×1500) `window.png` was taken, in seconds: t0 0.6 after `tasks` (the
 synopses' gold half eased to ink, the flash nearly gone); shoreline and woods 2.4 after their `map … look`; raid-start
 3.4 after `start`. With the cue's still (2026-10-19, after the dev build, 1600×900): t0 about 0.9, cue about 2.3 and t1

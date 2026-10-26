@@ -1,0 +1,60 @@
+# QA replay of the newest What's New card, line by line (drafted in the release UI QA pass of 0.7.0, 2026-10-26): each
+# line pointed at, then tapped. A line with a preview shows it on the map while the pointer is on it; a tour:N line
+# previews nothing and its tap opens the tour at chapter N (docs/whats-new.md; DESIGN.md §4, *What's New*, *The tour*,
+# "Keeping it current"). A developer build plays it with --dev-view --dev-script; how to run it, and what each still
+# must show: whatsnew-lines.md beside this file. Times are in seconds.
+#
+# No version is named: the steps take the newest card, the build's own release. A card has up to five lines; on one with
+# fewer, the steps past its last say "What's New <version> has <n> lines" in the app log and change nothing.
+
+# A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
+# once the data was there. It ends first.
+tour end
+# Customs' artwork read once, so a preview staged there has its map at once.
+map customs
+wait 3
+whatsnew
+wait 1.5
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\card
+whatsnew 1
+wait 2
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\line-1
+whatsnew click 1
+wait 3
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\line-1-tap
+tour end
+wait 1
+whatsnew 2
+wait 2
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\line-2
+whatsnew click 2
+wait 3
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\line-2-tap
+tour end
+wait 1
+whatsnew 3
+wait 2
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\line-3
+whatsnew click 3
+wait 3
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\line-3-tap
+tour end
+wait 1
+whatsnew 4
+wait 2
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\line-4
+whatsnew click 4
+wait 3
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\line-4-tap
+tour end
+wait 1
+whatsnew 5
+wait 2
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\line-5
+whatsnew click 5
+wait 3
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\line-5-tap
+tour end
+wait 1.5
+snapshot %TEMP%\shturmap-qa\whatsnew-lines\end
+exit

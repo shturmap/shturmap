@@ -265,7 +265,13 @@ public sealed partial class MainWindow
         return version;
     }
 
-    /// <summary>The window and the map as PNGs (as "--snapshot" does), and the developer view when it is open.</summary>
+    /// <summary>
+    /// The window and the map as PNGs (as "--snapshot" does), the cue alone while one is up, and the developer view's two
+    /// tabs when it is open. The step ends with the window's pictures: the view's tabs are taken after them while the
+    /// script goes on (release UI QA pass of 0.7.0, F2: with the PC busy each picture waited some 0.3 to 0.5 s for a
+    /// frame, so the tabs made a step of about 3 s, and a still after another inside a motion, the roll call's t1 and
+    /// t3, came after the cue had gone).
+    /// </summary>
     internal async Task DevSnapshotAsync(string folder)
     {
         await SaveSnapshotAsync(folder);
@@ -273,16 +279,48 @@ public sealed partial class MainWindow
         // a cue's dark band (YOUR EXTRACTS THIS RAID's going with its rows, its title's halo) shows only over map.png, put
         // in at the place the log line gives.
         if (CuePanel.Visibility == Visibility.Visible && CuePanel.ActualHeight > 0)
-        {
-            var at = CuePanel.TransformToVisual(Map).TransformPoint(new Windows.Foundation.Point(0, 0));
-            await RenderToPngAsync(CuePanel, Path.Combine(folder, "cue.png"));
-            AppLog.Debug(FormattableString.Invariant($"Snapshot: cue.png at {at.X:0},{at.Y:0} DIP in the map's panel"));
-        }
+            await DevCueSnapshotAsync(folder);
         if (_devView is not null)
-            await _devView.SaveSnapshotsAsync(folder);
+            _devViewPictures = DevViewPicturesAsync(_devViewPictures, _devView, folder);
     }
 
-    internal Task DevRenderAsync(UIElement element, string path) => RenderToPngAsync(element, path);
+    // A cue on its way out: once its fade has ended, until it is taken away a moment later, a still draws it with no pixel
+    // (not written); taken away while it is drawn (the fade's end collapses it), the render fails with "Value does not
+    // fall within the expected range" (release UI QA pass of 0.7.0, F2: the step failed, and the view's tabs went with
+    // it). Each says so in the app log instead.
+    private async Task DevCueSnapshotAsync(string folder)
+    {
+        var at = CuePanel.TransformToVisual(Map).TransformPoint(new Windows.Foundation.Point(0, 0));
+        try
+        {
+            if (await RenderToPngAsync(CuePanel, Path.Combine(folder, "cue.png"), unlessEmpty: true))
+                AppLog.Debug(FormattableString.Invariant($"Snapshot: cue.png at {at.X:0},{at.Y:0} DIP in the map's panel"));
+            else
+                AppLog.Debug("Snapshot: no cue.png, the cue faded out (drawn empty)");
+        }
+        catch (ArgumentException e)
+        {
+            AppLog.Debug("Snapshot: no cue.png, the cue gone while it was drawn (" + e.Message + ")");
+        }
+    }
+
+    // The developer view's tabs of each still, one still's after the other's.
+    private Task _devViewPictures = Task.CompletedTask;
+
+    private static async Task DevViewPicturesAsync(Task before, Dev.DevView view, string folder)
+    {
+        await before;
+        try
+        {
+            await view.SaveSnapshotsAsync(folder);
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn("Snapshot: the developer view's pictures failed", e);
+        }
+    }
+
+    internal Task<bool> DevRenderAsync(UIElement element, string path) => RenderToPngAsync(element, path);
 
     /// <summary>What's New of the newest version, as help's link shows it, or of the version named (its card alone; owner,
     /// 2026-10-15, D10: 0.4.0's extracts preview); with a line (counted from 1), the pointer on it: its preview starts at
@@ -484,8 +522,10 @@ public sealed partial class MainWindow
         return $"desk: pointed at {at}";
     }
 
-    internal void DevExit()
+    // After the developer view's last pictures (DevSnapshotAsync).
+    internal async Task DevExitAsync()
     {
+        await _devViewPictures;
         _devView?.Close();
         ((App)Application.Current).EndSession();
         Application.Current.Exit();

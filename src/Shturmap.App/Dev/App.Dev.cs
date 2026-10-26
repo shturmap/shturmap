@@ -72,7 +72,7 @@ public partial class App
             if (!await _window.DevRunScriptAsync(script) && _window.Quiet)
             {
                 AppLog.Info("Developer script done: a quiet run ends with it");
-                _window.DevExit();
+                await _window.DevExitAsync();
             }
         }
     }
