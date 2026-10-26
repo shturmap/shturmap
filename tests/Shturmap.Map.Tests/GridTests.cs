@@ -190,12 +190,12 @@ public class GridTests
         // The readout's hairline at its left edge, then the sheet's panel there once a plate lies over part of it.
         var edge = new SKPoint(you.Box.Left, you.Box.MidY);
         var drawn = At(edge);
-        scene.PlateOver = SKRect.Create(you.Box.MidX, 0, 400, 300);
+        scene.PlateOver = [SKRect.Create(you.Box.MidX, 0, 400, 300)];
         var covered = At(edge);
         Assert.True(drawn.Red > covered.Red + 10, $"{drawn} against {covered}");
         // Its room is still kept: no label is placed there while the plate stands.
         Assert.NotNull(MapRenderer.LayoutOf(camera, scene, 1, Now).Grid!.You);
-        scene.PlateOver = null;
+        scene.PlateOver = [];
         Assert.Equal(drawn, At(edge));
     }
 

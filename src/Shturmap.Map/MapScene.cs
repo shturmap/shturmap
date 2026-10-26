@@ -217,12 +217,14 @@ public sealed class MapScene
     private SquadGrid? _grid;
 
     /// <summary>
-    /// Where a plate of the window lies over the map for a while (pixels; the in-raid glance's for its 6 s), null while none
-    /// does: the player's reference at the map's top left isn't drawn where the plate lies over it, its room still kept, and
-    /// the marker's tag says it (UI QA pass of the squad grid, 2026-10-26, F5: the plate left "YOU C" showing). Only drawn
-    /// differently, never laid out anew.
+    /// Where the window's plates and labels lie over the map for a while (pixels; the in-raid glance's plate for its 6 s, the
+    /// notes at the map's top: a notice, the crash question, a preview's or a look's label), none while none does: the
+    /// player's reference at the map's top left isn't drawn where one lies over it, its room still kept, and the marker's
+    /// tag says it (UI QA pass of the squad grid, 2026-10-26, F5: the plate left "YOU C" showing; the re-check, R6: the
+    /// tour's PREVIEW label stood over "YOU F6-1"); a replay's tags keep off them (R7). Only drawn differently, never laid
+    /// out anew.
     /// </summary>
-    public SkiaSharp.SKRect? PlateOver { get; set; }
+    public IReadOnlyList<SkiaSharp.SKRect> PlateOver { get; set; } = [];
 
     /// <summary>
     /// Where the window's own controls stand over the map (pixels; the window gives them while the grid shows, none

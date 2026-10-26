@@ -429,7 +429,7 @@ public static partial class MapRenderer
 
     // The strips pinned to the view, over everything the map draws: the letters along the top and bottom, the numbers
     // along the left and right, a mark where each 100 m line meets them; then the player's reference at the top left,
-    // unless a plate of the window lies over it (MapScene.PlateOver).
+    // unless a plate or label of the window lies over it (MapScene.PlateOver).
     private static void DrawGridStrips(SKCanvas canvas, Camera camera, MapScene scene, MapLayout layout, float ui)
     {
         if (layout.Grid is not { } grid)
@@ -472,7 +472,7 @@ public static partial class MapRenderer
             canvas.DrawText(number, inner.Left / 2, y + cap, SKTextAlign.Center, font, ink);
             canvas.DrawText(number, (inner.Right + w) / 2, y + cap, SKTextAlign.Center, font, ink);
         }
-        if (grid.You is { } you && !(scene.PlateOver is { } over && over.IntersectsWith(you.Box)))
+        if (grid.You is { } you && !scene.PlateOver.Any(over => over.IntersectsWith(you.Box)))
             DrawYou(canvas, you, ui);
     }
 

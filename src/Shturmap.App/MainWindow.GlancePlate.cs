@@ -65,18 +65,38 @@ public sealed partial class MainWindow
         // Where it stands, the map knows: the player's reference at its top left isn't drawn under it.
         RaidGlancePlate.SizeChanged += (_, _) => PlateOverMap();
         RaidGlancePlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => PlateOverMap());
+        // And so for the notes at the map's top, each as it shows, goes or changes its size, after the layout pass.
+        Map.SizeChanged += (_, _) => PlateOverMapSoon();
+        MapNotes.SizeChanged += (_, _) => PlateOverMapSoon();
+        foreach (var note in MapNotes.Children.OfType<FrameworkElement>())
+        {
+            note.SizeChanged += (_, _) => PlateOverMapSoon();
+            note.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => PlateOverMapSoon());
+        }
     }
 
-    // The plate over the map, for the map's drawing: at the smallest window it lies over the player's reference at the map's
-    // top left for its 6 s, and the cut reference ("YOU C") read as broken, so the map leaves it out under the plate while
-    // the marker's tag says it (UI QA pass of the squad grid, 2026-10-26, F5). Looked at again as the plate shows, goes,
-    // changes its size or is placed anew.
+    private void PlateOverMapSoon() => DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, PlateOverMap);
+
+    // The plates over the map, for the map's drawing: at the smallest window the glance's plate lies over the player's
+    // reference at the map's top left for its 6 s, and the cut reference ("YOU C") read as broken, so the map leaves it out
+    // under the plate while the marker's tag says it (UI QA pass of the squad grid, 2026-10-26, F5); the same under the
+    // notes at the map's top, a preview's label among them (the re-check, R6: the tour's chapter 5 at 900×560 stood
+    // "PREVIEW · THE TOUR · CUSTOMS" over "YOU F6-1"), whose room a replay's tags keep off too (R7). Looked at again as a
+    // plate shows, goes, changes its size or is placed anew.
     private void PlateOverMap()
     {
-        Windows.Foundation.Rect? over = null;
-        if (!_stopped && GlanceUp && RaidGlancePlate.ActualWidth >= 1 && RaidGlancePlate.ActualHeight >= 1)
-            over = RaidGlancePlate.TransformToVisual(Map).TransformBounds(new Windows.Foundation.Rect(0, 0, RaidGlancePlate.ActualWidth, RaidGlancePlate.ActualHeight));
-        if (over != Map.PlateOver)
+        var over = new List<Windows.Foundation.Rect>();
+        if (!_stopped)
+        {
+            Windows.Foundation.Rect Of(FrameworkElement plate) =>
+                plate.TransformToVisual(Map).TransformBounds(new Windows.Foundation.Rect(0, 0, plate.ActualWidth, plate.ActualHeight));
+            bool Shows(FrameworkElement plate) => plate.Visibility == Visibility.Visible && plate.ActualWidth >= 1 && plate.ActualHeight >= 1;
+            if (GlanceUp && Shows(RaidGlancePlate))
+                over.Add(Of(RaidGlancePlate));
+            if (Shows(MapNotes))
+                over.AddRange(MapNotes.Children.OfType<FrameworkElement>().Where(Shows).Select(Of));
+        }
+        if (!over.SequenceEqual(Map.PlateOver))
             Map.PlateOver = over;
     }
 

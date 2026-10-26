@@ -346,6 +346,40 @@ pictures outside the repository): FAIL (0 blocks, 3 should, 4 nits).
 - R7 (nit, the owner's): the `replay` preview at the default window starts its route, and its "0 MIN IN" tag, under the
   PREVIEW label at the view's top; DESIGN.md says nothing of a framing under that label.
 
+**Fixed (2026-10-26, 4de2951).** R1, R2, R3, R6 and R7, on 846e75d; R4 and R5 (the owner's) not taken. DESIGN.md says each
+where its rule lives. Checked with the re-check's repro runs: the folder build of `eng\publish.ps1` for `--show-crash`,
+Plan and the tour's chapter 5 at 900×560 in English and German and `-Glance 1`; the Debug build for the re-check's replay,
+now `tools\qa\whatsnew-previews.devscript` with its `.md` (docs/QA.md), at 900×560 and the default window in English and
+at 900×560 in German; each run with a data folder of its own, no ERROR or WARN, its pictures outside the repository:
+
+- R1: the floor list steps aside unseen and out of reach (opacity 0, no hit test, disabled) instead of emptied, so it
+  stays laid out and its place counts in `ControlsOverMap` from the first moment; the rectangle kept from the list's last
+  showing is gone. `--show-crash` at 900×560: no name where the list stands ("KOLLONTAY 75%" and "Klimov Shopping Mall
+  Exfil" gone from there; in German "Klimov-Straße" too), the map's right side as in Plan without the question, the box
+  clear of the list.
+- R2: a replay's tags keep off the grid's strips, the window's controls (`MapScene.ControlsOver`) and its plates and
+  labels over the map (`MapScene.PlateOver`), as the map's labels do; a tag with no free place is left out, as before.
+  `whatsnew 0.4.0 2` at 900×560: "LAST SEEN · 4 MIN BEFORE THE END" whole below-left of its position, clear of + and −;
+  in German "ZULETZT GESEHEN · 4 MIN VOR DEM ENDE" likewise. The preview's other plates, its minute tags, follow the same
+  rule; its labels and names kept off the controls already (F2).
+- R3: a small change. A What's New line that stages no map of its own (`clock`, `stash`, `stash-card`, `stash-given`,
+  `notes`; `Rules.WhatsNew.StagesMap`) puts the player's map back first where the line before staged one, made anew at the
+  view it had (`PlayersMapUnder`; `UpdateMap` makes the scene under that preview while it lasts and keeps the view to
+  come back to for the preview's end). The replay's `clock` after `extracts` stands over the player's Customs (no lit or
+  struck-out extracts), `stash` and `notes` after `joined` over Customs, not Woods, in both languages and windows; `end`
+  the player's Customs with its floor list back.
+- R6: the label stays where the notes stand and the readout gives way, as under the glance's plate: `MapScene.PlateOver`
+  is now a list, the glance's plate and every note at the map's top that shows (a notice, the crash question, a
+  preview's or a look's label), looked at again as one shows, goes or changes its size. Chapter 5 at 900×560: no "YOU
+  F6-1" ("DU F6-1") under "PREVIEW · THE TOUR · CUSTOMS", the example's tag in the cut-out saying the square; `-Glance 1`
+  still without "YOU C".
+- R7: the same keep-out (`PlateOver` holds the PREVIEW label): at the default window "0 MIN IN" stands left of its
+  position, clear of the label; the route's first point itself still lies at the label's left edge (the framing not
+  changed). At 900×560 in German, where the label takes two lines, the first tag finds no free place and is left out.
+- Checked beside: `ReplayTests` (a tag off a control and off a plate), `WhatsNewTests` (`StagesMap`), `GridTests` with the
+  list; the suite passed (2684, 41 skipped); the layout check (`-States plan,crash,whatsnew,tour5`, 900x560 and
+  1600x900) passed in English, German and the pseudo-language, no problem in any. No text changed.
+
 ## 2026-10-26: the overnight run's five decisions
 
 **Decided** (owner, 2026-10-26, on the session's decision page; the page stays outside the repository). Each was found

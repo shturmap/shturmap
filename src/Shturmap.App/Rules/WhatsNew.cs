@@ -33,6 +33,14 @@ public static class WhatsNew
         { "replay", "extracts", "clock", "joined", "leaders", "stash", "stash-card", "stash-given", "notes" };
 
     /// <summary>
+    /// Whether a line's preview stages a map of its own (the replay, the extract list, the objectives on one spot, the
+    /// crowded spot). The others lay only a plate or a cue over the player's map, which comes back first, made anew, where
+    /// the line pointed at before staged one (UI QA re-check of the grid's fixes, 2026-10-26, R3: the clock stood over the
+    /// extract list's Customs until the pointer left the card).
+    /// </summary>
+    public static bool StagesMap(string preview) => preview is "replay" or "extracts" or "joined" or "leaders";
+
+    /// <summary>
     /// Whether the app knows what a line's preview is: one of <see cref="Previews"/>, or a line about the tour ("tour",
     /// "tour:5"), which previews nothing and opens the tour at that chapter when clicked (<see cref="Tour.ChapterOf"/>).
     /// </summary>
