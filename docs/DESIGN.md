@@ -1756,9 +1756,13 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     host, §2). So: a card at the top of Plan's rail, under the MAP picker (and the update band), in the panel's
     colour with a `Line` hairline. NEW IN 0.4.0 · PRAETORIAN in the eyebrow style in amber (the version and its
     release's name, below), × in its corner (`E711`, as on a notice),
-    up to five lines per version, each a 56×34 picture and the thing's name over one note line, then "Point at one: the
-    map shows it." The picture is the thing's map symbol drawn by `MapLegend`, as help's legend rows are, a small
-    drawing of the raid card's clock, the stash grid glyph the marks carry (what you have), a sticky note (`E70B`,
+    up to five lines per version, each a 56×34 picture and the thing's name over one note line, then a note that says
+    what the lines do, counted over every version the card shows (`Rules.WhatsNew.FootOf`): "Point at one: the map
+    shows it." where each previews, "Click one: the tour shows it." where each is about the tour, "Point or click: the
+    map or the tour shows it." where there are both, one line at 900×560 in each language (UI QA pass of the squad
+    grid, F9, 2026-10-26: the first stood under 0.7.0's five tour lines, which preview nothing). The picture is the
+    thing's map symbol drawn by `MapLegend`, as help's legend rows are, a small drawing of the raid card's clock, the
+    stash grid glyph the marks carry (what you have), a sticky note (`E70B`,
     Segoe's QuickNote) for quest notes (`notes`), or, on a line about the tour (`tour`, `tour:5`), the tour's drawn
     pointer as the tour draws it, white on a dark rim at 1.2 times, in the middle of the picture's place (owner,
     2026-10-15: until then a tour line had none, the one gap in the column; `MainWindow.TourPointerShape`). **Pointing

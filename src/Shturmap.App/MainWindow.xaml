@@ -1082,7 +1082,8 @@
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
-                  <TextBlock Text="{x:Bind local:ViewTexts.WhatsNewPointAt}" Style="{StaticResource NoteText}" Margin="0,-14,0,0" />
+                  <!-- What its lines do: preview on the map, open the tour, or both (Rules.WhatsNew.FootOf). -->
+                  <TextBlock Text="{x:Bind ViewModel.WhatsNewFoot, Mode=OneWay}" Style="{StaticResource NoteText}" Margin="0,-14,0,0" />
                 </StackPanel>
               </Border>
               <!-- The card's close, in its corner as on a notice. -->

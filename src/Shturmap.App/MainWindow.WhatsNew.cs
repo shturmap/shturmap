@@ -110,6 +110,13 @@ public sealed partial class MainWindow
                     item.Preview.StartsWith("stash", StringComparison.Ordinal), AboutTour: !WhatsNew.ShowsPreview(item.Preview), Notes: item.Preview == "notes"))
                     .ToList()))
             .ToList();
+        // The note at its foot says what its lines do (Rules.WhatsNew.FootOf).
+        ViewModel.WhatsNewFoot = WhatsNew.FootOf(sections) switch
+        {
+            WhatsNew.Foot.Click => ViewTexts.WhatsNewClickOne,
+            WhatsNew.Foot.PointOrClick => ViewTexts.WhatsNewPointOrClick,
+            _ => ViewTexts.WhatsNewPointAt,
+        };
         ViewModel.WhatsNewShown = sections.Count > 0;
     }
 

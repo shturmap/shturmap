@@ -352,6 +352,14 @@
     <value>Zeig auf eine Zeile: Die Map zeigt sie.</value>
     <comment>en: Point at one: the map shows it.</comment>
   </data>
+  <data name="WhatsNewClickOne" xml:space="preserve">
+    <value>Klick auf eine Zeile: Die Tour zeigt sie.</value>
+    <comment>en: Click one: the tour shows it.</comment>
+  </data>
+  <data name="WhatsNewPointOrClick" xml:space="preserve">
+    <value>Zeig drauf oder klick: Die Map oder die Tour zeigt sie.</value>
+    <comment>en: Point or click: the map or the tour shows it.</comment>
+  </data>
   <data name="WhatsNewCloseTip" xml:space="preserve">
     <value>Schließen. Die Hilfe holt sie zurück.</value>
     <comment>en: Close. Help brings it back.</comment>

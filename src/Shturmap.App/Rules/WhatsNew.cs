@@ -45,6 +45,32 @@ public static class WhatsNew
     /// </summary>
     public static bool ShowsPreview(string preview) => Tour.ChapterOf(preview) is null;
 
+    /// <summary>What the note at the card's foot says its lines do (<see cref="FootOf"/>).</summary>
+    public enum Foot
+    {
+        /// <summary>Every line previews on the map when pointed at: "Point at one: the map shows it."</summary>
+        PointAt,
+
+        /// <summary>Every line is about the tour and opens it when clicked: "Click one: the tour shows it."</summary>
+        Click,
+
+        /// <summary>Some of each: "Point or click: the map or the tour shows it."</summary>
+        PointOrClick,
+    }
+
+    /// <summary>
+    /// What the card's lines do, for the note at its foot: every one previews (<see cref="ShowsPreview"/>), every one is
+    /// about the tour, or some of each. A card shows every version newer than the one last seen, so the lines of all
+    /// the sections it shows count (UI QA pass of the squad grid, F9, 2026-10-26: "Point at one: the map shows it." stood
+    /// under 0.7.0's five tour lines, which preview nothing).
+    /// </summary>
+    public static Foot FootOf(IEnumerable<Section> sections)
+    {
+        var items = sections.SelectMany(s => s.Items).ToList();
+        var previews = items.Count(i => ShowsPreview(i.Preview));
+        return previews == items.Count ? Foot.PointAt : previews == 0 ? Foot.Click : Foot.PointOrClick;
+    }
+
     /// <summary>
     /// The sections of docs/whats-new.md, newest first: "## 0.4.0" and its "- preview · Name · Text" lines. A release
     /// that raises the minor or major number has a name, the owner's (owner, 2026-10-09: "named major releases", the
