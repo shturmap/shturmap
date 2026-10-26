@@ -153,6 +153,13 @@ out") and *A region never read*.)
   empty each a gear page read; the frame's rule and the line's the same on six pages) and the German test's four lines.
   Pictures (folder build, `fake-raid.ps1 -PlanOnly -Desk -DeskReading 4`): "ON YOU 3.20 M+ ₽ · KEEP 0 · 2 · 1" at
   1600×900 in English, „AN DIR 3,20 M+ ₽ · BEHALTEN 0 · 2 · 1“ at 900×560 in German. `docs/tour.md` shows no head line.
+- Held back, the owner's to decide (the coordinator, 2026-10-26): the placeholders one cell high (built on the branch
+  `worktree-agent-aab0fb213b96a7ce4`, c95bcd2, with "NOT SEEN" / „UNGESEHEN“ for the narrow frames). The decision's
+  premise, "as their grids", holds for the made-up desk (POCKETS 4×1, SPECIAL SLOTS 3×1) but not for the owner's own
+  screenshots: the session truths read `pockets 4x2` in all 14 that list them and `special 3x2` in all 15, so on the
+  owner's desk one-cell frames would move the column 40 DIP when the pockets are first read, which the two-cell frames
+  don't. Most likely the game edition decides the pockets' size (a guess). Until the owner decides, the frames stay two
+  cells high with the long words.
 
 ## 2026-10-25: the layout round: a steady desk, the reading's faults, the trader's task view
 
