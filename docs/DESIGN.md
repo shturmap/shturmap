@@ -41,9 +41,17 @@ And one for the daily and weekly tasks a Tasks screenshot brought (or, since 202
 cue, one for all of them (owner, 2026-10-19, after trying the dev build: "they should get the same animation as the
 other quests. Be mindful of multiple missions started at the same time, we might want to have them in one animation
 included"; §4, principle 11).
+And one for a squad, which widens the second question to "where are my teammates, from what they say": **a grid on
+the map** that players read out to each other (owner, 2026-10-26: "people in a squad communicate where they are. So
+therefore it is crucial to assess (1) where you are … and (2) it's crucial to easily figure out where team mates are
+when they give their position. As of (2) this has to be doable without, if possible, interacting with the map
+whatsoever"; from a panel of five, 2026-10-26: E, the squad grid; "Map drawing", *The grid*). Shturmap still sends
+nothing between players (§2, "Never share a position"): the player says the reference, and a teammate finds it on
+their own Shturmap, whose grid is the same on every install.
 
 **Not goals** (declined on purpose; don't add them): hideout tracking, loot or container maps beyond what quests
-need, item scanning by hotkey, ammo charts, squad sharing, achievements, overlays on the game window, statistics
+need, item scanning by hotkey, ammo charts, squad sharing (Shturmap sending, syncing or showing other players'
+positions; the grid players read out to each other is not that, owner, 2026-10-26), achievements, overlays on the game window, statistics
 dashboards, a settings maze. Of the market, the stash desk's one view and nothing more: no register of the stash over
 time (the desk mirrors the screenshot in hand; outside it, what Shturmap learned of having an item shows only on the
 rows that need it, §4, "What you have"), no watchlists or alerts, no stash value over time, no buying or selling

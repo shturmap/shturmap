@@ -6,6 +6,54 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-26: a grid on the map, for squads
+
+**The ask** (owner, 2026-10-26): a spec for a "tactical map grid" (100 m squares lettered A to Z without I and O, rows
+numbered, two keypad levels, NATO callouts, a readout with a hover line, metres and a copy action, five settings), to be
+judged against the design on a panel, by map and information-design practice ("we want to not overload the user with
+information"). Then its purpose: "people in a squad communicate where they are. So therefore it is crucial to assess (1)
+where you are (can likely be done by just showing precise location in grid when screenshot is taken) and (2) it's
+crucial to easily figure out where team mates are when they give their position. As of (2) this has to be doable
+without, if possible, interacting with the map whatsoever. … I feel the quiet grid makes (2) quite hard."
+
+**Found** (the coordinator, from DESIGN.md and the map code; the panel's pictures drawn by the renderer with throwaway
+code, outside the repository):
+
+- Every map is placed with tarkov.dev's transform (`MapProjection.For`), as the marker, objectives and extracts are, so
+  a grid in metres is as right as the marker. Every map's `coordinateRotation` is a multiple of 90° (Factory 90°, The Lab
+  and Labyrinth 270°, the others 180°), so the lines stand square on screen. On Streets Primorsky Ave. runs along a
+  100 m line and Kilmov St. along another. Icebreaker's render is stretched 1.75× along one axis: its squares are oblong.
+- A reference is only worth saying if every player's Shturmap draws the same grid: each map's A1 is fixed in the app,
+  never worked out at runtime from tarkov.dev's bounds, which can change.
+- The spec's hover line and copy work only out of a raid (the game holds the cursor; keys reach the window only while
+  it has the focus, no global hotkeys), where there is no "you". Its "phone keypad, 7-8-9 on the top row" is a
+  computer's number pad (a phone has 1-2-3 on top); its "MGRS-style" northing would grow southward.
+- Maps without artwork already draw a 10 m grid on their sheet.
+- On Woods' overview the spec's centred cell labels are 210; the squad grid's corner references 146 (64 left out under
+  names and symbols). Factory's whole map lies on four squares, A1 to B2.
+
+**Decided** (owner, 2026-10-26, on the panel; the page stays outside the repository): **E, the squad grid**, with one
+keypad level, on at the first start, none of the spec's extras, and the player's reference in both places:
+
+- 100 m lines visible on purpose from a second monitor (on Streets about twice the contrast of the quiet grid's: median
+  ΔL* about 21 where B had 11), no hue of their own (a lighter step of the ground under them), under every symbol, name
+  and route, broken under names.
+- Letters along the top and bottom, numbers along the left and right, pinned to the view while it pans.
+- In every square a small reference at its top-left corner ("D3"), left out where a name or symbol lies under it, so a
+  heard reference is found by reading, not counting.
+- The keypad (≈33 m, 7-8-9 on the top row as on a number pad): ticks at the thirds of each 100 m line at the overview,
+  its lines fading in by zoom where a third of a square is at least about 60 px; no second level. References like
+  "D5-8".
+- The player's reference on the marker's tag ("D5-8 · 2 MIN OLD") and large in one fixed place, the map's top left
+  ("YOU D5-8 · 2 MIN OLD").
+- One setting, the grid on or off, on by default.
+- Not taken: A (the spec as written), B (the quiet grid: lines, letters top and numbers left only; (2) hard), C (crosses
+  instead of lines), D (no grid); the extras (NATO words, a hover line, copy, metres, a second keypad level).
+
+Open for the build, the owner's to confirm: the fixed reference drawn in sand (DESIGN.md gives sand to the player alone;
+this is the player's position); the room the four strips take from the window's foot (the scale bar, the credit, the
+buttons and the floor list move inward); whether the sheet's 10 m grid gives way to it.
+
 ## 2026-10-26: the overnight run's five decisions
 
 **Decided** (owner, 2026-10-26, on the session's decision page; the page stays outside the repository). Each was found
