@@ -14,6 +14,35 @@
     <PackageReference Include="SkiaSharp" />
   </ItemGroup>
 
+  <!-- PaddleOCR's recognition, the second reader of a label or countdown band Windows' recognition left unread
+       (PaddleReader; owner, 2026-10-26, decision 1; docs/DESIGN.md §2 and §3): ONNX Runtime (MIT) on the CPU. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
+  </ItemGroup>
+
+  <!-- Its model and dictionary go with the app, in ocr\ beside the exe (and in every build's output that references this
+       project), but never into the repository: eng\paddle-model.ps1 fetches them at build time from RapidOCR's model hub
+       at a pinned revision, checks each against its SHA-256 and keeps them in a cache outside the repository, then puts
+       them into obj\ocr; again only when the script changed or they aren't there. A build after the first needs no
+       network; one that can't fetch or check them fails, so no build goes out without them. -->
+  <PropertyGroup>
+    <_PaddleOut>$(MSBuildProjectDirectory)\$(BaseIntermediateOutputPath)ocr</_PaddleOut>
+    <_PaddleScript>$(MSBuildProjectDirectory)\..\..\eng\paddle-model.ps1</_PaddleScript>
+  </PropertyGroup>
+
+  <Target Name="PaddleModelFetch" Condition="'$(DesignTimeBuild)' != 'true'" Inputs="$(_PaddleScript)"
+          Outputs="$(_PaddleOut)\latin_PP-OCRv5_rec_mobile.onnx;$(_PaddleOut)\ppocrv5_latin_dict.txt">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(_PaddleScript)&quot; -Out &quot;$(_PaddleOut)&quot;" />
+  </Target>
+
+  <Target Name="PaddleModel" BeforeTargets="AssignTargetPaths" DependsOnTargets="PaddleModelFetch" Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_PaddleFile Include="$(_PaddleOut)\latin_PP-OCRv5_rec_mobile.onnx;$(_PaddleOut)\ppocrv5_latin_dict.txt" />
+      <Content Include="@(_PaddleFile)" Link="ocr\%(_PaddleFile.Filename)%(_PaddleFile.Extension)" CopyToOutputDirectory="PreserveNewest"
+               CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+
   <!-- The CLI's stash command measures the stash reader against hand-written truths with what it saw on the way. -->
   <ItemGroup>
     <InternalsVisibleTo Include="Shturmap.Game.Tests" />

@@ -38,7 +38,7 @@ public sealed partial class GameSession
         if (_raidInventoryReaderLooked)
             return _raidInventoryReader;
         _raidInventoryReaderLooked = true;
-        if (Shturmap.Game.Screenshots.DeskReader.Create(_settings.Language) is not { } reader)
+        if (Shturmap.Game.Screenshots.DeskReader.Create(_settings.Language, Paddle()) is not { } reader)
             return null;
         _raidInventoryReader = async (path, catalogue, at, ct) =>
         {

@@ -1,4 +1,5 @@
 using Shturmap.Game.Screenshots;
+using SkiaSharp;
 
 namespace Shturmap.Game.Tests;
 
@@ -193,6 +194,104 @@ public sealed class TaskTableTests
         var story = TaskTable.Read([.. Header(), .. Row(254, ["Zorblat"], "Lighthouse")], Width, Height);
         Assert.Single(story.Rows);
         Assert.Equal(TaskScreen.OtherTable, TaskTable.Settle(story));
+    }
+
+    // ---- PaddleOCR where no way of Windows' recognition reads a countdown (owner, 2026-10-26, decision 1) ----
+
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
+    // The table's words as the page gives them, its bands on a picture where Windows' recognition reads nothing: a row whose
+    // countdown the page carried, a row expanded with an objective whose count the page dropped, and a third row.
+    private static List<TaskWord> RowsForPaddle() =>
+    [
+        .. Header(),
+        .. Row(254, ["Zorblat"], "Lighthouse"), W("1ø:14:11", 1285, 266, 69, 20),
+        .. Row(391, ["Quenvik"], "Shoreline"),
+        W("Objective(s)", 101, 598, 126, 22), .. Sentence(607, 651, "Outlast the Zorbs"),
+        W("Rewards", 101, 790, 95, 18),
+        .. Row(1100, ["Pindrake"], "Customs"),
+    ];
+
+    private static SKBitmap Blank()
+    {
+        var picture = new SKBitmap(Width, Height);
+        using var canvas = new SKCanvas(picture);
+        canvas.Clear(new SKColor(18, 20, 22));
+        return picture;
+    }
+
+    // Only a countdown band no way read goes to PaddleOCR, once each, at its own size in a narrow margin; never the band of
+    // a countdown the page carried, a progress or an objective's count. Its text goes through the countdown's parse, and
+    // it is no vote: a disagreement with another row never goes its way (OperationalChecks).
+    [Fact]
+    public async Task Paddle_reads_only_the_countdown_bands_no_way_read()
+    {
+        var paddle = new DeskReaderTests.Lines("00:48:48 >");
+        var ocr = TasksReader.Create(paddle);
+        if (ocr is null)
+            Assert.Skip("This Windows has no English text recognition.");
+        using var picture = Blank();
+        var page = await ocr.ReadPageAsync(picture, RowsForPaddle(), null, Ct);
+        Assert.Equal(["Zorblat", "Quenvik", "Pindrake"], page.Rows.Select(r => r.Name));
+        Assert.Equal(new TimeSpan(10, 14, 11), page.Rows[0].TimeLeft);
+        Assert.False(page.Rows[0].TimeByPaddle);
+        Assert.All(page.Rows.Skip(1), r =>
+        {
+            Assert.Equal(new TimeSpan(0, 48, 48), r.TimeLeft);
+            Assert.True(r.TimeByPaddle);
+            Assert.Equal(0, r.TimeVotes);
+        });
+        Assert.Equal(page.Rows.Skip(1).Select(r => r.TimeBand.H + 8), paddle.Read.Select(l => l.H));
+        Assert.All(page.Rows, r => Assert.Null(r.Progress));
+        Assert.Null(Assert.Single(page.Rows[1].Objectives).Of);
+    }
+
+    // PaddleOCR's countdown is taken only whole (2026-10-26): where Windows' recognition read nothing it is the only reading,
+    // so a digit lost must read as none, where Windows' text keeps its lenient parse ("05:55:4" is 00:55:54 there).
+    [Theory]
+    [InlineData("00:48:48", "00:48:48")]
+    [InlineData("00:48:48 >", "00:48:48")]
+    [InlineData("1Ø:14:11", "10:14:11")]
+    [InlineData("6 day(s) 23:07:57 >", "167:07:57")]
+    [InlineData("05:55:4", null)]
+    [InlineData("5:55:54", null)]
+    [InlineData("055554", null)]
+    [InlineData("00:4848", null)]
+    [InlineData("6 day(s) 23:7:57", null)]
+    [InlineData("6 day(s)", null)]
+    public void A_countdown_paddle_reads_is_taken_only_whole(string text, string? whole) =>
+        Assert.Equal(whole, TaskTable.WholeTimeLeft(text) is { } t ? TaskTable.Hms(t) : null);
+
+    [Fact]
+    public void A_countdown_with_a_digit_lost_still_parses_from_windows_text() =>
+        Assert.Equal(new TimeSpan(0, 55, 54), TaskTable.TimeLeft("05:55:4"));
+
+    // A text PaddleOCR reads that is no countdown, or one with a digit lost, is none; and a model that can't be loaded
+    // leaves the rows as Windows' recognition left them, said once.
+    [Fact]
+    public async Task A_countdown_band_paddle_reads_as_no_countdown_or_cant_read_stays_unread()
+    {
+        var failed = new List<string>();
+        var root = Directory.CreateTempSubdirectory("shturmap-paddle-").FullName;
+        try
+        {
+            using var missing = new PaddleReader(Path.Combine(root, "none.onnx"), Path.Combine(root, "none.txt"), failed: failed.Add);
+            foreach (ILineReader paddle in new ILineReader[] { new DeskReaderTests.Lines("Survive"), new DeskReaderTests.Lines("05:55:4"), missing })
+            {
+                var ocr = TasksReader.Create(paddle);
+                if (ocr is null)
+                    Assert.Skip("This Windows has no English text recognition.");
+                using var picture = Blank();
+                var page = await ocr.ReadPageAsync(picture, RowsForPaddle(), null, Ct);
+                Assert.Equal(new TimeSpan(10, 14, 11), page.Rows[0].TimeLeft);
+                Assert.All(page.Rows.Skip(1), r => Assert.Null(r.TimeLeft));
+            }
+            Assert.Single(failed);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     // A trader's tab whose list has no operational entry: told, and nothing is read from it (its objectives and rewards
@@ -661,5 +760,46 @@ public sealed class TaskTableTests
             }
         }
         Assert.True(3 * read >= 2 * countdowns, $"{read} of {countdowns} of the lists' countdowns read");
+    }
+
+    // With PaddleOCR's recognition on the countdown bands no way read (owner, 2026-10-26, decision 1), as the app reads:
+    // every countdown of the owner's screenshots read, the tables' rows and the traders' lists alike, and none wrong
+    // (measured 2026-10-26: 35 of 35, the two Windows' recognition leaves the orange ones under an hour). The rest of each
+    // page as the tests above hold it.
+    [Fact]
+    public async Task With_paddle_every_countdown_of_the_real_screenshots_is_read_and_none_wrong()
+    {
+        var truths = Truths(Fixtures).Concat(Truths(Path.Combine(Fixtures, "trader"))).ToList();
+        if (truths.Count == 0)
+            Assert.Skip(@"Real screenshots stay out of the repository: none with a truth on this PC (tests\fixtures\ocr\operational).");
+        if (!PaddleReader.IsBundled)
+            Assert.Skip(@"No PaddleOCR model beside the tests: the build puts it in ocr\ (eng\paddle-model.ps1).");
+        using var paddle = PaddleReader.Bundled();
+        var ocr = TasksReader.Create(paddle);
+        if (ocr is null)
+            Assert.Skip("This Windows has no English text recognition.");
+        int countdowns = 0, read = 0;
+        foreach (var (picturePath, truthPath) in truths)
+        {
+            var (page, truth) = await ReadAsync(ocr, picturePath, truthPath);
+            var file = Path.GetFileName(truthPath);
+            if (truth.Screen == "trader")
+            {
+                var (all, taken) = CheckTrader(page, truth, file);
+                (countdowns, read) = (countdowns + all, read + taken);
+                continue;
+            }
+            if (truth.Screen != "table")
+                continue;
+            for (var i = 0; i < truth.Rows.Count; i++)
+            {
+                countdowns++;
+                if (page.Rows[i].TimeLeft is not { } left)
+                    continue;
+                Assert.True(TaskTruth.SameTime(left, truth.Rows[i].Time), $"{file}, row {i + 1}: its countdown misread");
+                read++;
+            }
+        }
+        Assert.Equal(countdowns, read);
     }
 }

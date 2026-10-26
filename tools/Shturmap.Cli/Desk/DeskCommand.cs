@@ -64,12 +64,13 @@ internal static class DeskCommand
                     i++;
                     break;
                 case "--mode": mode = args[++i] == "pvp" || args[i] == "regular" ? GameMode.Pvp : GameMode.Pve; break;
+                case var _ when Ocr.PaddleUse.IsOption(args, ref i): break;
                 default: inputs.Add(args[i]); break;
             }
         }
         if (inputs.Count == 0 && !audit)
         {
-            Console.WriteLine("Use: shturmap-cli desk <png or folder>... [--quiet] [--online] [--mode pve|pvp] [--raid | --menus] [--plate <w>x<h>] [--why] [--lattice] [--no-icons]");
+            Console.WriteLine("Use: shturmap-cli desk <png or folder>... [--quiet] [--online] [--mode pve|pvp] [--raid | --menus] [--plate <w>x<h>] [--why] [--lattice] [--no-icons] " + Ocr.PaddleUse.Usage);
             Console.WriteLine("  each picture's page: regions, cells (name or \"one of N\", count, condition, figure and source, marks), the head line;");
             Console.WriteLine("  with truth-<picture>.txt beside a picture, the tally against it (and footprints-<picture>.txt, the items' footprints).");
             Console.WriteLine("  A truth's line: \"A 3,0 <short name>\" (grid A, the biggest the stash's lines give, its cell), or by the page's");
@@ -107,7 +108,8 @@ internal static class DeskCommand
         if (inputs.Count == 0)
             return;
 
-        var reader = DeskReader.Create("en");
+        var paddle = Ocr.PaddleUse.From(args);
+        var reader = DeskReader.Create("en", paddle);
         if (reader is null)
         {
             Console.WriteLine("This Windows has no text recognition language: no reading.");
@@ -215,6 +217,8 @@ internal static class DeskCommand
                               $"of another size {tally.RegionsWrongSize}, made up {tally.RegionsExtra}; screens told wrong {tally.ScreensWrong}");
         }
         Console.WriteLine($"{files.Count} pictures, {(files.Count > 0 ? totalMs / files.Count : 0)} ms a picture" + (online ? "" : $"; requests refused: {refused}"));
+        if (paddle is not null)
+            Console.WriteLine(paddle.Summary(files.Count));
     }
 
     // "--why": the layout as found, in pixels: the stash, the loadout's slot boxes, the grids the lines give (a window's has
@@ -387,7 +391,8 @@ internal static class DeskCommand
                 if (c.Keep != DeskKeepLevel.None)
                     line.Append($" KEEP {c.Keep.ToString().ToLowerInvariant()}");
                 if (Why && look.Cells.FirstOrDefault(l => l.Region == r.Key && l.Cell.I == cell.I && l.Cell.J == cell.J && l.Cell.Slot == cell.Slot) is { } seen)
-                    line.Append($"   | label \"{seen.Label}\" fit {seen.Fit:0.00}" + (seen.Contradicted ? " FOOTPRINT" : "") + (seen.CountText is { } ct ? $" count \"{ct}\"" : "") +
+                    line.Append($"   | label \"{seen.Label}\"{(seen.ByPaddle ? " PADDLE" : "")} fit {seen.Fit:0.00} at {seen.Pixels.Left},{seen.Pixels.Top}" +
+                                (seen.Contradicted ? " FOOTPRINT" : "") + (seen.CountText is { } ct ? $" count \"{ct}\"" : "") +
                                 // A "one of N" cell's picture against each candidate's grid image: its likeness and, after the
                                 // slash, its likeness where their images differ (DeskIcons; 2026-10-25).
                                 (seen.Icons.Count > 0 ? " | icons " + string.Join(", ", seen.Icons.Select(s => $"{data.ItemName(s.ItemId)} " +

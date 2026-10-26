@@ -524,6 +524,94 @@ public sealed class DeskReaderTests : IDisposable
         Assert.Empty(In(reading.Page!, "stash", c => c.J == 4).Ids);
     }
 
+    // ---- PaddleOCR where Windows' recognition reads nothing (owner, 2026-10-26, decision 1) ----
+
+    /// <summary>A second reader that hands back one text, and keeps each line's size it was given.</summary>
+    internal sealed class Lines(string? text) : ILineReader
+    {
+        public List<(int W, int H)> Read { get; } = [];
+
+        public Task<string?> ReadAsync(SKBitmap line, CancellationToken ct)
+        {
+            lock (Read)
+                Read.Add((line.Width, line.Height));
+            return Task.FromResult(text);
+        }
+    }
+
+    // A stash page with two labels Windows' recognition reads and one that fits no name ("Xqvzzt"), a count on one of them.
+    private static StashReaderTests.Page Unread()
+    {
+        var page = new StashReaderTests.Page(2560, 1440).Start();
+        var (x, y) = page.StashOrigin;
+        page.Grid(x, y, 10, 12, 1);
+        page.Item(x, y, 1, 2, 1, 1, 1, "Hollin");
+        page.Item(x, y, 1, 4, 2, 2, 1, "Drevak", "330");
+        page.Item(x, y, 1, 0, 5, 1, 1, "Xqvzzt");
+        return page;
+    }
+
+    private static DeskReader Reader(ILineReader paddle) =>
+        DeskReader.Create("en", paddle) ?? throw new InvalidOperationException("no recognition (Reader() skips first)");
+
+    // Only the label band Windows' recognition left unread goes to PaddleOCR, once, as the band at its own size in a narrow
+    // margin; never a label Windows named, never a count. Its text is matched as Windows' is: "Quenvik" names the cell.
+    [Fact]
+    public async Task Paddle_reads_only_a_label_band_windows_left_unread_and_its_text_is_matched_as_windows_is()
+    {
+        Reader();
+        var page = Unread();
+        using var picture = page.Bitmap.Copy();
+        var paddle = new Lines("Quenvik");
+        var reading = await Reader(paddle).ReadAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
+        Assert.Equal([Id(5)], In(reading.Page!, "stash", c => c.J == 1).Ids);
+        var drevak = In(reading.Page!, "stash", c => c.J == 2);
+        Assert.Equal([Id(6)], drevak.Ids);
+        Assert.Equal(330, drevak.Count);
+        Assert.Equal([Id(2)], In(reading.Page!, "stash", c => c.J == 5).Ids);
+        var line = Assert.Single(paddle.Read);
+        Assert.Equal((int)Math.Round(0.2 * page.Pitch) + 8, line.H);
+    }
+
+    // PaddleOCR's text that fits no name, or no text, leaves the cell as Windows' reading left it: nothing said.
+    [Theory]
+    [InlineData("Zzqqxv")]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task A_band_paddle_reads_as_nothing_known_stays_unread(string? text)
+    {
+        Reader();
+        using var picture = Unread().Bitmap.Copy();
+        var paddle = new Lines(text);
+        var reading = await Reader(paddle).ReadAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
+        Assert.Empty(In(reading.Page!, "stash", c => c.J == 5).Ids);
+        Assert.Equal([Id(5)], In(reading.Page!, "stash", c => c.J == 1).Ids);
+        Assert.Single(paddle.Read);
+    }
+
+    // A model that can't be loaded (gone from beside the exe, damaged): the reading is Windows' alone, and the failure is
+    // said once however many bands and readings ask for it.
+    [Fact]
+    public async Task A_model_that_cant_be_loaded_leaves_the_reading_as_windows_alone_reads_it()
+    {
+        var windows = Reader();
+        var failed = new List<string>();
+        using var paddle = new PaddleReader(Path.Combine(_root, "none.onnx"), Path.Combine(_root, "none.txt"), failed: failed.Add);
+        var page = Unread();
+        page.Item(page.StashOrigin.X, page.StashOrigin.Y, 1, 6, 7, 1, 1, "Vvqqzz");
+        using var picture = page.Bitmap.Copy();
+        var catalogue = new DeskCatalogue(Catalogue);
+        var alone = await windows.ReadAsync(picture, catalogue, DateTimeOffset.MinValue, Ct);
+        var reader = Reader(paddle);
+        foreach (var _ in Enumerable.Range(0, 2))
+        {
+            var reading = await reader.ReadAsync(picture, catalogue, DateTimeOffset.MinValue, Ct);
+            Assert.Equal(alone.Page!.Region("stash")!.Cells.Select(c => (c.I, c.J, string.Join(",", c.Ids))),
+                reading.Page!.Region("stash")!.Cells.Select(c => (c.I, c.J, string.Join(",", c.Ids))));
+        }
+        Assert.Single(failed);
+    }
+
     // ---- the layout's faults on the owner's screenshots of 2026-10-19 (owner, 2026-10-25) ----
     // The layout from words given as the recognition reads them (boxes at 1440p, 15 px a heading) over drawn frames: the
     // rules held without the recognition's moods. Each test fails on the reading of before 2026-10-25.
