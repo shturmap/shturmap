@@ -1,9 +1,45 @@
 using System.Diagnostics;
+using System.Globalization;
 using Shturmap.Core.Desk;
 using Shturmap.Core.Raid;
+using Shturmap.Core.Screenshots;
 using Shturmap.Game.Screenshots;
 
 namespace Shturmap.Session;
+
+/// <summary>Why a raid screenshot gave the in-raid glance nothing (the app log's line, <see cref="GameSession.GlanceNotTaken"/>).</summary>
+public enum GlanceSkip
+{
+    /// <summary>The menu screenshots' tick ("… and loot in a raid") is off.</summary>
+    SettingOff,
+
+    /// <summary>The game's logs show no raid running.</summary>
+    NoRaid,
+
+    /// <summary>The item data (the catalogue) isn't loaded yet.</summary>
+    NoData,
+
+    /// <summary>Windows has no text recognition language.</summary>
+    NoRecognition,
+
+    /// <summary>The picture couldn't be opened: nothing read.</summary>
+    Unreadable,
+
+    /// <summary>No inventory screen: the world, a map, another tab.</summary>
+    NotInventory,
+
+    /// <summary>The loadout beside the stash and the menus' bar: the menus' GEAR tab.</summary>
+    MenusGear,
+
+    /// <summary>The stash alone.</summary>
+    MenusStash,
+
+    /// <summary>A trader's screen.</summary>
+    Trading,
+
+    /// <summary>The raid ended, or another began, while the picture was read.</summary>
+    RaidChanged,
+}
 
 // The in-raid glance's reading (owner, 2026-10-19, three choices: when, what and what is kept; docs/DESIGN.md §2, "For the
 // stash desk", "In a raid", and §4, *The in-raid glance*): a screenshot taken in a raid, once its corner was read for the
@@ -50,7 +86,8 @@ public sealed partial class GameSession
 
     // A position screenshot taken in a raid, after its extract list: if it shows an inventory screen, its page for the
     // glance. Reading takes a moment (decoding, the recognition), so it runs outside the gate, and counts only if the same
-    // raid is still on when it is done.
+    // raid is still on when it is done. One the glance doesn't take says so in the app log, once, with why (owner,
+    // 2026-10-26: a weapon box's screenshots, told as the menus' GEAR tab, had left no line at all).
     private async Task ReadRaidInventoryAsync(ScreenshotSeen seen)
     {
         Func<string, DeskCatalogue, DateTimeOffset, CancellationToken, Task<DeskReading?>>? read;
@@ -59,11 +96,18 @@ public sealed partial class GameSession
         await _gate.WaitAsync();
         try
         {
-            if (!_readStash || _tracker.State.Phase != RaidPhase.InRaid || _data is null)
+            var why = !_readStash ? GlanceSkip.SettingOff
+                : _tracker.State.Phase != RaidPhase.InRaid ? GlanceSkip.NoRaid
+                : _data is null ? GlanceSkip.NoData
+                : (GlanceSkip?)null;
+            catalogue = why is null ? DeskCatalogueNow() : null;
+            if (why is null && catalogue is null)
+                why = GlanceSkip.NoData;
+            if (why is { } skip)
+            {
+                AppLog.Info(GlanceNotTaken(seen.Info, skip));
                 return;
-            catalogue = DeskCatalogueNow();
-            if (catalogue is null)
-                return;
+            }
             read = ReaderForRaidInventory();
             raid = _tracker.State.RaidStartedAt;
         }
@@ -72,18 +116,31 @@ public sealed partial class GameSession
             _gate.Release();
         }
         if (read is null)
+        {
+            AppLog.Info(GlanceNotTaken(seen.Info, GlanceSkip.NoRecognition));
             return;
+        }
         var started = Stopwatch.GetTimestamp();
-        var reading = await read(seen.Path, catalogue, new DateTimeOffset(seen.CreatedAt), _stop.Token);
+        var reading = await read(seen.Path, catalogue!, new DateTimeOffset(seen.CreatedAt), _stop.Token);
         var ms = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
         if (reading?.Page is not { } page || reading.Screen != DeskScreen.Raid)
+        {
+            AppLog.Info(GlanceNotTaken(seen.Info, reading is null ? GlanceSkip.Unreadable : SkipFor(reading.Screen), ms));
             return;
+        }
         await _gate.WaitAsync();
         try
         {
-            if (!_readStash || _data is null || _tracker.State.Phase != RaidPhase.InRaid || _tracker.State.RaidStartedAt != raid)
+            var why = !_readStash ? GlanceSkip.SettingOff
+                : _data is null ? GlanceSkip.NoData
+                : _tracker.State.Phase != RaidPhase.InRaid || _tracker.State.RaidStartedAt != raid ? GlanceSkip.RaidChanged
+                : (GlanceSkip?)null;
+            if (why is { } skip)
+            {
+                AppLog.Info(GlanceNotTaken(seen.Info, skip, ms));
                 return;
-            TakeGlance(page, seen.CreatedAt, ms);
+            }
+            TakeGlance(page, seen.Info, seen.CreatedAt, ms);
         }
         finally
         {
@@ -91,8 +148,42 @@ public sealed partial class GameSession
         }
     }
 
+    // What a reading that is no raid inventory was told as.
+    private static GlanceSkip SkipFor(DeskScreen screen) => screen switch
+    {
+        DeskScreen.Gear => GlanceSkip.MenusGear,
+        DeskScreen.Stash => GlanceSkip.MenusStash,
+        DeskScreen.Trading => GlanceSkip.Trading,
+        DeskScreen.Raid => GlanceSkip.Unreadable,
+        _ => GlanceSkip.NotInventory,
+    };
+
+    /// <summary>A raid screenshot as the app log names it: its date, minute and number as the game wrote them,
+    /// "2026-01-01[13-35] (0)", never its position (docs/DESIGN.md §2, "Never share a position": the app log records
+    /// none).</summary>
+    public static string ScreenshotNamed(ScreenshotInfo shot) =>
+        string.Create(CultureInfo.InvariantCulture, $"{shot.TakenAt:yyyy-MM-dd}[{shot.TakenAt:HH-mm}] ({shot.Counter})");
+
+    /// <summary>The app log's line for a raid screenshot the in-raid glance didn't take, with why, and how long its reading
+    /// took where it was read.</summary>
+    public static string GlanceNotTaken(ScreenshotInfo shot, GlanceSkip why, double? ms = null) =>
+        $"Raid screenshot {ScreenshotNamed(shot)} not taken for the in-raid glance: " + why switch
+        {
+            GlanceSkip.SettingOff => "the setting \"Read your stash, gear and tasks from menu screenshots, and loot in a raid\" is off",
+            GlanceSkip.NoRaid => "no raid running as the game's logs tell it",
+            GlanceSkip.NoData => "the item data isn't loaded yet",
+            GlanceSkip.NoRecognition => "this Windows has no text recognition language",
+            GlanceSkip.Unreadable => "read nothing (the picture couldn't be opened)",
+            GlanceSkip.NotInventory => "not an inventory screen",
+            GlanceSkip.MenusGear => "told as the menus' GEAR tab",
+            GlanceSkip.MenusStash => "told as the menus' stash",
+            GlanceSkip.Trading => "told as the trading screen",
+            GlanceSkip.RaidChanged => "the raid changed meanwhile",
+            _ => why.ToString(),
+        } + (ms is { } t ? string.Create(CultureInfo.InvariantCulture, $" ({t:0} ms)") : "");
+
     // Under the gate, in the raid: the reading's page with its values, published; nothing of it written anywhere.
-    private void TakeGlance(DeskPage page, DateTime takenAt, double ms)
+    private void TakeGlance(DeskPage page, ScreenshotInfo shot, DateTime takenAt, double ms)
     {
         var sources = _sources;
         var data = _data;
@@ -104,7 +195,7 @@ public sealed partial class GameSession
         var lootCells = attached.Regions.Where(r => r.IsLoot).SelectMany(r => r.Cells).ToList();
         Study.Game("glance.read", ("regions", attached.Regions.Count), ("loot", loot is not null), ("cells", cells.Count),
             ("named", cells.Count(c => c.Ids.Count == 1)), ("unsure", cells.Count(c => c.Ids.Count > 1)), ("lootCells", lootCells.Count), ("ms", ms));
-        AppLog.Info($"Inventory read from a raid screenshot: {attached.Regions.Count} regions{(loot is not null ? ", a LOOT pane" : "")}, {cells.Count} cells, " +
+        AppLog.Info($"Inventory read from raid screenshot {ScreenshotNamed(shot)}: {attached.Regions.Count} regions{(loot is not null ? ", a LOOT pane" : "")}, {cells.Count} cells, " +
                     $"{cells.Count(c => c.Ids.Count == 1)} named, {cells.Count(c => c.Ids.Count > 1)} one of several ({ms:0} ms); not kept");
         Publish();
     }

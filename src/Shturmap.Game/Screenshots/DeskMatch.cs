@@ -66,6 +66,15 @@ internal sealed class DeskMatch
         var cut = QuickSlotCut(label) ?? (cutAtStart ? label : null);
         if (cut is not null)
             label = cut;
+        // A "?" is a glyph the recognition saw and couldn't tell: first as any letter or digit in its place, so the label
+        // names the item with a glyph there (the owner's weapon box of 2026-10-26: "AEM-?" on the AEM-5 suppressor, the "?"
+        // folded away, named the AEM textbook whole); then, where that fits nothing, as nothing, as before.
+        if (label.Contains('?') && ExitList.Fold(label.Replace('?', Unknown)) is { Length: > 0 } wild && wild.Contains(Unknown))
+        {
+            var (wildFit, wildBest) = Folded(wild, cells, kind, cut is not null);
+            if (wildFit >= Enough)
+                return (wildFit, wildBest);
+        }
         var a = ExitList.Fold(label);
         if (a.Length == 0)
             return (0, []);
@@ -101,12 +110,28 @@ internal sealed class DeskMatch
         _ => null,
     };
 
-    // The best names for a folded label (Match).
-    private (double Fit, List<DeskCandidate> Best) Folded(string a, int cells, DeskSlotKind kind, bool cut)
+    // A glyph read as "?" in a folded label (Match): a letter no name has (the glottal stop, U+0294), which the fold keeps.
+    private const char Unknown = (char)0x0294;
+
+    // The label with each unknown glyph taken as the name's own letter in its place (none past the name's end).
+    private static string Filled(string a, string b)
     {
-        var digits = new string(a.Where(char.IsDigit).ToArray());
+        var filled = a.ToCharArray();
+        for (var n = 0; n < filled.Length && n < b.Length; n++)
+        {
+            if (filled[n] == Unknown)
+                filled[n] = b[n];
+        }
+        return new string(filled);
+    }
+
+    // The best names for a folded label (Match).
+    private (double Fit, List<DeskCandidate> Best) Folded(string label, int cells, DeskSlotKind kind, bool cut)
+    {
+        var wild = label.Contains(Unknown);
+        var labelDigits = new string(label.Where(char.IsDigit).ToArray());
         // A cell holds about seven folded letters a cell of its width at the label's size: shorter labels aren't cut.
-        var mayBeCut = a.Length >= Math.Max(6, 6 * cells);
+        var mayBeCut = label.Length >= Math.Max(6, 6 * cells);
         double top = 0;
         var best = new List<DeskCandidate>();
         foreach (var e in _entries)
@@ -114,6 +139,8 @@ internal sealed class DeskMatch
             if (kind != DeskSlotKind.Any && (e.Candidate.Slots & kind) == 0)
                 continue;
             var b = e.Folded;
+            var a = wild ? Filled(label, b) : label;
+            var digits = wild ? new string(a.Where(char.IsDigit).ToArray()) : labelDigits;
             double fit;
             // How much of the name's beginning a label cut at the cell's right edge covers (0: not taken so).
             var prefix = 0;

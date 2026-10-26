@@ -87,6 +87,10 @@ internal static class DeskLoot
             // raid screenshots of 2026-10-19: its Clock's frame and the hover's around the Horse stood out, the frame round
             // the whole didn't, and the USD in the corner between them fell in neither).
             var state = searching.Count > 0 ? DeskSearch.Searching : unsearched.Count > 0 ? DeskSearch.Unsearched : DeskSearch.Searched;
+            // A frame over a lattice on its lines is more of that one grid, not the lattice seen twice: the lattice holds
+            // only the cells framed all round, the frames the items' rows too (the owner's weapon box of 2026-10-26: a 4×5
+            // lattice of its empty cells, its rifles' rows framed beside and above it, the grid 6×6).
+            compartments.AddRange(frames.Where(f => Within(f) && lattices.Any(l => Within(l) && DeskLayout.Overlapping(l, f) && OnLattice(l, f, pitch))));
             compartments = OneGrid(compartments, pitch);
             // Its grid starts right under the head; a first row whose items hid the grid's top line (a weapon box of the
             // same screenshots: a rifle part's red ground) left the frame found a row lower.
@@ -131,15 +135,20 @@ internal static class DeskLoot
         return new DeskLootFound(kind ?? "BODY", pane, slots, parts);
     }
 
+    // Whether an offset is whole cells, within a few pixels.
+    private static bool Whole(int d, int pitch)
+    {
+        var phase = ((d % pitch) + pitch) % pitch;
+        return phase <= 4 || phase >= pitch - 4;
+    }
+
+    // Whether two rectangles stand on one lattice: their corners whole cells apart.
+    private static bool OnLattice(SKRectI a, SKRectI b, int pitch) => Whole(a.Left - b.Left, pitch) && Whole(a.Top - b.Top, pitch);
+
     // Rectangles on one lattice (their corners whole cells apart, within a few pixels) that touch or overlap, as the one
     // rectangle round them.
     internal static List<SKRectI> OneGrid(List<SKRectI> rects, int pitch)
     {
-        static bool Whole(int d, int pitch)
-        {
-            var phase = ((d % pitch) + pitch) % pitch;
-            return phase <= 4 || phase >= pitch - 4;
-        }
         var groups = rects.ToList();
         var merged = true;
         while (merged)

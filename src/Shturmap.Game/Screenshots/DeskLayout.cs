@@ -155,11 +155,6 @@ internal static class DeskLayout
     public static DeskLayoutFound Find(IReadOnlyList<DeskWord> words, StashLines lines, StashGray gray, int w, int h, int pitch)
     {
         var k = pitch / 84.0;
-        var grids = StashGrids.Find(lines, gray, w, h, pitch);
-        if (grids.Any(g => g.Place == StashGridPlace.Left))
-            return new DeskLayoutFound(DeskScreen.Trading, [], [], null, [], 0, []);
-        var stash = grids.FirstOrDefault(g => g.Place == StashGridPlace.Stash);
-
         var headingWords = new HashSet<DeskWord>();
         var loadout = Headings(words, DeskSlots.Loadout.Select(s => s.Heading), headingWords)
             .Where(x => x.Word.X < w * 0.4)
@@ -167,12 +162,21 @@ internal static class DeskLayout
             .GroupBy(x => x.Heading).Select(g => g.OrderBy(x => x.Word.X).First()).ToList();
         var middle = Headings(words, Middle.Select(m => m.Heading), headingWords).Where(x => x.Word.X > w * 0.25 && x.Word.X < w * 0.66).ToList();
         var gear = loadout.Count >= 4;
-        // In a raid the GEAR tab has no stash pane and no menus' bar at its foot (DeskLoot).
-        var raid = gear && stash is null && !DeskLoot.MenuBar(words, h);
+        var menuBar = DeskLoot.MenuBar(words, h);
+        // In a raid the GEAR tab has no stash pane and no menus' bar at its foot (DeskLoot). Looting, the LOOT pane stands
+        // where the menus' stash pane would, and a container's grid there may be ten cells wide or show lines enough to be
+        // taken for the stash (the owner's weapon box of 2026-10-26: its 6×6 grid read as a stash 10×6, the screen as the
+        // GEAR tab, and the glance said nothing). The loadout's headings with no menus' bar and the LOOT pane's head over the
+        // right third are the raid's inventory: a grid there is the container's, never the stash.
+        var lootHead = gear && !menuBar ? DeskLoot.Head(words, w, h) : null;
+        var grids = StashGrids.Find(lines, gray, w, h, pitch, stashPane: lootHead is null);
+        if (grids.Any(g => g.Place == StashGridPlace.Left))
+            return new DeskLayoutFound(DeskScreen.Trading, [], [], null, [], 0, []);
+        var stash = grids.FirstOrDefault(g => g.Place == StashGridPlace.Stash);
+        var raid = gear && stash is null && !menuBar;
         var screen = raid ? DeskScreen.Raid : gear ? DeskScreen.Gear : stash is not null ? DeskScreen.Stash : DeskScreen.None;
         if (screen == DeskScreen.None)
             return new DeskLayoutFound(DeskScreen.None, [], [], null, [], 0, []);
-        var lootHead = raid ? DeskLoot.Head(words, w, h) : null;
 
         // The game's toasts at the lower right carry the screenshot's path: never read, nor what they cover (to the
         // screen's right edge, where the path runs on).

@@ -1176,6 +1176,96 @@ public sealed class DeskReaderTests : IDisposable
         }
     }
 
+    // The owner's weapon box of 2026-10-26 (build 1.2.5.0.48146): looting, the LOOT pane stands where the menus' stash pane
+    // would, and the container's grid there, six by six, showed lines enough to be taken for the stash, ten wide from its
+    // lines (seven of its eleven): the screen was told as the GEAR tab and the glance said nothing. Its rifles and rails
+    // hide the grid's lines, so its empty cells frame a lattice four wide only.
+    private static StashReaderTests.Page WeaponBox()
+    {
+        var page = Raid(null);
+        Text(page, "LOOT", 1690, 80, 15);
+        Text(page, "WEAPON BOX", 2420, 76);
+        page.Grid(1686, 106, 6, 6, 1);
+        page.Item(1686, 106, 1, 0, 0, 4, 2, "Vostrak");
+        page.Item(1686, 106, 1, 0, 2, 4, 2, "Brindel");
+        page.Item(1686, 106, 1, 4, 0, 1, 2, "Tessaril");
+        page.Item(1686, 106, 1, 5, 0, 1, 2, "Calvory");
+        page.Item(1686, 106, 1, 4, 2, 1, 2, "Calvory");
+        page.Item(1686, 106, 1, 5, 2, 1, 2, "Feldspan");
+        page.Item(1686, 106, 1, 4, 4, 1, 2, "Feldspan");
+        page.Item(1686, 106, 1, 5, 4, 1, 2, "Tessaril");
+        return page;
+    }
+
+    private static readonly DeskCandidate[] WeaponBoxItems =
+        [Item(20, "Vostrak", 4, 2), Item(21, "Brindel", 4, 2), Item(22, "Calvory", 1, 2), Item(23, "Feldspan", 1, 2)];
+
+    [Fact]
+    public async Task A_looted_containers_grid_where_the_stash_would_stand_is_the_raids_loot()
+    {
+        var box = WeaponBox();
+        Dump(box, "raid-weapon-box.png");
+        using var picture = box.Bitmap.Copy();
+        var catalogue = new DeskCatalogue([.. Catalogue, .. WeaponBoxItems]);
+        var reader = Reader();
+        var reading = await reader.ReadRaidAsync(picture, catalogue, DateTimeOffset.MinValue, Ct);
+        // No menus' bar and the LOOT pane's head: the raid's inventory, the grid the container's, never the stash.
+        Assert.Equal(DeskScreen.Raid, reading.Screen);
+        var page = reading.Page!;
+        Assert.DoesNotContain(page.Regions, r => r.Kind == DeskRegionKind.Stash);
+        var loot = Assert.Single(page.Regions, r => r.IsLoot);
+        Assert.Equal((DeskRegionKind.Loot, "LOOT · WEAPON BOX", 6, 6), (loot.Kind, loot.Title, loot.Cols, loot.Rows));
+        // Every item named in its place, the rifles' rows beside the lattice of the empty cells too.
+        Assert.Equal([(0, 0, Id(20)), (4, 0, Id(4)), (5, 0, Id(22)), (0, 2, Id(21)), (4, 2, Id(22)), (5, 2, Id(23)), (4, 4, Id(23)), (5, 4, Id(4))],
+            loot.Cells.Select(c => (c.I, c.J, Assert.Single(c.Ids))).OrderBy(c => c.J).ThenBy(c => c.I));
+        // The player's own regions as before.
+        Assert.Contains(page.Region("pockets")!.Cells, c => c.Ids.Contains(Id(2)));
+        // Never the desk's.
+        Assert.Null((await reader.ReadAsync(picture, catalogue, DateTimeOffset.MinValue, Ct)).Page);
+    }
+
+    // The menus' GEAR tab: the stash at the right and the menus' bar at the foot (BUILDS, HANDBOOK, MESSENGER). It stays
+    // the GEAR tab, for the glance as for the desk, whatever stands at the stash pane's head.
+    [Fact]
+    public async Task The_menus_gear_tab_with_its_stash_and_bar_is_never_the_raids()
+    {
+        var gear = Gear();
+        Text(gear, "OVERALL", 80, 20, 16);
+        Text(gear, "GEAR", 330, 20, 16);
+        Text(gear, "HEALTH", 530, 20, 16);
+        Text(gear, "SKILLS", 760, 20, 16);
+        Text(gear, "QUICK USE", 760, 1262, 15);
+        Text(gear, "BUILDS", 1640, 1400, 16);
+        Text(gear, "HANDBOOK", 1830, 1400, 16);
+        Text(gear, "MESSENGER", 2030, 1400, 16);
+        // A word "LOOT" at the head's place changes nothing: the menus' bar tells the menus.
+        Text(gear, "LOOT", 2050, 78, 15);
+        Dump(gear, "gear-menus-bar.png");
+        using var picture = gear.Bitmap.Copy();
+        var reader = Reader();
+        var raid = await reader.ReadRaidAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
+        Assert.Equal((DeskScreen.Gear, null), (raid.Screen, raid.Page));
+        var desk = await reader.ReadAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
+        Assert.Equal(DeskScreen.Gear, desk.Screen);
+        Assert.Contains(desk.Page!.Regions, r => r.Kind == DeskRegionKind.Stash);
+        Assert.DoesNotContain(desk.Page.Regions, r => r.IsLoot);
+    }
+
+    // The owner's weapon box of 2026-10-26: the AEM-5 suppressor's label read "AEM-?", whose "?" the fold dropped, named the
+    // AEM textbook whole. A "?" is a glyph the recognition saw: any letter or digit in its place first; where that fits
+    // nothing, nothing, as before (a speck read as "?" after a whole name).
+    [Fact]
+    public void A_glyph_read_as_a_question_mark_stands_for_one_in_its_place()
+    {
+        var match = new DeskMatch([Item(1, "AEM", 1, 2), Item(2, "AEM-5", 1, 2), Item(3, "Salewa", 1, 2)]);
+        Assert.Equal(Id(2), Assert.Single(match.Match("AEM-?").Best).ItemId);
+        Assert.Equal(Id(1), Assert.Single(match.Match("AEM").Best).ItemId);
+        Assert.Equal(Id(3), Assert.Single(match.Match("Salewa?").Best).ItemId);
+        // Two names a glyph there fits: one of 2, never a guess.
+        var two = new DeskMatch([Item(1, "AEM", 1, 2), Item(2, "AEM-5", 1, 2), Item(4, "AEM-7", 1, 2)]);
+        Assert.Equal([Id(2), Id(4)], two.Match("AEM-?").Best.Select(c => c.ItemId).Order());
+    }
+
     [Fact]
     public async Task The_trading_screen_is_told_and_nothing_is_read()
     {

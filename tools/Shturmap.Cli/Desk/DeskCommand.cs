@@ -230,7 +230,8 @@ internal static class DeskCommand
         var layout = look.Layout;
         var gray = StashGray.Of(picture);
         var lines = new StashLines(gray);
-        var grids = StashGrids.Find(lines, gray, picture.Width, picture.Height, look.Pitch);
+        // As the layout found them: with the LOOT pane's head, no stash (DeskLayout.Find).
+        var grids = StashGrids.Find(lines, gray, picture.Width, picture.Height, look.Pitch, stashPane: layout.Loot is null);
         Console.WriteLine($"   layout at pitch {look.Pitch}: stash {(layout.Stash is { } s ? $"({s.X0},{s.Y0}) {s.Cols}x{s.Rows}" : "none")}; " +
                           $"slots {string.Join(", ", layout.Slots.Select(x => $"{x.Key} {Box(x.Box)}"))}");
         Console.WriteLine("   grids: " + string.Join(", ", grids.Select(g =>
