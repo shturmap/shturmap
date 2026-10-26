@@ -291,6 +291,61 @@ repository:
   and 1600x900) passed in English, German and the pseudo-language, which flags only the glance's "BODY" (the game's word,
   kept English). No text changed.
 
+**The UI QA re-check of the grid's fixes (2026-10-26, on 909ea69).** F1 to F3 and F5 to F8 by the pass's repro
+commands, and the fixes' knock-on: the tour's seven chapters, What's New's card and previews, the Streets glide's keypad
+fade. Not the layout check (run beside it) nor the desk's, prices' and glance reading's changes (another re-check). The
+folder build of `eng\publish.ps1`, the developer build for `--whats-new` and `--text-scale`, the Debug build for the
+replays and the CLI; every run quiet, off every monitor, with a data folder of its own, the app log naming 909ea69 (its
+pictures outside the repository): FAIL (0 blocks, 3 should, 4 nits).
+
+- Ran: `--show-crash`, `-Glance 1` and `-Glance 2` at 900×560 in English and German; Plan and the raid at 900×560 in
+  both languages and at 1600×900 in English; the tour's seven chapters in English and chapters 1 and 5 in German at the
+  default window, chapter 5 at 900×560 in both; `--whats-new` at the default window and at 900×560 in English, at
+  900×560 in German; `--text-scale 1.5` at 900×765; `whatsnew-lines` in English at the default window and at 900×560,
+  in German at 900×560; a replay drafted in the pass, older cards' preview lines pointed at (0.4.0's `replay`,
+  `extracts`, `clock`, `joined`, 0.5.0's `stash`, 0.6.0's `notes`, 0.6.2's `leaders`) at 900×560 and the default
+  window; `shturmap-cli render` of The Lab's sheet with a position, Factory (with `--pick "Black Swan"` and without),
+  Streets and Woods with a position; `frames streets-of-tarkov --scene plan --fix 40 2.5 120 --glide`. 27 snapshot
+  runs and 5 replays, no ERROR or WARN, 43 settings and help pictures each drawn, 86 layout files without a problem.
+- Confirmed: F1, the floor list gone while the crash question stands, in both languages, no list over the box. F2,
+  "Transit to Interchange" ("Transit zu Interchange") and its diamond above the credit in both glances and languages;
+  Plan at 900×560 drops the name (no free side, as designed) where it ran under the credit; the 1600×900 views clear of
+  the foot; every framing seen (the tour's, the previews', the roll call's) inside the strips. F3, The Lab's caption
+  "NO ARTWORK FOR THIS MAP · GRID 100 M" whole beside "YOU F4-7". F5, no "YOU C" and no "DU" in either glance or
+  language, the marker's tag saying C8-7. F6, the CLI's medians as the fix says: Factory with Black Swan the keypad
+  11.9 (dark ground 6.6, light 11.9), the 100 m lines 23.6 (dark 8.9); Streets at three times 9.9 (6.6, 11.9), the
+  100 m lines 23.6; Woods at three times 8.8 (8.8, 9.4), the 100 m lines 13.0; Factory without a pick 1.0 on the empty
+  ground (7.5 on light), left so by design; the glide's keypad at frame 5 0.38, frame 6 1.00. F7, no "A8" before
+  "Crash Site" in Plan at 1600×900; Woods' overview 132 shown, 93 left out, none read as part of a label. F8, the
+  stepper whole and settings' layout file without a problem at 150 %. The tour's chapters' words as tour.md and
+  tour.de.md; What's New's card as whats-new.md and its German, its foot "Click one: the tour shows it."; each tour
+  line staging nothing and its tap opening its chapter (2, 1, 7, 6, 5), the end the player's Customs.
+- R1 (should): the crash question at 900×560 on Streets: while the floor list steps aside its place isn't kept, so
+  "KOLLONTAY 75%" and "Klimov Shopping Mall Exfil" (in German also "Klimov-Straße") are written where the list
+  stands, and go when the answer brings it back; Plan without the question draws neither there. *The grid*: "the floor
+  list, whose place is kept while it steps aside so nothing moves as it goes and comes". `fake-raid.ps1 -PlanOnly
+  -Window 900x560 -MoreArgs '--show-crash'` against the same without it, both languages.
+- R2 (should): What's New's `replay` preview (0.4.0) at 900×560: "LAST SEEN · 4 MIN BEFORE THE END" runs under the +
+  and − buttons, "THE END" hidden. *The grid*: no label "is placed under the window's controls while the grid shows".
+  The drafted replay's `whatsnew 0.4.0 2`, `--window 900x560`.
+- R3 (should; not from the grid's fixes, seen in the previews): pointing from a line that stages a map of its own to
+  one that lays a plate or cue over the map leaves the first preview's scene under the second: the clock over the
+  `extracts` example's lit extracts, the stash cue and the notes card over `joined`'s Woods; the player's map is back
+  only when the pointer leaves the card. *What's New*: "leaving puts the map back as it was: a preview that staged a map
+  of its own gives the player's back made anew". The drafted replay, `whatsnew 0.4.0 3` then `whatsnew 0.4.0 4`.
+- R4 (nit, the owner's): in both glances at 900×560 "Transit to Interchange" and its diamond stand on the WIKI MAP
+  link's line, the diamond about 9 px after its arrow, so the row reads "WIKI MAP ↗ ◆ Transit to Interchange"; in Plan
+  the diamond alone. DESIGN.md keeps a label from under a control, not from beside one (a reference keeps a label's
+  8 px gap, F7).
+- R5 (nit, the owner's): Plan at 1600×900 no longer names "Entrance to Catacombs" at rest (the pass on fcdd49c did),
+  the whole map a little smaller inside the strips; a label with no free side drops as designed, pointing names it.
+- R6 (nit, the owner's): the tour's chapter 5 at 900×560 (folder build, both languages; and `whatsnew-lines`' tap on
+  line 5): the label "PREVIEW · THE TOUR · CUSTOMS" stands over the readout "YOU F6-1" ("DU F6-1") from the middle of
+  its figure, under the tour's dim; F5's kind, which `PlateOver` answers for the glance's plate only. *The player's
+  reference*: "Labels keep off it".
+- R7 (nit, the owner's): the `replay` preview at the default window starts its route, and its "0 MIN IN" tag, under the
+  PREVIEW label at the view's top; DESIGN.md says nothing of a framing under that label.
+
 ## 2026-10-26: the overnight run's five decisions
 
 **Decided** (owner, 2026-10-26, on the session's decision page; the page stays outside the repository). Each was found
