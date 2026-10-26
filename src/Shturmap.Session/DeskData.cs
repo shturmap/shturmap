@@ -35,8 +35,9 @@ public static class DeskData
 
     /// <summary>
     /// Every item a cell can be: its short name (and full name, for a window's title), its footprint and what it holds.
-    /// Presets are left out: the game draws the gun, never the preset (they share its short name). Without the item
-    /// file, footprints are unknown (one by one) and nothing holds anything.
+    /// Presets are left out: a preset is its gun with mods, and a cell labelled with a preset's name ("USP .45 Expert") is
+    /// named the gun (owner, 2026-10-26; <c>DeskMatch.Preset</c>). Without the item file, footprints are unknown (one by
+    /// one) and nothing holds anything.
     /// </summary>
     public static DeskCatalogue Catalogue(GameData data, ItemSources? sources) =>
         new(Candidates(data, sources));

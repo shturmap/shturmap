@@ -110,6 +110,48 @@ public sealed class DeskReaderTests : IDisposable
         Assert.Empty(match.Match("Varkel-12", kind: DeskSlotKind.Knife).Best);
     }
 
+    // A weapon preset's name on its cell (owner, 2026-10-26: the holster's "USP .45 Expert", which fit nothing, the catalogue
+    // leaving presets out): a label that fits no name but begins with a gun's whole short name, on a word boundary, and goes
+    // on names the gun. Only a gun; not where the slot takes none, nor under a quick slot's number (its start may be gone).
+    [Fact]
+    public void A_label_that_begins_with_a_guns_name_and_goes_on_names_the_gun()
+    {
+        var match = new DeskMatch([
+            Item(1, "Varkel .45", 2, 1, DeskHolds.Mods, slots: DeskSlotKind.Weapon),
+            Item(2, "Varkel45 std", 1, 2), // its magazine
+            Item(3, "Ripsaw", 1, 1), // an ammo, no gun
+        ]);
+        Assert.True(match.Match("Varkel .45 Expert").Fit < DeskMatch.Enough);
+        Assert.Equal([Id(1)], match.Preset("Varkel .45 Expert").Select(c => c.ItemId));
+        Assert.Equal([Id(1)], match.Preset("Varkel.45 Expert", DeskSlotKind.Weapon).Select(c => c.ItemId));
+        Assert.Empty(match.Preset("Varkel .45 Expert", DeskSlotKind.Headwear));
+        Assert.Empty(match.Preset("Varkel .45 Expert", cutAtStart: true));
+        // No word boundary, nothing after the name but a mark, or not a gun's name: nothing.
+        Assert.Empty(match.Preset("Varkel .45Expert"));
+        Assert.Empty(match.Preset("Varkel .45 ."));
+        Assert.Empty(match.Preset("Varkel"));
+        Assert.Empty(match.Preset("Ripsaw ammo pack"));
+    }
+
+    // Several guns' names begin the label: the longest's; two guns of that one name are "one of 2", never a guess. A label a
+    // letter off the name of an item that isn't a gun and begins with the gun's ("Torvik DG" for the Torvik DC muzzle brake)
+    // is that item misread as much as a preset's name: nothing.
+    [Fact]
+    public void A_preset_name_takes_the_longest_guns_name_and_a_near_miss_of_a_part_names_nothing()
+    {
+        var match = new DeskMatch([
+            Item(1, "Torvik", 3, 1, DeskHolds.Mods, slots: DeskSlotKind.Weapon),
+            Item(2, "Torvik SD", 3, 1, DeskHolds.Mods, slots: DeskSlotKind.Weapon),
+            Item(3, "Brask", 4, 1, DeskHolds.Mods, slots: DeskSlotKind.Weapon),
+            Item(4, "Brask", 4, 1, DeskHolds.Mods, slots: DeskSlotKind.Weapon),
+            Item(5, "Torvik DC", 2, 1), // a muzzle brake
+        ]);
+        Assert.Equal([Id(2)], match.Preset("Torvik SD Tactical").Select(c => c.ItemId));
+        Assert.Equal([Id(1)], match.Preset("Torvik Default").Select(c => c.ItemId));
+        Assert.Equal([Id(3), Id(4)], match.Preset("Brask Default").Select(c => c.ItemId).Order());
+        Assert.Empty(match.Preset("Torvik DG"));
+    }
+
     [Fact]
     public void A_windows_title_names_the_containers_by_short_or_full_name()
     {
@@ -459,6 +501,27 @@ public sealed class DeskReaderTests : IDisposable
         Assert.Equal(DeskScreen.Stash, reading.Screen);
         Assert.Equal(["stash"], reading.Page!.Regions.Select(r => r.Key));
         Assert.Equal([Id(5)], reading.Page.Region("stash")!.Cells.Single().Ids);
+    }
+
+    // A gun in the stash labelled with its preset's name (owner, 2026-10-26: the holster's "USP .45 Expert" in the test set's
+    // 09-gear.png, read whole and named nothing; "DVL-10 Urbana" six by two in the stash): the gun, as a gun's cell is, its
+    // mods unseen ("+"); an item whose label begins with a name that is no gun's stays unread.
+    [Fact]
+    public async Task A_cell_labelled_with_a_weapon_presets_name_is_the_gun()
+    {
+        var page = new StashReaderTests.Page(2560, 1440).Start();
+        var (x, y) = page.StashOrigin;
+        page.Grid(x, y, 10, 12, 1);
+        page.Item(x, y, 1, 2, 1, 3, 1, "Varkel .45 Expert");
+        page.Item(x, y, 1, 0, 4, 2, 1, "Hollin ammo pack");
+        using var picture = page.Bitmap.Copy();
+        var catalogue = new DeskCatalogue([.. Catalogue, Item(20, "Varkel .45", 2, 1, DeskHolds.Mods, slots: DeskSlotKind.Weapon), Item(21, "Varkel45 std", 1, 2)]);
+        var reading = await Reader().ReadAsync(picture, catalogue, DateTimeOffset.MinValue, Ct);
+        var gun = In(reading.Page!, "stash", c => c.J == 1);
+        Assert.Equal([Id(20)], gun.Ids);
+        Assert.Equal((2, 1, 3, 1), (gun.I, gun.J, gun.W, gun.H));
+        Assert.Equal(DeskHolds.Mods, gun.Holds);
+        Assert.Empty(In(reading.Page!, "stash", c => c.J == 4).Ids);
     }
 
     // ---- the layout's faults on the owner's screenshots of 2026-10-19 (owner, 2026-10-25) ----

@@ -31,6 +31,9 @@ internal sealed class DeskMatch
 
     private readonly List<Entry> _entries;
 
+    // The guns by their folded short name, for a label that is a weapon preset's name (Preset).
+    private readonly ILookup<string, DeskCandidate> _guns;
+
     public DeskMatch(IEnumerable<DeskCandidate> candidates)
     {
         _entries = candidates.Where(c => c.ShortName.Length > 0)
@@ -41,6 +44,7 @@ internal sealed class DeskMatch
             })
             .Where(e => e.Folded.Length > 0)
             .ToList();
+        _guns = _entries.Where(e => e.Candidate.Holds == DeskHolds.Mods).ToLookup(e => e.Folded, e => e.Candidate, StringComparer.Ordinal);
     }
 
     public int Count => _entries.Count;
@@ -161,6 +165,48 @@ internal sealed class DeskMatch
         }
         return (top, best);
     }
+
+    /// <summary>
+    /// The guns a label names that fits no name as read (<see cref="Match"/> below <see cref="Enough"/>) but begins with a
+    /// gun's whole short name, on a word boundary, and goes on with more words (owner, 2026-10-26): a weapon preset's name,
+    /// which the catalogue leaves out ("USP .45 Expert" in the holster, the gun's short name "USP .45"). The cell is the gun,
+    /// its figure the bare gun's with the "+" for its mods unseen, as a gun's cell has. Only guns, the items that hold mods:
+    /// "RIP ammo pack" stays what it is. Where several guns' short names begin the label, the longest's; several guns of
+    /// that one name are "one of N", never a guess. None for a label whose start a quick slot's number may have taken
+    /// (<paramref name="cutAtStart"/>), and none where the slot takes no gun (<paramref name="kind"/>). None either for a
+    /// label <see cref="NearMiss"/> near the name of an item that isn't a gun and begins with the gun's name: that item
+    /// misread ("AK-308 DG" for the AK-308 DC muzzle brake, "TT SX" for the TT SK rig) as much as a preset's name.
+    /// </summary>
+    public List<DeskCandidate> Preset(string label, DeskSlotKind kind = DeskSlotKind.Any, bool cutAtStart = false)
+    {
+        if (cutAtStart)
+            return [];
+        label = label.Replace("!", "").Replace("|", "");
+        var words = label.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        // The label's beginnings of whole words, the longest first, with a word that holds a letter or a digit after it.
+        for (var k = words.Length - 1; k >= 1; k--)
+        {
+            if (ExitList.Fold(string.Concat(words[k..])).Length == 0)
+                continue;
+            var name = ExitList.Fold(string.Concat(words[..k]));
+            var guns = _guns[name].Where(c => kind == DeskSlotKind.Any || (c.Slots & kind) != 0).ToList();
+            if (guns.Count == 0)
+                continue;
+            // Another item's name of that beginning, a letter off the label (its digits the same, as a match wants them).
+            var a = ExitList.Fold(label);
+            var digits = new string(a.Where(char.IsDigit).ToArray());
+            var misread = _entries.Any(e => e.Candidate.Holds != DeskHolds.Mods && e.Folded.Length > name.Length && e.Folded.StartsWith(name, StringComparison.Ordinal) &&
+                                            !(e.HasDigits && digits != e.Digits) && StashLabels.Similarity(a, e.Folded) >= NearMiss);
+            return misread ? [] : guns;
+        }
+        return [];
+    }
+
+    /// <summary>How near a label that begins with a gun's name may come to another item's name of that beginning and still
+    /// be taken for a preset's name: one folded letter in four off is that name misread (<see cref="Preset"/>). Of
+    /// tarkov.dev's 400 presets whose names begin with a gun's (2026-10-26), 5 come so near another item's name, not
+    /// whole ("UZI SD" and the "UZI SW" part, "G36 K" and "G36 KV"), and stay unread.</summary>
+    public const double NearMiss = 0.75;
 
     /// <summary>The items a container window's title names: its short name or its full name fits the title at least as
     /// well as <see cref="Enough"/>, and it holds a grid.</summary>
