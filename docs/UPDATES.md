@@ -117,12 +117,14 @@ window and at 1600x900 (docs/LANGUAGES.md, "Layout check"). It must say PASSED f
 pseudo-language; read the pseudo-language's warnings in `summary.md` for what a longer language will break next. Its
 pictures stay on the PC.
 
-## 6. Before a release: the QA pass (about an hour)
+## 6. Before a minor or major release: the QA pass (about 40 minutes)
 
-The UI QA pass for a release (docs/QA.md, "What it runs"), by someone who didn't make the release's changes: the views
-in English and German at both sizes, the tour's seven chapters, What's New and each line's preview, every replay script
-in `tools\qa\`, `shturmap-cli frames` in both scenes, and the layout check of step 5 with `-SwitchCheck`, every picture
-opened. It must say PASS; a finding left open goes to the owner before the Release workflow runs.
+The UI QA pass for a release (docs/QA.md, "What it runs"), by someone who didn't make the release's changes: the views,
+the tour's seven chapters in both languages, the new What's New card and its lines' previews, every replay script in
+`tools\qa\` once, and the layout check of step 5 with `-SwitchCheck`. No BLOCKS or SHOULD finding may stand unless the
+owner has taken it as open; its fixes are checked by their repro commands, not by another pass, and the nits go to the
+owner, before the Release workflow runs. A patch release with nothing new to see skips this step (docs/QA.md, "When a
+QA pass runs").
 
 ## What the rules assume
 

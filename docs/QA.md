@@ -10,17 +10,26 @@ A pass is made by someone who didn't make the change: the **UI QA tester**, an a
 tester of a second-monitor game companion, adversarial, patient and exact, who tests what the player sees and does, not
 the code, and judges against DESIGN.md, never against taste. Locally it is `.claude/agents/ui-qa.md` (the `.claude`
 folder isn't in the repository); its rules are these, so any reviewer applies the same. It never edits product files:
-it returns findings, the change's author fixes them, and it checks again.
+it returns findings, and the change's author fixes them.
 
 ## When a QA pass runs
 
-- After any change to what the user sees (the window, a card, a cue, a dialog, the map's drawing, a text, a flow),
-  before the change is reported done.
-- Before every release (docs/UPDATES.md, step 6).
+- Once for a new feature or flow the player sees (a new view, card, cue, plate or flow, or the redesign of one), before
+  it is reported done.
+- Before a minor or major release (docs/UPDATES.md, step 6). A patch release with nothing new to see has step 5's
+  layout check and its What's New card at 900x560 instead.
 - After a layout change, in any language.
 
-Its findings are fixed, or reported to the owner as open. After the fixes, a new pass from fresh builds, until it says
-PASS.
+Not for a fix, a text, a few pixels moved or a finding's fix: its author runs the finding's repro (or one snapshot of
+the view), and the coordinator opens that picture. No re-check pass: BLOCKS and SHOULD findings are fixed and checked
+by their repro commands, or reported to the owner as open; NITs go to the owner as a list and start no fix round on
+their own (owner, 2026-10-27: "we need to cut the UI QA way down"; over the 28 passes of 2026-10-15 to 26 the first
+pass on a new feature found the bugs a player would meet, such as German hand-over items missing, the tour wiping the
+window's texts, the stash past the window's edge or the glance losing a body's loot, while re-checks and passes on
+small changes, about half the time, found mostly pixel offsets, the QA tools' own faults and checks not run).
+
+What a pass can't see: the readers on real screenshots. On 2026-10-19 four passes had passed the made-up desk, and the
+owner's evening of play found the page reshaping with every real screenshot; the owner's play test checks that.
 
 ## Builds and folders
 
@@ -45,10 +54,10 @@ PASS.
 
 ## What it runs
 
-A pass runs the checks of each row the change reaches, and only those, with the replay scripts of the flows it reaches
-(every script before a release). A pass for a change takes about 20 minutes, a release pass about an hour (owner,
-2026-10-16: the passes had grown to 30 minutes and 200 tool calls; "we need to cut a bit on the computation time").
-Within the time the checks the change is judged by come first; what didn't fit is reported as not run:
+A pass runs the checks of each row the change reaches, and only those, with the replay script of the feature's flow
+(every script once before a release). A feature's pass takes about 15 minutes, a release pass about 40 (owner,
+2026-10-16: "we need to cut a bit on the computation time"; 2026-10-27: cut again). Within the time the checks the
+change is judged by come first; what didn't fit is listed as not run:
 
 | change | checks |
 | --- | --- |
@@ -56,7 +65,7 @@ Within the time the checks the change is judged by come first; what didn't fit i
 | map drawing | `shturmap-cli render` of the maps it reaches; `shturmap-cli frames` in the scene the change reaches, with `--glide`, `--notch` or `--step 2` only when the change moves the view; the raid view at the smallest window |
 | an animation or a flow | the replay script of that flow, or one drafted in the pass folder for a flow without one; `frames` for a map animation |
 | the layout, in any language | the layout check, every view, en-US, de-DE and qps-ploc, both sizes |
-| a release | all of the above for every view; the tour's seven chapters in both languages; What's New and each line's preview; the layout check in full with `-SwitchCheck` |
+| a release | the views as in the first row; the tour's seven chapters in both languages; the new What's New card and each of its lines' previews (older cards' are not checked); every replay script once, as its `.md` says; the layout check in full with `-SwitchCheck` |
 
 ```powershell
 # Views (folder build): plan, raid (a PMC raid on Streets, a list read, a walk), quest (Dandies' card and its item's)
@@ -122,8 +131,6 @@ positions, `--focus-item <item>` and `--pick <quest>`; `frames` 36 frames 100 ms
   drawn as nothing in most runs; help now closes first, and an empty popup picture is taken again (the app log says so).
 - **Against the words**: DESIGN.md's for that view (what shows, in which order, colour, type role, size; what is lit,
   framed, pulsing, stepped back), `docs/tour.md` and `docs/whats-new.md` (and their German files), a replay's `.md`.
-- **Against the last pass**, where one is kept, for the views the change is judged by: what changed that the change
-  didn't mean to. Never an older commit built for a comparison.
 - **The states DESIGN.md names**, where the change reaches them: animation effects off (a `--snapshot` run draws the
   tour and the raid replay without motion; elsewhere it is Windows' setting, which only the owner changes; a replay
   that needs it on reads it first, `SystemParametersInfo` with SPI_GETCLIENTAREAANIMATION, and isn't run when off), both
@@ -140,15 +147,17 @@ Anything the player would see that DESIGN.md doesn't say: overlap; clipping, a t
 doesn't allow it; a wrong state (the wrong map or view, a card or preview left behind); a symbol lit, framed, tinted or
 pulsing that shouldn't be, or not where it should; motion where *Motion* names none or none where it names some, a frame
 that jumps or goes into nothing; a colour off the token table; a text not in the texts files; a flow that ends in
-another state than its `.md` says; an ERROR or WARN; a picture empty or missing; a planned check not run. Where
-DESIGN.md says nothing of what a picture shows, it is a finding for the owner to decide.
+another state than its `.md` says; an ERROR or WARN; a picture empty or missing. Not findings: a check not run (listed
+under NOT RUN), what DESIGN.md says nothing of (at most three lines under FOR THE OWNER), a fault of the QA tools
+themselves (one line under TOOLS).
 
 - **BLOCKS**: the player reads something wrong or loses the way (a wrong map, state, extract, distance or time; the
   glance unreadable at 900x560; a UX principle broken; a flow ending in the wrong state; a window on a monitor; an ERROR).
-- **SHOULD**: a visible defect the design contradicts, the right answer still readable (an overflow, trim or overlap in
-  an offered language, motion off its timing, a symbol off the visual language, a text not in the texts files, a WARN,
-  a check not run).
-- **NIT**: a few pixels off the spacing or alignment, nothing misread; a pseudo-language overflow.
+- **SHOULD**: a visible defect the design contradicts that a player would notice, the right answer still readable (an
+  overflow, trim or overlap that hides or cuts words in an offered language, motion off its timing, a symbol off the
+  visual language, a text not in the texts files, a WARN).
+- **NIT**: a few pixels off the spacing or alignment, an overlap that hides nothing, nothing misread; a pseudo-language
+  overflow.
 
 ## How it reports
 
@@ -159,15 +168,19 @@ FINDING <n> · BLOCKS|SHOULD|NIT · <view or flow> · <what the picture shows> �
 PASS FOLDER: <the pass folder, the user folder written %USERPROFILE%>
 CHECKED:
 - <tool, view or flow, language, size, build and commit> → <its folder>
-PASS | FAIL (<n> blocks, <n> should, <n> nits)
+NOT RUN: <check: why>, …
+FOR THE OWNER: <up to three lines>
+TOOLS: <one line, or none>
+PASS (<n> nits) | FAIL (<n> blocks, <n> should, <n> nits)
 ```
 
-A check that didn't run is a finding: `· not run: <why> ·`. `PASS` only when every planned check ran and found nothing.
+`PASS` when no BLOCKS or SHOULD finding stands; nits don't fail a pass.
 
 ## Replay scripts
 
-`tools\qa\` holds the replays of flows, one `<flow>.devscript` and one `<flow>.md` of expectations per flow; the QA pass
-runs every script there, on the Debug build, as its `.md` says, then again in de-DE and at the smallest window. The
+`tools\qa\` holds the replays of flows, one `<flow>.devscript` and one `<flow>.md` of expectations per flow; a feature's
+pass runs its flow's script on the Debug build as its `.md` says, then once at the smallest window, and in de-DE only
+where its texts are new; a release pass runs every script once, as its `.md` says. The
 first is `whatsnew-tour-line` (the 0.5.0 card's tour line); `extract-roll-call` (2026-10-15) replays the extract
 list's roll call, YOUR EXTRACTS THIS RAID, from a list the script hands the session; `update-ready` (2026-10-15) the
 update band under MAP and its cue, UPDATE READY, from `trigger update` (the next patch taken for downloaded) through a
@@ -239,7 +252,7 @@ A flow a change reaches without a script gets one, added here with the change.
 
 - No praise and no "looks fine" without the pictures opened; findings are not softened.
 - The reviewer never edits product files; it writes only into its pass folder. The change's author fixes.
-- "Not run" is a finding, never a pass.
+- "Not run" is said, never hidden: it is listed under NOT RUN, not counted as a finding.
 - No `--visible`, `tools\record-window` or `fake-raid.ps1 -Demo` unless the owner has said they aren't playing; then
   `tools\record-window` records Shturmap's own window only (DESIGN.md §8). Never the owner's monitors.
 - `--data` on every run that would otherwise use `%LOCALAPPDATA%\Shturmap-dev` (the layout check's through `-MoreArgs`);

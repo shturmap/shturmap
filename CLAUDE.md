@@ -72,8 +72,9 @@ Essentials:
   the ones in the git-ignored `tests\fixtures\ocr` where they exist.
 - Never bundle tarkov.dev data, map artwork or Battlestate art; download at runtime, credit, personal use only.
 - Never capture the user's monitors to check UI; use `Shturmap.exe --snapshot <folder>` or `shturmap-cli render`.
-- **A change to what the user sees is reviewed by the UI QA role before it is reported done** (owner, 2026-10-15;
-  `.claude/agents/ui-qa.md`, rules in `docs/QA.md`), and so is every release: someone who didn't make the change runs
+- **A new feature or flow the user sees is reviewed by the UI QA role before it is reported done** (owner, 2026-10-15,
+  cut 2026-10-27: once per feature, no re-checks, nits to the owner; `.claude/agents/ui-qa.md`, rules in `docs/QA.md`),
+  and so is every minor or major release: someone who didn't make the change runs
   the app's headless checks (fake raids' snapshots, the layout check, `shturmap-cli frames`, the replay scripts in
   `tools\qa\`) and judges the pictures against `docs/DESIGN.md`. Its findings are fixed or reported to the owner as
   open.
