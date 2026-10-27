@@ -8,6 +8,8 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 
 ## 2026-10-26: clearing the desk
 
+**Decided after the build** (owner, 2026-10-27, in the chat, on the windows that shrink the desk, measured below): **windows never shrink the page; it scrolls for them.** A container window no longer counts in the height the cells must fit (`DeskPageRules.Arrangement.Held`); the cell size stays the desk's own and the page scrolls further; nothing seen is lost, and CLEAR and the fresh page after a raid tidy up. Not taken: a closed case's window leaving the page (its contents would leave the totals), both, or no change. Not built yet.
+
 **Asked** (owner, 2026-10-26, after 0.7.0's release): "We need an option to clear the desk because it quickly gets
 messy".
 
