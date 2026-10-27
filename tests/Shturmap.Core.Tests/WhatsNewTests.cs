@@ -129,6 +129,11 @@ public class WhatsNewTests
     [InlineData("stash-card", true)]
     [InlineData("stash-given", true)]
     [InlineData("notes", true)]
+    [InlineData("desk", true)]
+    [InlineData("tasks", true)]
+    [InlineData("textsize", true)]
+    [InlineData("glance", true)]
+    [InlineData("grid", true)]
     [InlineData("tour", false)]
     [InlineData("tour:1", false)]
     [InlineData("tour:5", false)]
@@ -149,35 +154,71 @@ public class WhatsNewTests
     // stood over the extract list's Customs): only these stage a map of their own; the others lay a plate or a cue over it.
     [Fact]
     public void Only_the_map_previews_stage_a_map_of_their_own() =>
-        Assert.Equal(["extracts", "joined", "leaders", "replay"], WhatsNew.Previews.Where(WhatsNew.StagesMap).Order(StringComparer.Ordinal));
+        Assert.Equal(["extracts", "grid", "joined", "leaders", "replay"], WhatsNew.Previews.Where(WhatsNew.StagesMap).Order(StringComparer.Ordinal));
 
-    // The note at the card's foot says what its lines do (UI QA pass of the squad grid, F9, 2026-10-26: "Point at one: the
-    // map shows it." stood under 0.7.0's five tour lines, which preview nothing). A card with several versions counts the
-    // lines of all of them.
+    // The features that move play a short sequence and hold its end (owner, 2026-10-27, D4 B): the desk, the glance and
+    // the grid, in 4 to 6 s; text size and the dailies are stills.
+    [Fact]
+    public void Only_the_features_that_move_play_a_sequence_of_four_to_six_seconds()
+    {
+        Assert.Equal(["desk", "glance", "grid"], WhatsNew.Previews.Where(WhatsNew.Moves).Order(StringComparer.Ordinal));
+        Assert.InRange(WhatsNew.Plays.TotalSeconds, 4, 6);
+    }
+
+    // A click holds a line's preview, in place of any other; on the line held it lets go (owner, 2026-10-27, D4 B). What's
+    // New opens no tour: an older version's line about the tour holds nothing either.
+    [Fact]
+    public void A_click_holds_a_preview_and_a_second_lets_it_go()
+    {
+        Assert.Equal("0.7.0:0", WhatsNew.Click(null, "0.7.0:0", "desk"));
+        Assert.Equal("0.7.0:4", WhatsNew.Click("0.7.0:0", "0.7.0:4", "grid"));
+        Assert.Null(WhatsNew.Click("0.7.0:4", "0.7.0:4", "grid"));
+        Assert.Null(WhatsNew.Click(null, "0.6.2:2", "tour:3"));
+        Assert.Equal("0.7.0:1", WhatsNew.Click("0.7.0:1", "0.6.2:2", "tour:3"));
+    }
+
+    // The owner's words of 2026-10-27 (D4): "when I click on them the standard tour of the app starts. This should not be
+    // the case, each feature should have a icon and a appropriate picture". From 0.7.0 on, every line has a preview of its
+    // own, never the tour, in English and in each translation (which keeps the English previews; the test above).
+    [Fact]
+    public void From_0_7_0_on_every_line_previews_its_feature_and_none_is_about_the_tour()
+    {
+        var sections = WhatsNew.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "docs", "whats-new.md")));
+        var kaomoji = sections.Single(s => s.Label == "0.7.0");
+        Assert.Equal(["desk", "tasks", "textsize", "glance", "grid"], kaomoji.Items.Select(i => i.Preview));
+        Assert.All(sections.Where(s => s.Version >= new Version(0, 7, 0)).SelectMany(s => s.Items), item =>
+        {
+            Assert.True(WhatsNew.Previews.Contains(item.Preview), $"'{item.Preview}' ({item.Name}) isn't a preview of its own");
+            Assert.Null(Tour.ChapterOf(item.Preview));
+        });
+    }
+
+    // The note at the card's foot says what its lines do: point to preview, click to hold, wherever a line previews; no note
+    // where none does (only older versions' lines about the tour). A card with several versions counts the lines of all
+    // of them.
     [Fact]
     public void The_cards_foot_says_what_its_lines_do()
     {
         var sections = WhatsNew.Parse("""
             ## 0.7.0
 
-            - tour:2 · The stash desk · DESK, top left.
-            - tour · The tour · Seven short chapters.
+            - desk · The stash desk · DESK, top left.
+            - grid · A grid for your squad · YOU says your square.
 
             ## 0.6.2
 
             - leaders · Bosses, stepped back · One name each.
             - tour:3 · Plan by trader · Point to light their quests.
 
-            ## 0.6.1
+            ## 0.4.0
 
-            - extracts · Your extracts, slower · One after the other.
-            - leaders · Above or below, bolder · A bold caret.
+            - tour · The tour · Seven short chapters.
             """);
         WhatsNew.Section Version(string label) => sections.Single(s => s.Label == label);
-        Assert.Equal(WhatsNew.Foot.Click, WhatsNew.FootOf([Version("0.7.0")]));
-        Assert.Equal(WhatsNew.Foot.PointOrClick, WhatsNew.FootOf([Version("0.6.2")]));
-        Assert.Equal(WhatsNew.Foot.PointAt, WhatsNew.FootOf([Version("0.6.1")]));
-        Assert.Equal(WhatsNew.Foot.PointOrClick, WhatsNew.FootOf([Version("0.7.0"), Version("0.6.1")]));
+        Assert.Equal(WhatsNew.Foot.PointAt, WhatsNew.FootOf([Version("0.7.0")]));
+        Assert.Equal(WhatsNew.Foot.PointAt, WhatsNew.FootOf([Version("0.6.2")]));
+        Assert.Equal(WhatsNew.Foot.None, WhatsNew.FootOf([Version("0.4.0")]));
+        Assert.Equal(WhatsNew.Foot.PointAt, WhatsNew.FootOf([Version("0.7.0"), Version("0.4.0")]));
     }
 
     // What's New in another language (docs/DESIGN.md §8, "Texts"): docs/whats-new.<code>.md beside docs/whats-new.md, each

@@ -396,6 +396,10 @@
     <value>Ein Beispiel, nicht dein Stash.</value>
     <comment>en: An example, not your stash.</comment>
   </data>
+  <data name="CueExampleTasks" xml:space="preserve">
+    <value>Ein Beispiel, nicht deine Dailies.</value>
+    <comment>en: An example, not your dailies.</comment>
+  </data>
   <data name="CueExitsListedEyebrow" xml:space="preserve">
     <value>AUS DEINEM SCREENSHOT</value>
     <comment>en: FROM YOUR SCREENSHOT</comment>
@@ -468,6 +472,14 @@
     <value>EIN BEISPIEL, NICHT DEINE NOTIZEN</value>
     <comment>en: AN EXAMPLE, NOT YOUR NOTES</comment>
   </data>
+  <data name="PreviewExampleTasks" xml:space="preserve">
+    <value>EIN BEISPIEL, NICHT DEINE DAILIES</value>
+    <comment>en: AN EXAMPLE, NOT YOUR DAILIES</comment>
+  </data>
+  <data name="PreviewExampleSetting" xml:space="preserve">
+    <value>EIN BEISPIEL, NICHT DEINE EINSTELLUNG</value>
+    <comment>en: AN EXAMPLE, NOT YOUR SETTING</comment>
+  </data>
   <data name="TourCardExample" xml:space="preserve">
     <value>DIE RAID-KARTE, MIT BEISPIELWERTEN</value>
     <comment>en: THE RAID CARD, WITH EXAMPLE VALUES</comment>
@@ -507,6 +519,18 @@
   <data name="WhatsNewNotesExample" xml:space="preserve">
     <value>EINE QUEST-KARTE, MIT BEISPIELNOTIZEN</value>
     <comment>en: A QUEST CARD, WITH EXAMPLE NOTES</comment>
+  </data>
+  <data name="WhatsNewDeskExample" xml:space="preserve">
+    <value>DER DESK, MIT EINER BEISPIELSEITE</value>
+    <comment>en: THE STASH DESK, WITH AN EXAMPLE PAGE</comment>
+  </data>
+  <data name="WhatsNewGlanceExample" xml:space="preserve">
+    <value>LOOT AUF EINEN BLICK, MIT BEISPIEL-ITEMS</value>
+    <comment>en: THE IN-RAID GLANCE, WITH EXAMPLE LOOT</comment>
+  </data>
+  <data name="WhatsNewTextSizeExample" xml:space="preserve">
+    <value>TEXTGRÖSSE DER EINSTELLUNGEN, MIT BEISPIELZEILEN</value>
+    <comment>en: SETTINGS' TEXT SIZE, WITH EXAMPLE LINES</comment>
   </data>
   <data name="WhatsNewNoteExampleNewer" xml:space="preserve">
     <value>Nächster Raid: von Norden rein.</value>

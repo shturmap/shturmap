@@ -263,8 +263,12 @@ public sealed partial class DeskBoard : Grid
         _view = view;
         var cells = Build(motion ? entering : null);
         ShowAge(DateTimeOffset.Now);
+        // No page: the next counts up from nothing, as a first showing does (What's New's desk preview shows the same page anew).
         if (view is null)
+        {
+            _shown = (0, 0);
             return;
+        }
         var to = (view.Sheet.Totals.OnYou, view.Sheet.Totals.Stash);
         if (motion && entering.Count > 0 && to != _shown)
         {

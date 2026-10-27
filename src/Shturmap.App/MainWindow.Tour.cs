@@ -167,6 +167,10 @@ public sealed partial class MainWindow
         // highlight does weird movements and highlights the wrong things sometimes"; MapView.FollowHeld).
         _previewTimer?.Stop();
         _previewWanted = null;
+        // A What's New line held keeps its preview up with the pointer away from the card: it ends as the tour opens, and
+        // lets go (Rules.WhatsNew.Click; owner, 2026-10-27, D4 B).
+        if (_previewing?.StartsWith(WhatsNewPreviewPrefix, StringComparison.Ordinal) == true)
+            EndPreview(restore: true);
         Map.FollowHeld = true;
         if (!TourOpen)
         {

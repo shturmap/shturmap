@@ -349,9 +349,9 @@ public sealed partial class MainWindow
 
     /// <summary>
     /// A click on the newest version's n-th What's New line (counted from 1), as the mouse makes it: the pointer onto
-    /// the line, then the tap, through the code the pointer's own events call, so a line about the tour opens it there
-    /// (a script can replay the owner's report of 2026-10-15 on the tour:5 line without a mouse). The card shows first
-    /// if it isn't up. Returns what it couldn't find, or null.
+    /// the line, then the tap, through the code the pointer's own events call, so the tap holds the line's preview, or
+    /// on the line held lets it go (owner, 2026-10-27, D4 B; Rules.WhatsNew.Click). The card shows first if it isn't up.
+    /// Returns what it couldn't find, or null.
     /// </summary>
     internal string? DevWhatsNewClick(int line, string? version = null)
     {

@@ -959,7 +959,8 @@ quoting it anywhere new.
    cover the window, and only because the player opened it: the Report dialog (review of 2026-10-04: the
    principle didn't name it). And the tour, which dims the window around the parts it is about (owner, 2026-10-09,
    the panel's T3: "I want to put an exception to the design for the tour"): at a first start and when the player
-   opens it from help or What's New, never in a raid, and Esc ends it from its first frame (*The tour*).
+   opens it from help (What's New no longer opens it: owner, 2026-10-27, D4 B), never in a raid, and Esc ends it from
+   its first frame (*The tour*).
 4. **Minimal surface.** Every control earns its place. Prefer an automatic behaviour over a button, a sensible
    default over a setting. Messages are one line and dismiss themselves.
 5. **Clear requirements.** What a raid needs (keys, items to bring) is shown before the raid, unprompted, and next
@@ -1818,16 +1819,27 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     release's name, below), × in its corner (`E711`, as on a notice),
     up to five lines per version, each a 56×34 picture and the thing's name over one note line, then a note that says
     what the lines do, counted over every version the card shows (`Rules.WhatsNew.FootOf`): "Point at one: the map
-    shows it." where each previews, "Click one: the tour shows it." where each is about the tour, "Point or click: the
-    map or the tour shows it." where there are both, one line at 900×560 in each language (UI QA pass of the squad
-    grid, F9, 2026-10-26: the first stood under 0.7.0's five tour lines, which preview nothing). The picture is the
+    shows it. Click: it stays." where any line previews, none where none does (only an older version's lines about
+    the tour), one line at 900×560 in each language (UI QA pass of the squad grid, F9, 2026-10-26: "Point at one: the map
+    shows it." stood under 0.7.0's five tour lines, which previewed nothing then). The picture is the
     thing's map symbol drawn by `MapLegend`, as help's legend rows are, a small drawing of the raid card's clock, the
     stash grid glyph the marks carry (what you have), a sticky note (`E70B`,
-    Segoe's QuickNote) for quest notes (`notes`), or, on a line about the tour (`tour`, `tour:5`), the tour's drawn
-    pointer as the tour draws it, white on a dark rim at 1.2 times, in the middle of the picture's place (owner,
-    2026-10-15: until then a tour line had none, the one gap in the column; `MainWindow.TourPointerShape`). **Pointing
-    at a line previews it** on the map, as resting on a map's row in Plan
-    does (0.6 s; the line takes the linked tint): its map with the thing staged, the preview label "PREVIEW · NEW IN
+    Segoe's QuickNote) for quest notes (`notes`), a picture of the feature drawn by the map's code for 0.7.0's lines
+    (`Shturmap.Map.FeatureGlyphs`, owner, 2026-10-27, D4 B below: the desk's cells with the keep notch and their figures,
+    a stopwatch in a frame for the dailies, a small and a large "A" for the text size, the glance's plate between its
+    amber hairlines, the grid's lines with the player's dot), or, on an older version's line about the tour (`tour`,
+    `tour:5`), the tour's drawn pointer as the tour draws it, white on a dark rim at 1.2 times, in the middle of the
+    picture's place (owner, 2026-10-15: until then a tour line had none, the one gap in the column;
+    `MainWindow.TourPointerShape`). **Each feature its own picture and preview, never the tour** (owner, 2026-10-27, from
+    the decision page of the desk and What's New, D4: "we have features listed with our new releases, but when I click on
+    them the standard tour of the app starts. This should not be the case, each feature should have a icon and a
+    appropriate picture or even animation."; picked "D4 B", a glyph and a short animated preview on point, no notes): a
+    line names its feature's own key in docs/whats-new.md, the next release's lines too; What's New opens no tour (the
+    tour stays in help). **Pointing at a line previews it** on the map, as resting on a map's row in Plan
+    does (0.6 s; the line takes the linked tint), and **a click holds it** (`Rules.WhatsNew.Click`; D4 B): the preview
+    stays when the pointer leaves the card, keeping the line's tint; pointing at another line previews that one and
+    leaving it gives the held one back, at its end; a click on another line holds that one instead, a second click on
+    the line held lets it go, and the card's ×, a raid, the desk or the tour let go too. The preview: its map with the thing staged, the preview label "PREVIEW · NEW IN
     0.4.0 · YOUR EXTRACTS THIS RAID" with "AN EXAMPLE, NOT YOUR RAID" beside it, or under it where the map leaves too
     little room for both, each whole, a plate then standing as much lower than the map's middle as it takes to keep clear
     of the label (QA pass, 2026-10-15: at 900×560 the stash lines' "AN EXAMPLE, NOT YOUR STASH" ran out of the label's
@@ -1837,7 +1849,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     drawn and its foot under WIKI MAP and the credit; at 900×560 it now stands at about 82 % in English, 74 % in
     German; YOUR EXTRACTS THIS RAID keeps clear of the label too, principle 11), and leaving puts the map back as it
     was: a preview that staged a map of its own gives the player's back made anew, at the view it had; one that showed only a
-    cue or a plate over it (`stash`, `stash-card`, `stash-given`, `clock`, `notes`) leaves the map's scene alone, so
+    cue or a plate over it (`stash`, `stash-card`, `stash-given`, `clock`, `notes`, `desk`, `tasks`, `textsize`,
+    `glance`; `grid` stages Customs) leaves the map's scene alone, so
     the last position doesn't ping again nor, with Follow my position on, glide (found 2026-10-15, looking into the owner's report
     on the `tour:5` line below; `SceneGate.MakeAnew`). Each preview starts from the map put back: pointing from a line
     that staged a map of its own straight to one that shows only a cue or a plate gives the player's map back first, made
@@ -1856,9 +1869,31 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     STASH line of today's date, from a screenshot with NOT ANY MORE or from the game's log; and for quest notes (0.6.0)
     `notes`, a quest card on the plate, held so its field and each note's × show, with two made-up notes written today,
     under A QUEST CARD, WITH EXAMPLE NOTES and beside AN EXAMPLE, NOT YOUR NOTES: Ballet Lover (where the data has none
-    by that name, the first quest by name with a place on a map), active whatever the player's is. Nothing of
+    by that name, the first quest by name with a place on a map), active whatever the player's is; and for 0.7.0's
+    features (D4 B, `MainWindow.WhatsNewPreviews`) `desk`, the made-up desk's first reading (`Rules.DeskExample`) as a
+    page on the plate over the dimmed map, laid out at the map's size, the desk's own place, and drawn smaller: its cells
+    come in 50 ms apart and its totals count up from nothing, then the stash's LEDX is clicked, its frame flashing gold
+    and its figure decoding, as a copy does (the desk isn't opened: the card and the line stay under the pointer), under
+    THE STASH DESK, WITH AN EXAMPLE PAGE beside AN EXAMPLE, NOT YOUR STASH; `tasks`, the cue of a Tasks screenshot read
+    with three made-up dailies and weeklies, a survival on Streets of Tarkov, a kill on Customs, a weekly's hand-over on
+    any map, each row with its map and time left, "An example, not your dailies." under its title, beside AN EXAMPLE,
+    NOT YOUR DAILIES (it stays while the line is pointed at or held, as the stash cue's example does); `textsize`, a
+    still on the plate: the same three lines, a quest's name, its trader and an extract's map label, at NORMAL and at
+    LARGEST side by side, drawn by the map's code at each step's sizes (WinUI's curve), under SETTINGS' TEXT SIZE, WITH
+    EXAMPLE LINES beside AN EXAMPLE, NOT YOUR SETTING: the window's own text size isn't changed, since the rail would be
+    laid out anew and the line move out from under the pointer; `glance`, the made-up glance's drawer
+    (`Rules.GlanceExample`) on its own plate over the dimmed map, clear of the map's buttons, rising in after 0.7 s as the
+    cue's rows rise and its figures decoding one after another, under THE IN-RAID GLANCE, WITH EXAMPLE LOOT; `grid`,
+    Customs with the grid (also where settings have it off; put back as the preview ends) and a made-up position that
+    walks over 3 s from C5's top right into D5's top middle, its tag and YOU at the map's top left going from C5-9 to
+    D5-8, the line's own example, the position never pinging (the map lights no square: the reference says it; at
+    900×560 YOU steps aside for the two-line label, as under any note, and the marker's tag says it). The desk, the
+    glance and the grid move: each plays once in about 4.5 s and holds its end (`Rules.WhatsNew.Moves`, the app's own
+    motion, *Motion*: "slow enough to read, never for show"); with Windows' animation effects off, in a snapshot, and for
+    the line held coming back, each shows its end at once. Nothing of
     the player's is shown or changed, and nothing is bundled: every picture and preview is drawn when it shows, from the
-    cache, by the app's own code (`MainWindow.WhatsNew`). **When:** at the first start of a version with lines, outside
+    cache, by the app's own code (`MainWindow.WhatsNew`); the desk's and the glance's item pictures are those the app
+    downloaded (§3). **When:** at the first start of a version with lines, outside
     raids; the versions newer than the one last seen (`whatsNew.seen` in shturmap.db), newest first, each under its
     own NEW IN line. A first start (no `help.seen` either) shows none: help opens, and the newest version counts as
     seen. After an update from a version before the card, the newest version only (`Rules.WhatsNew.Due`). Never by
@@ -1866,13 +1901,13 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     NEW IN 0.4.0 · PRAETORIAN brings the newest version's card back. The lines are docs/whats-new.md, built into the
     app, with each language's translation beside it (`docs/whats-new.<code>.md`; a version it lacks shows in English,
     `Rules.WhatsNew.InLanguage`): one section
-    per version, "- preview · Name · What it is.", at most five (a test checks the file: known previews, short words). A line about the tour (`tour`, or `tour:5` for a
-    chapter a release changed) previews nothing; a click on it opens the tour there (owner, 2026-10-09, T13; *The tour*).
-    Once it is clicked the tour owns the map: the preview timer stands still until the tour ends, a request the pointer
-    made before is dropped, and the line's leaving under the tour's layer asks for nothing (owner, 2026-10-15, on the
-    `tour:5` line: "the highlight does weird movements and highlights the wrong things sometimes"; the leaving ended a
-    preview 0.3 s later, which put the player's map back under YOUR SCREENSHOT KEY while the chapter went on staging on
-    Customs, so its view moved and its cut-outs sat by a map no longer shown; `Rules.PreviewOwner`).
+    per version, "- preview · Name · What it is.", at most five (a test checks the file: known previews, short words;
+    from 0.7.0 on, every line a preview of its own). An older version's line about the tour (`tour`, or `tour:5` for a
+    chapter a release changed) previews nothing and, since D4 B (2026-10-27), opens nothing either; it stays as written
+    (from 2026-10-09, T13, to 0.7.0 a click on one opened the tour there; *The tour*). The tour, opened from help while
+    a line is held, ends the held preview first and owns the map: the preview timer stands still until the tour ends, a
+    request the pointer made before is dropped (owner, 2026-10-15, on the `tour:5` line: "the highlight does weird
+    movements and highlights the wrong things sometimes"; `Rules.PreviewOwner`).
     0.4.0's card names the tour in place of "Symbols stand apart", which was the least a player acts on.
     **Only what is new for the player** (owner, 2026-10-19: "Don't add 'new in' entries for stuff that is not really
     relevant to the player, only add really new things, like the desk."): a line names a thing the player can now do
@@ -3106,9 +3141,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     column.
   - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
     outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
-    (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New
-    line about it (below); never in a raid, these ways too (review of 2026-10-09: they opened it over the raid card):
-    TAKE THE TOUR is hidden while a raid loads or runs, and a SHOW ME or a What's New line then opens nothing and says
+    (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter); no longer from What's
+    New (owner, 2026-10-27, D4 B; *What's New*); never in a raid, these ways too (review of 2026-10-09: they opened it
+    over the raid card): TAKE THE TOUR is hidden while a raid loads or runs, and a SHOW ME then opens nothing and says
     "The tour waits until the raid is over.". Ending it, at its last chapter or with Esc, counts it and help as seen,
     and a notice says where it stays ("The tour stays in help: F1, then TAKE THE TOUR."). Never in the website demo;
     "--tour <n>" opens a chapter for a snapshot (`tools\fake-raid.ps1 -PlanOnly -Tour <n>`).
@@ -3123,9 +3158,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     tour's isn't shown, the English one is (`Rules.Tour.InLanguage`, `Rules.BuiltDocs`; §8, "Texts").
   - **Keeping it current** (owner, 2026-10-09). A change to something a chapter shows changes the chapter in the same
     commit. Its drawing is the app's own, so a new symbol, card or cue shows in the tour by itself; what can go stale is
-    its words and what it frames, and the test catches the second. A release that changed a chapter says so in What's
-    New with a line `tour:N` ("- tour:5 · …"), which opens the tour at that chapter when clicked; pointing at such a line
-    previews nothing. Before a release, the chapters are looked at (`fake-raid.ps1 -PlanOnly -Tour 1` … `7`).
+    its words and what it frames, and the test catches the second. A release that changed a chapter says so in its
+    release notes. Until 2026-10-27 it said so in What's New with a line `tour:N` ("- tour:5 · …"), which opened the
+    tour at that chapter when clicked; since the owner's D4 B (*What's New*: "when I click on them the standard tour of
+    the app starts. This should not be the case") What's New opens no tour and a feature's line previews the feature
+    itself, so no new `tour:N` line is written (CLAUDE.md's "Keep the tour current" still names it: the owner's to
+    amend). Before a release, the chapters are looked at (`fake-raid.ps1 -PlanOnly -Tour 1` … `7`).
   - **First-time lines** (the panel's E). The habit is needed in the raid, long after the tour, so after a first start
     the first raid's RAID LOADING cue carries one line under its kit, "FIRST RAID WITH SHTURMAP · PRESS PRTSC ONCE YOU'RE
     IN" (the key as the game's settings name it), and the first position plotted gets a notice, "That's you, from your

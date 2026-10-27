@@ -62,7 +62,7 @@ public static class DevScript
         ["choose"] = "<folder> | game | auto: \"Choose game folder…\" with that folder; game is this view's fake game; auto is FIND AUTOMATICALLY",
         ["whatsnew"] = "[<version>] [<n>] | [<version>] click <n> | leave: What's New of the newest version, as help's link shows it, or of that version (0.4.0), its card alone; "
             + "with n, the pointer on its n-th line (its preview; a line about the tour previews nothing, as for the pointer); "
-            + "click n, the pointer onto line n and a tap there, through the code the pointer's events call (a line about the tour opens it); "
+            + "click n, the pointer onto line n and a tap there, through the code the pointer's events call (it holds the line's preview, or on the line held lets it go; no line opens the tour); "
             + "leave, the pointer off the line it is on, as leaving the card does",
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
         ["stash"] = "the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it",

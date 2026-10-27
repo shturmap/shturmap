@@ -234,6 +234,8 @@ public sealed partial class MainWindow : Window
         Map.StopDrawing();
         StopTasksCue();
         StashDesk.Stop();
+        _whatsNewDesk?.Stop();
+        StopWhatsNewSteps();
     }
 
     // The app is ending (StopForExit): nothing of the window's own runs again.
@@ -1326,6 +1328,8 @@ public sealed partial class MainWindow : Window
         // owner, 2026-10-15: the tour:5 line's leaving, under the tour's layer, ended YOUR SCREENSHOT KEY's staging).
         if (!PreviewOwner.Heeds(TourOpen))
             return;
+        // Nothing asked for: the What's New line a click holds comes back, if there is one (Rules.WhatsNew.Click).
+        map ??= WhatsNewHeldPreview;
         _previewWanted = map;
         if (_previewTimer is null)
         {
@@ -1406,6 +1410,8 @@ public sealed partial class MainWindow : Window
         _previewing = null;
         _previewWanted = null;
         ViewModel.PreviewText = "";
+        // Ended by something other than the pointer (a raid, the desk, the card's ×): a What's New line held lets go.
+        LetGoWhatsNew();
         EndWhatsNewPreview();
         var s = _snapshot;
         // A preview that put a map of its own in the view gives the player's back, made anew, at the view it had (or
@@ -1945,7 +1951,12 @@ public sealed partial class MainWindow : Window
         }
         var (eyebrow, title, detail) = CueText(cue);
         if (example)
-            detail = cue.Kind == CueKind.StashSeen ? AppTexts.CueExampleStash : AppTexts.CueExample;
+            detail = cue.Kind switch
+            {
+                CueKind.StashSeen => AppTexts.CueExampleStash,
+                CueKind.TasksRead => AppTexts.CueExampleTasks,
+                _ => AppTexts.CueExample,
+            };
         FirstRaidLine(cue, example);
         UpdateCueLine(cue);
         CueEyebrow.Text = eyebrow;

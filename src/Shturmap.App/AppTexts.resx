@@ -396,6 +396,10 @@
     <value>An example, not your stash.</value>
     <comment>The SEEN IN YOUR STASH cue's line when What's New shows it with example items.</comment>
   </data>
+  <data name="CueExampleTasks" xml:space="preserve">
+    <value>An example, not your dailies.</value>
+    <comment>The cue of dailies and weeklies read from a Tasks screenshot ("3 DAILIES AND WEEKLIES"): its line when What's New shows it with three made-up ones.</comment>
+  </data>
   <data name="CueExitsListedEyebrow" xml:space="preserve">
     <value>FROM YOUR SCREENSHOT</value>
     <comment>The YOUR EXTRACTS THIS RAID cue's eyebrow, over its title: a raid screenshot showed the game's extract list. Capitals.</comment>
@@ -468,6 +472,14 @@
     <value>AN EXAMPLE, NOT YOUR NOTES</value>
     <comment>As PreviewExample, while What's New previews quest notes (a quest card with two made-up notes). Capitals.</comment>
   </data>
+  <data name="PreviewExampleTasks" xml:space="preserve">
+    <value>AN EXAMPLE, NOT YOUR DAILIES</value>
+    <comment>As PreviewExample, while What's New previews dailies and weeklies (the game's operational tasks, read from a screenshot of the Tasks screen): the cue of a reading with three made-up ones. Capitals.</comment>
+  </data>
+  <data name="PreviewExampleSetting" xml:space="preserve">
+    <value>AN EXAMPLE, NOT YOUR SETTING</value>
+    <comment>As PreviewExample, while What's New previews the text size: example lines at two of settings' text sizes on a plate; the player's own text size setting stays as it is. Capitals.</comment>
+  </data>
   <data name="TourCardExample" xml:space="preserve">
     <value>THE RAID CARD, WITH EXAMPLE VALUES</value>
     <comment>The tour's example raid card: the line under it. Capitals.</comment>
@@ -507,6 +519,18 @@
   <data name="WhatsNewNotesExample" xml:space="preserve">
     <value>A QUEST CARD, WITH EXAMPLE NOTES</value>
     <comment>What's New, the notes' preview: the line under a held quest card shown with two made-up notes. Capitals.</comment>
+  </data>
+  <data name="WhatsNewDeskExample" xml:space="preserve">
+    <value>THE STASH DESK, WITH AN EXAMPLE PAGE</value>
+    <comment>What's New, the stash desk's preview: the line under a made-up desk page (stash and gear with prices) shown on a plate over the map. "Stash desk": the app's view of a stash or gear screenshot's items with their prices, named DESK at its head. Capitals.</comment>
+  </data>
+  <data name="WhatsNewGlanceExample" xml:space="preserve">
+    <value>THE IN-RAID GLANCE, WITH EXAMPLE LOOT</value>
+    <comment>What's New, the in-raid glance's preview: the line under the plate a raid screenshot of a body or container brings (its items' prices), shown with made-up loot. Capitals.</comment>
+  </data>
+  <data name="WhatsNewTextSizeExample" xml:space="preserve">
+    <value>SETTINGS' TEXT SIZE, WITH EXAMPLE LINES</value>
+    <comment>What's New, the text size's preview: the line under the same example lines (a quest's name, its trader, a map label) drawn at NORMAL and at LARGEST, settings' text size steps (SettingsTextSize). Capitals.</comment>
   </data>
   <data name="WhatsNewNoteExampleNewer" xml:space="preserve">
     <value>Next raid: come in from the north.</value>
