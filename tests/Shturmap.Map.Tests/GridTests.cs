@@ -277,4 +277,214 @@ public class GridTests
         var strip = bitmap.GetPixel(500, 4);
         Assert.True(strip.Red < 20 && strip.Green < 20, $"{strip}");
     }
+
+    // ---- under the pointer (owner, 2026-10-26: "When you are with the mouse over the map highlight the current square and
+    // sub-square and show the currently mouse-overed position somewhere where it makes sense") ----
+
+    // D5-8's middle on the test sheet: 360 px right (world x −140), 415 px down (z 85).
+    private static readonly SKPoint OverD5Top = new(350, 415);
+
+    private static SKBitmap Drawn(Camera camera, MapScene scene)
+    {
+        using var surface = SKSurface.Create(new SKImageInfo(1000, 1000));
+        MapRenderer.Render(surface.Canvas, camera, scene, 1, null, Now);
+        using var image = surface.Snapshot();
+        return SKBitmap.FromImage(image);
+    }
+
+    private static int Light(SKColor c) => c.Red + c.Green + c.Blue;
+
+    [Fact]
+    public void The_pointer_has_the_square_and_ninth_under_it()
+    {
+        var (camera, scene) = Gridded();
+        scene.Pointer = OverD5Top;
+        var at = MapRenderer.PointerOf(camera, scene, 1)!;
+        Assert.Equal("D5-8", at.Reference.ToString());
+        // D5 is 300 to 400 across and 400 to 500 down; its top middle ninth a third of that, at its top.
+        Assert.Equal(new SKRect(300, 400, 400, 500), Rounded(at.Square));
+        Assert.Equal(new SKRect(333, 400, 367, 433), Rounded(at.Ninth));
+        // Each ninth of D5, as on a number pad: 7 at the top left, 3 at the bottom right.
+        foreach (var (x, y, digit) in new[] { (310f, 410f, 7), (390f, 410f, 9), (350f, 450f, 5), (310f, 490f, 1), (390f, 490f, 3) })
+        {
+            scene.Pointer = new SKPoint(x, y);
+            Assert.Equal($"D5-{digit}", MapRenderer.PointerOf(camera, scene, 1)!.Reference.ToString());
+        }
+    }
+
+    private static SKRect Rounded(SKRect r) => new(MathF.Round(r.Left), MathF.Round(r.Top), MathF.Round(r.Right), MathF.Round(r.Bottom));
+
+    [Fact]
+    public void At_the_maps_edges_the_pointer_has_the_corner_squares_and_over_a_strip_or_off_the_grid_none()
+    {
+        var (camera, scene) = Gridded();
+        var inner = MapRenderer.Layout(camera, scene, 1, Now).Grid!.Inner;
+        // Just inside the strips at the top left: A1's top left ninth; at the bottom right, K10's bottom right.
+        scene.Pointer = new SKPoint(inner.Left + 1, inner.Top + 1);
+        Assert.Equal("A1-7", MapRenderer.PointerOf(camera, scene, 1)!.Reference.ToString());
+        scene.Pointer = new SKPoint(inner.Right - 1, inner.Bottom - 1);
+        Assert.Equal("K10-3", MapRenderer.PointerOf(camera, scene, 1)!.Reference.ToString());
+        // Over a strip: off the map, nothing lit.
+        scene.Pointer = new SKPoint(inner.Left - 5, 500);
+        Assert.Null(MapRenderer.PointerOf(camera, scene, 1));
+        scene.Pointer = new SKPoint(500, inner.Bottom + 5);
+        Assert.Null(MapRenderer.PointerOf(camera, scene, 1));
+        // Left of A and above row 1 (the view moved right and down): no reference there, as for a position.
+        camera.Pan(200, 200);
+        scene.Pointer = new SKPoint(150, 500);
+        Assert.Null(MapRenderer.PointerOf(camera, scene, 1));
+        scene.Pointer = new SKPoint(500, 150);
+        Assert.Null(MapRenderer.PointerOf(camera, scene, 1));
+        // A1 now 200 to 300 each way: its middle.
+        scene.Pointer = new SKPoint(250, 250);
+        Assert.Equal("A1-5", MapRenderer.PointerOf(camera, scene, 1)!.Reference.ToString());
+        // Off the map altogether.
+        scene.Pointer = null;
+        Assert.Null(MapRenderer.PointerOf(camera, scene, 1));
+    }
+
+    [Fact]
+    public void The_square_and_its_ninth_are_lit_lighter_the_ninth_more_and_nothing_else()
+    {
+        var (camera, scene) = Gridded();
+        using var plain = Drawn(camera, scene);
+        scene.Pointer = OverD5Top;
+        using var lit = Drawn(camera, scene);
+        // In the ninth, in the rest of the square, outside it: lighter, a little lighter, the same. No hue of its own.
+        var (ninth, square, outside) = (new SKPoint(350, 420), new SKPoint(320, 470), new SKPoint(250, 470));
+        int Step(SKPoint p) => Light(lit.GetPixel((int)p.X, (int)p.Y)) - Light(plain.GetPixel((int)p.X, (int)p.Y));
+        Assert.True(Step(square) > 6, $"the square {Step(square)}");
+        Assert.True(Step(ninth) > Step(square) + 6, $"the ninth {Step(ninth)}, the square {Step(square)}");
+        Assert.Equal(0, Step(outside));
+        var c = lit.GetPixel(350, 420);
+        var was = plain.GetPixel(350, 420);
+        Assert.InRange(Math.Abs((c.Red - was.Red) - (c.Green - was.Green)), 0, 3);
+        // The 100 m line at its left keeps its own pixel.
+        Assert.Equal(plain.GetPixel(300, 470), lit.GetPixel(300, 470));
+    }
+
+    [Fact]
+    public void The_strips_light_the_column_and_row_under_the_pointer()
+    {
+        var (camera, scene) = Gridded();
+        using var plain = Drawn(camera, scene);
+        scene.Pointer = OverD5Top;
+        using var lit = Drawn(camera, scene);
+        var grid = scene.GridShown!;
+        // Where the letter D stands on the top strip and the number 5 on the left one, more light than before; C and 4 as
+        // they were.
+        int Ink(SKBitmap b, float x, float y, int half = 7)
+        {
+            var sum = 0;
+            for (var dx = -half; dx <= half; dx++)
+            {
+                for (var dy = -6; dy <= 6; dy++)
+                    sum += Light(b.GetPixel((int)x + dx, (int)y + dy));
+            }
+            return sum;
+        }
+        var d = grid.Letters.Single(l => l.Text == "D").At;
+        var c = grid.Letters.Single(l => l.Text == "C").At;
+        var five = grid.Numbers.Single(n => n.Text == "5").At;
+        var four = grid.Numbers.Single(n => n.Text == "4").At;
+        var top = grid.Inner.Top / 2;
+        var left = grid.Inner.Left / 2;
+        Assert.True(Ink(lit, d, top) > Ink(plain, d, top) + 300, $"D {Ink(lit, d, top)} against {Ink(plain, d, top)}");
+        Assert.True(Ink(lit, left, five) > Ink(plain, left, five) + 300, $"5 {Ink(lit, left, five)} against {Ink(plain, left, five)}");
+        Assert.Equal(Ink(plain, c, top), Ink(lit, c, top));
+        Assert.Equal(Ink(plain, left, four), Ink(lit, left, four));
+        // The column's span on the bottom strip a step lighter (Raised) away from its letter, the next column's not.
+        Assert.Equal(Palette.Sk(Palette.Raised), lit.GetPixel(305, 995));
+        Assert.Equal(plain.GetPixel(405, 995), lit.GetPixel(405, 995));
+    }
+
+    [Fact]
+    public void The_readout_says_the_pointers_square_alone_out_of_a_raid_and_under_YOU_in_one()
+    {
+        var (camera, scene) = Gridded();
+        var inner = MapRenderer.Layout(camera, scene, 1, Now).Grid!.Inner;
+        scene.Pointer = OverD5Top;
+        // Out of a raid: the only line, in YOU's place 8 inside the strips.
+        var alone = MapRenderer.PointerOf(camera, scene, 1)!;
+        Assert.True(alone.LineShown);
+        Assert.Equal(inner.Left + 8, alone.Line.Left, 1);
+        Assert.Equal(inner.Top + 8, alone.Line.Top, 1);
+        using (var drawn = Drawn(camera, scene))
+            Assert.Equal(Palette.Sk(Palette.LineStrong), drawn.GetPixel((int)alone.Line.Left, (int)alone.Line.MidY));
+        // In a raid with a position: under YOU's line, on its plate, YOU where it stood.
+        scene.Player = new PlayerFix(new WorldPoint(300, 0, -300), null, Now - TimeSpan.FromMinutes(3));
+        var you = MapRenderer.Layout(camera, scene, 1, Now).Grid!.You!;
+        var under = MapRenderer.PointerOf(camera, scene, 1)!;
+        Assert.Equal("D5-8", under.Reference.ToString());
+        Assert.Equal(you.Box.Left, under.Line.Left, 1);
+        Assert.InRange(under.Line.Top, you.Box.Top + you.Box.Height / 2, you.Box.Bottom);
+        Assert.Equal(inner.Top + 8, you.Box.Top, 1);
+        using (var drawn = Drawn(camera, scene))
+        {
+            // One plate for both: its hairline runs down past YOU's foot to the line's.
+            Assert.Equal(Palette.Sk(Palette.LineStrong), drawn.GetPixel((int)you.Box.Left, (int)under.Line.MidY));
+            Assert.Equal(Palette.Sk(Palette.LineStrong), drawn.GetPixel((int)you.Box.Left + 4, (int)under.Line.Bottom - 1));
+        }
+        // The pointer gone: YOU alone again, the plate ending at its foot.
+        scene.Pointer = null;
+        using (var drawn = Drawn(camera, scene))
+            Assert.NotEqual(Palette.Sk(Palette.LineStrong), drawn.GetPixel((int)you.Box.Left + 4, (int)under.Line.Bottom - 1));
+    }
+
+    [Fact]
+    public void The_readouts_line_gives_way_to_the_pointer_on_it_and_to_a_plate_of_the_window()
+    {
+        var (camera, scene) = Gridded();
+        scene.Pointer = OverD5Top;
+        var line = MapRenderer.PointerOf(camera, scene, 1)!.Line;
+        // The pointer on the line itself: the square under it still lit, the line not drawn, so it covers nothing pointed at.
+        scene.Pointer = new SKPoint(line.MidX, line.MidY);
+        var on = MapRenderer.PointerOf(camera, scene, 1)!;
+        Assert.False(on.LineShown);
+        using (var drawn = Drawn(camera, scene))
+            Assert.NotEqual(Palette.Sk(Palette.LineStrong), drawn.GetPixel((int)line.Left, (int)line.MidY));
+        // A plate of the window over it (the glance's, a note at the map's top): not drawn, as YOU isn't.
+        scene.Pointer = OverD5Top;
+        scene.PlateOver = [SKRect.Create(line.MidX, 0, 300, 100)];
+        Assert.False(MapRenderer.PointerOf(camera, scene, 1)!.LineShown);
+        scene.PlateOver = [];
+        Assert.True(MapRenderer.PointerOf(camera, scene, 1)!.LineShown);
+    }
+
+    [Fact]
+    public void With_the_grid_off_the_pointer_draws_nothing()
+    {
+        var (camera, scene) = Of([]);
+        using var plain = Drawn(camera, scene);
+        scene.Pointer = OverD5Top;
+        Assert.Null(MapRenderer.PointerOf(camera, scene, 1));
+        Assert.False(MapRenderer.PointerMoved(camera, scene, 1));
+        using var pointed = Drawn(camera, scene);
+        Assert.Null(scene.PointerShown);
+        Assert.Equal(plain.Pixels, pointed.Pixels);
+    }
+
+    [Fact]
+    public void A_move_of_the_pointer_lays_nothing_out_and_draws_only_a_new_ninth()
+    {
+        var (camera, scene) = Gridded(Quest("a", -100, 100, "A quest"));
+        scene.Pointer = OverD5Top;
+        using (Drawn(camera, scene)) { }
+        var layout = scene.LastLayout!.Value.Layout;
+        Assert.Equal(("D5-8", true), (scene.PointerShown!.Value.Reference.ToString(), scene.PointerShown.Value.LineShown));
+        // Within the same ninth: no frame needed; into the next ninth, the next square, or off the map: one.
+        scene.Pointer = new SKPoint(352, 418);
+        Assert.False(MapRenderer.PointerMoved(camera, scene, 1));
+        scene.Pointer = new SKPoint(380, 418);
+        Assert.True(MapRenderer.PointerMoved(camera, scene, 1));
+        scene.Pointer = new SKPoint(450, 418);
+        Assert.True(MapRenderer.PointerMoved(camera, scene, 1));
+        scene.Pointer = null;
+        Assert.True(MapRenderer.PointerMoved(camera, scene, 1));
+        // And the frame drawn for it keeps the layout it had: nothing placed anew.
+        scene.Pointer = new SKPoint(450, 418);
+        using (Drawn(camera, scene)) { }
+        Assert.Same(layout, scene.LastLayout!.Value.Layout);
+        Assert.Equal("E5-8", scene.PointerShown!.Value.Reference.ToString());
+    }
 }

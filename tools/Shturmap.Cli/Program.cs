@@ -92,10 +92,13 @@ switch (command)
                                             and the bosses it targets); --point-exit <extract name> draws it as
                                             pointing at that extract does (a gated one lights its switches, with
                                             the guide to the first); --no-grid without the squad grid; --age <minutes>
-                                            the last position that old (its tag and the grid's readout)
+                                            the last position that old (its tag and the grid's readout); --pointer
+                                            <fx> <fy> the mouse over the map at those fractions of the picture (the
+                                            grid's square under it lit and how much lighter, its reference read out)
             shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout|plan] [--every <ms>]
                                 [--count <n>] [--fix <x> <y> <z>] [--glide [ms] | --notch [ms] | --step <factor> [ms]
                                 | --sway [n]] [--toward <name>] [--viewport <W>x<H>] [--grid off] [--quests all]
+                                [--pointer]
                                             draw a map's animations headless, frame by frame: an extract list just
                                             read (list-read: every other extract lit, two "??:??:??", the rest struck
                                             out, at a PMC spawn or --fix; whatsnew-extracts: What's New's preview, no
@@ -116,8 +119,10 @@ switch (command)
                                             turn the wheel at that symbol's place instead of the position;
                                             --viewport: the view's size instead of 1600x1000 (500x481: the map at
                                             the smallest window, 900x560); --grid off: without the squad grid;
-                                            --quests all: every quest active; summary.txt ends with the frames'
-                                            drawing times
+                                            --quests all: every quest active; --pointer: the mouse sweeps the view
+                                            from its top left to its bottom right, a step a frame, as the map view
+                                            tells the scene (the grid's square under it lit); summary.txt ends with
+                                            the frames' drawing times
             shturmap-cli grid                every map's squad grid: its A1 as the app fixes it (GridOrigins) and as the data's
                                             bounds would put it, its squares across and down, flagged NEW (no entry: it
                                             starts at its bounds, add one), MOVED (the bounds now start elsewhere), WIDE
@@ -616,6 +621,15 @@ static async Task Render(string mapName, string output, List<string> screenshots
         pointExit = screenshots[pe + 1];
         screenshots.RemoveRange(pe, 2);
     }
+    // "--pointer <fx> <fy>": the mouse over the map at those fractions of the picture's size, as the map view tells the
+    // scene: with the grid, the square under it lit, its letter and number stronger, its reference in the readout.
+    SkiaSharp.SKPoint? pointerAt = null;
+    if (screenshots.IndexOf("--pointer") is var po and >= 0 && po + 2 < screenshots.Count)
+    {
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        pointerAt = new SkiaSharp.SKPoint(float.Parse(screenshots[po + 1], inv), float.Parse(screenshots[po + 2], inv));
+        screenshots.RemoveRange(po, 3);
+    }
     var paths = Shturmap.Session.AppPaths.Default;
     var http = new CachedHttp(CachedHttp.CreateClient(), paths.DataCache);
     var data = await new GameDataLoader(http).LoadAsync(GameMode.Pve, "en");
@@ -729,6 +743,7 @@ static async Task Render(string mapName, string output, List<string> screenshots
             camera.Pan(-away, -away * 0.3f);
         }
         scene.PingSince = ping ? DateTime.Now - TimeSpan.FromSeconds(0.6) : null;
+        scene.Pointer = pointerAt is { } fraction ? new SkiaSharp.SKPoint(fraction.X * 1600, fraction.Y * 1000) : null;
         if (tiles is not null && definition.TilePath is { } basePath)
         {
             sw.Restart();
@@ -754,7 +769,11 @@ static async Task Render(string mapName, string output, List<string> screenshots
         await File.WriteAllBytesAsync(path, png.ToArray());
         Console.WriteLine($"{path}: drawn in {drawMs:0.0} ms (CPU raster)");
         if (scene.GridShown is { } grid)
+        {
             GridContrast(camera, scene, grid, image);
+            if (Shturmap.Map.MapRenderer.PointerOf(camera, scene, 1) is { } pointer)
+                PointerContrast(camera, scene, grid, pointer, image);
+        }
     }
     Console.WriteLine($"{content.Markers.Count} markers, {content.Zones.Count} zones; objectives here: " +
                       string.Join("; ", content.Objectives.Select(o => $"{o.Quest.Name}: {o.Objective.Description} ({o.Places.Count} places)")));
@@ -820,6 +839,57 @@ static void GridContrast(Shturmap.Map.Camera camera, Shturmap.Map.MapScene scene
     }
     Console.WriteLine($"  grid: 100 m lines {Measure(grid.Verticals, grid.Horizontals)}; keypad lines at {grid.Keypad:0.00} {Measure(grid.ThirdVerticals, grid.ThirdHorizontals)}" +
                       $"; {grid.References.Count} references, {grid.LeftOut} left out; squares {(grid.Verticals.Length > 1 ? grid.Verticals[1] - grid.Verticals[0] : grid.Extent.Width):0} px wide");
+}
+
+// The square under the pointer and its ninth against the same view without the pointer: how much lighter (CIE L*) their
+// pixels are inside the strips, the ninth's apart from the rest of the square, over the map's artwork or sheet (the ground
+// around the map, L* 8 or less, left out, as GridContrast leaves it), in all and on dark and light ground; then what the
+// strips and the readout say (docs/DESIGN.md "Map drawing", *The grid*, *Under the pointer*).
+static void PointerContrast(Shturmap.Map.Camera camera, Shturmap.Map.MapScene scene, Shturmap.Map.MapRenderer.GridLayout grid,
+    Shturmap.Map.MapRenderer.GridPointer pointer, SkiaSharp.SKImage withPointer)
+{
+    var (w, h) = ((int)camera.Viewport.Width, (int)camera.Viewport.Height);
+    using var plainSurface = SkiaSharp.SKSurface.Create(new SkiaSharp.SKImageInfo(w, h));
+    var at = scene.Pointer;
+    scene.Pointer = null;
+    Shturmap.Map.MapRenderer.Render(plainSurface.Canvas, camera, scene);
+    scene.Pointer = at;
+    using var plainImage = plainSurface.Snapshot();
+    using var plain = SkiaSharp.SKBitmap.FromImage(plainImage);
+    using var lit = SkiaSharp.SKBitmap.FromImage(withPointer);
+    static double Lstar(SkiaSharp.SKColor c)
+    {
+        static double Lin(byte v) { var s = v / 255.0; return s <= 0.04045 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4); }
+        var y = 0.2126 * Lin(c.Red) + 0.7152 * Lin(c.Green) + 0.0722 * Lin(c.Blue);
+        return y > 216.0 / 24389 ? 116 * Math.Cbrt(y) - 16 : y * 24389.0 / 27;
+    }
+    static string Median(List<double> steps) => steps.Count == 0 ? "none" : FormattableString.Invariant($"{steps.Order().ElementAt(steps.Count / 2):0.0}");
+    var inner = grid.Inner;
+    string Measure(SkiaSharp.SKRect area, SkiaSharp.SKRect? without)
+    {
+        var (all, dark, light) = (new List<double>(), new List<double>(), new List<double>());
+        for (var y = (int)Math.Max(area.Top + 2, inner.Top + 2); y < Math.Min(area.Bottom - 2, inner.Bottom - 2); y += 2)
+        {
+            for (var x = (int)Math.Max(area.Left + 2, inner.Left + 2); x < Math.Min(area.Right - 2, inner.Right - 2); x += 2)
+            {
+                if (without is { } hole && hole.Contains(x, y) || pointer.Line.Contains(x, y) || grid.You?.Box.Contains(x, y) == true)
+                    continue;
+                var before = Lstar(plain.GetPixel(x, y));
+                if (before <= 8)
+                    continue;
+                var step = Lstar(lit.GetPixel(x, y)) - before;
+                all.Add(step);
+                if (before <= 32)
+                    dark.Add(step);
+                else if (before > 40)
+                    light.Add(step);
+            }
+        }
+        return all.Count == 0 ? "none on the map"
+            : FormattableString.Invariant($"median ΔL* {Median(all)} ({all.Count} px; dark ground {Median(dark)} of {dark.Count} px, light {Median(light)} of {light.Count} px)");
+    }
+    Console.WriteLine($"  pointer: {pointer.Reference} under ({at!.Value.X:0}, {at.Value.Y:0}) px; the square {Measure(pointer.Square, pointer.Ninth)}; " +
+                      $"its ninth {Measure(pointer.Ninth, null)}; the readout's line {(pointer.LineShown ? "at " + pointer.Line : "not drawn")}");
 }
 
 // The squad grid's audit (docs/UPDATES.md): each map's A1 as the app fixes it and as the data's bounds would put it, so a

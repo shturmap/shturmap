@@ -10,7 +10,9 @@ namespace Shturmap.Map;
 // with the zoom; the columns' letters along the top and bottom and the rows' numbers along the left and right, on strips
 // pinned to the view; a small reference at each square's top-left corner, left out where a name or a symbol lies under
 // it; and the player's own reference on the marker's tag and large at the map's top left. Laid out with the frame's
-// layout (Layout), so once per view and not for every frame of a pulse or a ping.
+// layout (Layout), so once per view and not for every frame of a pulse or a ping. Under the pointer (owner, 2026-10-26),
+// the square and its ninth lit, the strips' letter and number, and its reference on the readout's second line: drawn
+// from the pointer and that layout, never laid out (GridPointer).
 public static partial class MapRenderer
 {
     /// <summary>The strips along the top and bottom of the view, with the columns' letters (pixels, before scaling). The
@@ -366,10 +368,13 @@ public static partial class MapRenderer
 
     // The lines in the artwork's layer: drawn before every name, symbol and route, broken under the names and labels (each
     // name's box, a little larger; GridOf lays the runs out), so a line never runs through a word. Then the references.
-    private static void DrawGrid(SKCanvas canvas, Camera camera, MapScene scene, MapLayout layout, float ui, bool sheet)
+    private static void DrawGrid(SKCanvas canvas, Camera camera, MapScene scene, MapLayout layout, float ui, bool sheet, GridPointer? pointer)
     {
         if (layout.Grid is not { } grid)
             return;
+        // The square under the pointer and its ninth first, under the lines and everything else.
+        if (pointer is not null)
+            DrawPointerSquare(canvas, camera, scene, grid, pointer, sheet);
         // On the sheet, a panel too dark for the overlay to step it up, the same step is added: ink at a low strength, plus.
         using var paint = new SKPaint { StrokeWidth = 1, IsAntialias = false, Style = SKPaintStyle.Stroke, BlendMode = sheet ? SKBlendMode.Plus : SKBlendMode.Overlay };
         var (lineAlpha, keypadAlpha) = sheet ? (SheetLineAlpha, SheetKeypadAlpha) : (GridLineAlpha, GridKeypadAlpha);
@@ -428,9 +433,9 @@ public static partial class MapRenderer
     }
 
     // The strips pinned to the view, over everything the map draws: the letters along the top and bottom, the numbers
-    // along the left and right, a mark where each 100 m line meets them; then the player's reference at the top left,
-    // unless a plate or label of the window lies over it (MapScene.PlateOver).
-    private static void DrawGridStrips(SKCanvas canvas, Camera camera, MapScene scene, MapLayout layout, float ui)
+    // along the left and right, a mark where each 100 m line meets them, the square under the pointer's letter and number
+    // lit; then the readout at the top left (DrawReadout).
+    private static void DrawGridStrips(SKCanvas canvas, Camera camera, MapScene scene, MapLayout layout, float ui, GridPointer? pointer)
     {
         if (layout.Grid is not { } grid)
             return;
@@ -441,6 +446,24 @@ public static partial class MapRenderer
         canvas.DrawRect(new SKRect(0, inner.Bottom, w, h), strip);
         canvas.DrawRect(new SKRect(0, inner.Top, inner.Left, inner.Bottom), strip);
         canvas.DrawRect(new SKRect(inner.Right, inner.Top, w, inner.Bottom), strip);
+        // Along the square under the pointer, each strip a step lighter (Raised, the selected thing's), as a spreadsheet's
+        // header lights up: the column's span on the top and bottom strips, the row's on the left and right.
+        if (pointer is not null)
+        {
+            using var raised = new SKPaint { Color = Palette.Sk(Palette.Raised) };
+            var (left, right) = (Math.Max(inner.Left, MathF.Floor(pointer.Square.Left) + 1), Math.Min(inner.Right, MathF.Floor(pointer.Square.Right)));
+            var (top, bottom) = (Math.Max(inner.Top, MathF.Floor(pointer.Square.Top) + 1), Math.Min(inner.Bottom, MathF.Floor(pointer.Square.Bottom)));
+            if (right > left)
+            {
+                canvas.DrawRect(new SKRect(left, 0, right, inner.Top), raised);
+                canvas.DrawRect(new SKRect(left, inner.Bottom, right, h), raised);
+            }
+            if (bottom > top)
+            {
+                canvas.DrawRect(new SKRect(0, top, inner.Left, bottom), raised);
+                canvas.DrawRect(new SKRect(inner.Right, top, w, bottom), raised);
+            }
+        }
         using var edge = new SKPaint { Color = Palette.Sk(Palette.Line), StrokeWidth = 1, Style = SKPaintStyle.Stroke };
         canvas.DrawRect(new SKRect(inner.Left - 0.5f, inner.Top - 0.5f, inner.Right + 0.5f, inner.Bottom + 0.5f), edge);
         using var mark = new SKPaint { Color = Palette.Sk(Palette.LineStrong), StrokeWidth = 1, Style = SKPaintStyle.Stroke };
@@ -461,28 +484,55 @@ public static partial class MapRenderer
         }
         using var font = new SKFont(TypefaceBold, GridStripTextSize * ui);
         using var ink = new SKPaint { Color = Ink.WithAlpha(GridStripTextAlpha), IsAntialias = true };
+        // The column's letter and the row's number of the square under the pointer: the strips' type a step stronger, bold
+        // in full ink, as an index map's or a spreadsheet's headers light up; the others as they are.
+        using var litFont = new SKFont(TypefaceStrong, GridStripTextSize * ui);
+        using var lit = new SKPaint { Color = Ink, IsAntialias = true };
+        var (litLetter, litNumber) = pointer is { Reference: var at }
+            ? (SquadGrid.Letter(at.Column), at.Row.ToString(System.Globalization.CultureInfo.InvariantCulture))
+            : (null, null);
         var cap = font.Size * 0.36f;
         foreach (var (x, letter) in grid.Letters)
         {
-            canvas.DrawText(letter, x, inner.Top / 2 + cap, SKTextAlign.Center, font, ink);
-            canvas.DrawText(letter, x, (inner.Bottom + h) / 2 + cap, SKTextAlign.Center, font, ink);
+            var (face, paint) = letter == litLetter ? (litFont, lit) : (font, ink);
+            canvas.DrawText(letter, x, inner.Top / 2 + cap, SKTextAlign.Center, face, paint);
+            canvas.DrawText(letter, x, (inner.Bottom + h) / 2 + cap, SKTextAlign.Center, face, paint);
         }
         foreach (var (y, number) in grid.Numbers)
         {
-            canvas.DrawText(number, inner.Left / 2, y + cap, SKTextAlign.Center, font, ink);
-            canvas.DrawText(number, (inner.Right + w) / 2, y + cap, SKTextAlign.Center, font, ink);
+            var (face, paint) = number == litNumber ? (litFont, lit) : (font, ink);
+            canvas.DrawText(number, inner.Left / 2, y + cap, SKTextAlign.Center, face, paint);
+            canvas.DrawText(number, (inner.Right + w) / 2, y + cap, SKTextAlign.Center, face, paint);
         }
-        if (grid.You is { } you && !scene.PlateOver.Any(over => over.IntersectsWith(you.Box)))
+        DrawReadout(canvas, scene, grid, pointer, ui);
+    }
+
+    // The readout at the map's top left: YOU's line while a position is shown, and the pointer's under it while the
+    // pointer is over the map (alone out of a raid, in YOU's place), on one plate with a LineStrong hairline. A line isn't
+    // drawn under a plate or note of the window (MapScene.PlateOver), its room still kept, and the pointer's isn't while
+    // the pointer is on it (GridPointer.LineShown).
+    private static void DrawReadout(SKCanvas canvas, MapScene scene, GridLayout grid, GridPointer? pointer, float ui)
+    {
+        var you = grid.You is { } shown && !scene.PlateOver.Any(over => over.IntersectsWith(shown.Box)) ? shown : null;
+        var line = pointer is { LineShown: true } ? pointer : null;
+        if (you is null && line is null)
+            return;
+        var box = you is null ? line!.Line
+            : line is null ? you.Box
+            : new SKRect(you.Box.Left, you.Box.Top, Math.Max(you.Box.Right, line.Line.Right), line.Line.Bottom);
+        using var plate = new SKPaint { Color = Background.WithAlpha(235) };
+        using var frame = new SKPaint { Color = Palette.Sk(Palette.LineStrong), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
+        canvas.DrawRect(box, plate);
+        canvas.DrawRect(SKRect.Inflate(box, -0.5f, -0.5f), frame);
+        if (you is not null)
             DrawYou(canvas, you, ui);
+        if (line is not null)
+            DrawPointerLine(canvas, line, ui);
     }
 
     // YOU, the reference large in sand (the player's colour, as the marker), the age small: muted, in sand once stale.
     private static void DrawYou(SKCanvas canvas, YouReadout you, float ui)
     {
-        using var plate = new SKPaint { Color = Background.WithAlpha(235) };
-        using var frame = new SKPaint { Color = Palette.Sk(Palette.LineStrong), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
-        canvas.DrawRect(you.Box, plate);
-        canvas.DrawRect(SKRect.Inflate(you.Box, -0.5f, -0.5f), frame);
         using var small = new SKFont(TypefaceBold, YouSmall * ui);
         using var large = new SKFont(TypefaceBold, YouLarge * ui);
         using var muted = new SKPaint { Color = Muted, IsAntialias = true };
@@ -495,5 +545,142 @@ public static partial class MapRenderer
         x += large.MeasureText(you.Reference) + YouGap * ui;
         if (you.Age.Length > 0)
             canvas.DrawText(you.Age, x, baseline, SKTextAlign.Left, small, you.Stale ? sand : muted);
+    }
+
+    // ---- the grid under the pointer (owner, 2026-10-26: "When you are with the mouse over the map highlight the current
+    // square and sub-square and show the currently mouse-overed position somewhere where it makes sense") ----
+
+    /// <summary>
+    /// The square and the ninth under the pointer while it is over the map with the grid on, as a frame draws them
+    /// (docs/DESIGN.md §4, "Map drawing", *The grid*, *Under the pointer*): the square lit faintly and its ninth a little
+    /// more, the strips' letter and number a step stronger, and its reference on the readout's line at the map's top left.
+    /// Made for each frame from <see cref="MapScene.Pointer"/> and the frame's layout, never laid out itself.
+    /// </summary>
+    /// <param name="Reference">The square and ninth under the pointer: "D5-8".</param>
+    /// <param name="Square">The square on screen (pixels), whole; drawn inside the strips.</param>
+    /// <param name="Ninth">Its ninth on screen.</param>
+    /// <param name="Line">Where the readout's line stands: under YOU while a position is shown, else in YOU's place.</param>
+    /// <param name="LineShown">Whether that line is drawn: not while the pointer is on it, where it would cover what the
+    /// pointer is on, nor under a plate or note of the window (<see cref="MapScene.PlateOver"/>), as YOU.</param>
+    public sealed record GridPointer(GridReference Reference, SKRect Square, SKRect Ninth, SKRect Line, bool LineShown)
+    {
+        /// <summary>What a frame shows of it: a move of the pointer that keeps both draws nothing anew.</summary>
+        public (GridReference Reference, bool LineShown) Shown => (Reference, LineShown);
+    }
+
+    // The square under the pointer and its ninth: the grid's own lightening step at a low strength, no hue, as its lines
+    // are: Ink in the overlay blend, and on the artwork's drawn map a floor in the plus blend, where the overlay steps a
+    // dark ground up least (as the keypad's lines have it); on the sheet the step added (its panel too dark for the
+    // overlay). The ninth's on top of the square's.
+    private const byte PointerSquareAlpha = 100, PointerNinthAlpha = 90, PointerFloorAlpha = 9, PointerNinthFloorAlpha = 11;
+    private const byte SheetPointerSquareAlpha = 22, SheetPointerNinthAlpha = 26;
+
+    // The readout's line: the reference a step under YOU's (the title's 17 to YOU's 22) and in ink, not sand (sand is the
+    // player's alone); its label as YOU's.
+    private const float PointerLarge = 17, PointerHigh = 30, PointerTuck = 6;
+
+    /// <summary>
+    /// The square and ninth under the pointer (<see cref="MapScene.Pointer"/>) as the frame on screen would draw them, from
+    /// that frame's layout; null without the grid, with the pointer off the map, over a strip, or off the lettered grid
+    /// (left of A, past Z, above row 1: <see cref="SquadGrid.At(double, double)"/>).
+    /// </summary>
+    public static GridPointer? PointerOf(Camera camera, MapScene scene, float ui) =>
+        scene.Pointer is null || !scene.ShowGrid ? null : PointerOf(camera, scene, LayoutOf(camera, scene, ui), ui);
+
+    /// <summary>
+    /// Whether a move of the pointer needs a frame: what it would show of the grid under it (the reference, the readout's
+    /// line) differs from what the last frame drew (<see cref="MapScene.PointerShown"/>). From the last frame's layout,
+    /// never laid out anew: a move inside one ninth draws nothing, and a pointer's move places no label.
+    /// </summary>
+    public static bool PointerMoved(Camera camera, MapScene scene, float ui)
+    {
+        if (scene.LastLayout?.Layout is not { } layout)
+            return scene.Pointer is not null && scene.ShowGrid;
+        return PointerOf(camera, scene, layout, ui)?.Shown != scene.PointerShown;
+    }
+
+    private static GridPointer? PointerOf(Camera camera, MapScene scene, MapLayout layout, float ui)
+    {
+        if (scene.Pointer is not { } at || layout.Grid is not { } grid || !grid.Inner.Contains(at))
+            return null;
+        var (x, z) = scene.Projection.ToWorld(camera.ToMap(at));
+        var squad = scene.Grid;
+        if (squad.At(x, z) is not { Keypad: { } keypad } reference)
+            return null;
+        SKPoint On(double u, double v)
+        {
+            var (wx, wz) = squad.World(u, v);
+            return camera.ToScreen(scene.Projection.ToMap(wx, wz));
+        }
+        // As GridOf lays the lines out (A1's corner, a square dx by dy, each line from + k · step), so the square's and the
+        // ninth's edges fall on the lines' own pixels.
+        var origin = On(squad.OriginU, squad.OriginV);
+        var far = On(squad.OriginU + SquadGrid.Square, squad.OriginV + SquadGrid.Square);
+        var (dx, dy) = (far.X - origin.X, far.Y - origin.Y);
+        var (column, row) = (reference.Column, reference.Row - 1);
+        var square = new SKRect(origin.X + column * dx, origin.Y + row * dy, origin.X + (column + 1) * dx, origin.Y + (row + 1) * dy);
+        var (across, down) = (column * 3 + (keypad - 1) % 3, row * 3 + 2 - (keypad - 1) / 3);
+        var (tx, ty) = (dx / 3, dy / 3);
+        var ninth = new SKRect(origin.X + across * tx, origin.Y + down * ty, origin.X + (across + 1) * tx, origin.Y + (down + 1) * ty);
+        var line = PointerLine(scene, grid, reference.ToString(), ui);
+        return new GridPointer(reference, square, ninth, line, !line.Contains(at) && !scene.PlateOver.Any(over => over.IntersectsWith(line)));
+    }
+
+    // The readout's line: under YOU's while a position is shown (tucked up a little, so the two read as one readout), else
+    // in YOU's place, 8 DIP inside the strips. As wide as the widest reference of the map, so it doesn't change its width
+    // as the pointer moves.
+    private static SKRect PointerLine(MapScene scene, GridLayout grid, string reference, float ui)
+    {
+        using var small = new SKFont(TypefaceBold, YouSmall * ui);
+        using var large = new SKFont(TypefaceBold, PointerLarge * ui);
+        var widest = "W" + new string('8', scene.Grid.Rows.ToString(System.Globalization.CultureInfo.InvariantCulture).Length) + "-8";
+        var width = YouPad * ui + small.MeasureText(MapTexts.MapGridPointer) + YouGap * ui
+                    + Math.Max(large.MeasureText(reference), large.MeasureText(widest)) + YouPad * ui;
+        var top = grid.You is { } you ? you.Box.Bottom - PointerTuck * ui : grid.Inner.Top + YouInset * ui;
+        return SKRect.Create(grid.Inner.Left + YouInset * ui, top, width, PointerHigh * ui);
+    }
+
+    // POINTER small and muted, the reference a step under YOU's, in ink.
+    private static void DrawPointerLine(SKCanvas canvas, GridPointer pointer, float ui)
+    {
+        using var small = new SKFont(TypefaceBold, YouSmall * ui);
+        using var large = new SKFont(TypefaceBold, PointerLarge * ui);
+        using var muted = new SKPaint { Color = Muted, IsAntialias = true };
+        using var ink = new SKPaint { Color = Ink, IsAntialias = true };
+        var line = pointer.Line;
+        var baseline = line.MidY + PointerLarge * ui * 0.36f;
+        var x = line.Left + YouPad * ui;
+        canvas.DrawText(MapTexts.MapGridPointer, x, baseline, SKTextAlign.Left, small, muted);
+        x += small.MeasureText(MapTexts.MapGridPointer) + YouGap * ui;
+        canvas.DrawText(pointer.Reference.ToString(), x, baseline, SKTextAlign.Left, large, ink);
+    }
+
+    // The square and its ninth, inside the strips, each between its lines (a line's own pixel left alone, as the ticks
+    // leave it): the square faint, the ninth a little more on top of it.
+    private static void DrawPointerSquare(SKCanvas canvas, Camera camera, MapScene scene, GridLayout grid, GridPointer pointer, bool sheet)
+    {
+        // Between the lines, which lie on their pixel's middle (GridOf): from the pixel after one to the pixel before the next.
+        static SKRect Between(SKRect r) => new(MathF.Floor(r.Left) + 1, MathF.Floor(r.Top) + 1, MathF.Floor(r.Right), MathF.Floor(r.Bottom));
+        var (square, ninth) = (Between(pointer.Square), Between(pointer.Ninth));
+        canvas.Save();
+        canvas.ClipRect(grid.Inner);
+        using var fill = new SKPaint { IsAntialias = false, BlendMode = sheet ? SKBlendMode.Plus : SKBlendMode.Overlay };
+        fill.Color = Ink.WithAlpha(sheet ? SheetPointerSquareAlpha : PointerSquareAlpha);
+        canvas.DrawRect(square, fill);
+        fill.Color = Ink.WithAlpha(sheet ? SheetPointerNinthAlpha : PointerNinthAlpha);
+        canvas.DrawRect(ninth, fill);
+        if (!sheet && GroundShader(camera, scene) is { } ground)
+        {
+            using (ground)
+            {
+                using var floor = new SKPaint { IsAntialias = false, BlendMode = SKBlendMode.Plus, Color = Ink.WithAlpha(PointerFloorAlpha) };
+                using (OnGround(floor, ground))
+                    canvas.DrawRect(square, floor);
+                using var ninthFloor = new SKPaint { IsAntialias = false, BlendMode = SKBlendMode.Plus, Color = Ink.WithAlpha(PointerNinthFloorAlpha) };
+                using (OnGround(ninthFloor, ground))
+                    canvas.DrawRect(ninth, ninthFloor);
+            }
+        }
+        canvas.Restore();
     }
 }

@@ -45,6 +45,9 @@ public static partial class MapRenderer
         SKTypeface.FromFamilyName("Bahnschrift", new SKFontStyle(SKFontStyleWeight.Normal, SKFontStyleWidth.SemiCondensed, SKFontStyleSlant.Upright)) ?? SKTypeface.Default;
     private static readonly SKTypeface TypefaceBold =
         SKTypeface.FromFamilyName("Bahnschrift", new SKFontStyle(SKFontStyleWeight.SemiBold, SKFontStyleWidth.SemiCondensed, SKFontStyleSlant.Upright)) ?? SKTypeface.Default;
+    // A step stronger than semibold: the grid strips' letter and number of the square under the pointer.
+    private static readonly SKTypeface TypefaceStrong =
+        SKTypeface.FromFamilyName("Bahnschrift", new SKFontStyle(SKFontStyleWeight.Bold, SKFontStyleWidth.SemiCondensed, SKFontStyleSlant.Upright)) ?? TypefaceBold;
 
     /// <param name="stepBack">How markers outside the focus step back; <see cref="StepBackOf"/> unless a developer
     /// render compares alternatives.</param>
@@ -81,8 +84,11 @@ public static partial class MapRenderer
                 AskForTiles(camera, scene, missing);
         }
         var layout = LayoutOf(camera, scene, uiScale, time);
+        // The square under the pointer, from the frame's layout: drawn, never laid out (*The grid*, *Under the pointer*).
+        var pointer = PointerOf(camera, scene, layout, uiScale);
+        scene.PointerShown = pointer?.Shown;
         // The squad grid in the artwork's layer, under every symbol, name and route (docs/DESIGN.md "Map drawing", *The grid*).
-        DrawGrid(canvas, camera, scene, layout, uiScale, sheet);
+        DrawGrid(canvas, camera, scene, layout, uiScale, sheet, pointer);
         if (sheet)
             DrawContainers(canvas, camera, scene, uiScale);
 
@@ -172,7 +178,7 @@ public static partial class MapRenderer
         DrawPlayer(canvas, camera, scene, uiScale, time);
         DrawReplay(canvas, camera, scene, uiScale);
         // The grid's strips pinned to the view, and the player's reference in its fixed place, over all of it.
-        DrawGridStrips(canvas, camera, scene, layout, uiScale);
+        DrawGridStrips(canvas, camera, scene, layout, uiScale, pointer);
         if (trace is not null)
         {
             foreach (var marker in layout.Markers)

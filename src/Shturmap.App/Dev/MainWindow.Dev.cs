@@ -175,6 +175,17 @@ public sealed partial class MainWindow
         return null;
     }
 
+    /// <summary>
+    /// "pointer &lt;fx&gt; &lt;fy&gt; | leave" (2026-10-26): the mouse onto the map at those fractions of its size, through
+    /// the code its own moves call, or off it; a script's pointer stays whichever window is active, as "hover"'s does
+    /// (<see cref="ScriptedPointer"/>). Says the square under it.
+    /// </summary>
+    internal string DevPointerOnMap((double X, double Y)? at)
+    {
+        ScriptedPointer = true;
+        return Map.DevPointer(at);
+    }
+
     // A quest's own block in the lists: not the glance's NEXT (an objective's row), not a glyph on a folded card.
     private FrameworkElement? DevQuestRow(string questId) =>
         Linked.DevLive(Content.XamlRoot)

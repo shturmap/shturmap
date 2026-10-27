@@ -57,7 +57,8 @@ public sealed partial class MapView : Grid
         PointerMoved += OnPointerMoved;
         PointerReleased += OnPointerReleased;
         PointerCaptureLost += (_, _) => _dragFrom = null;
-        PointerExited += (_, e) => Hover(null, e.GetCurrentPoint(this).Position);
+        PointerExited += (_, e) => PointerLeft(e.GetCurrentPoint(this).Position);
+        PointerCanceled += (_, e) => PointerLeft(e.GetCurrentPoint(this).Position);
         PointerWheelChanged += OnPointerWheelChanged;
         DoubleTapped += OnDoubleTapped;
         // A tap on a marker is that marker's click (MarkerClicked); only taps on the bare map reach the window, where
@@ -231,6 +232,7 @@ public sealed partial class MapView : Grid
             scene.ShowGrid = _showGrid;
             scene.PlateOver = PlatePixels();
             scene.ControlsOver = ControlPixels();
+            scene.Pointer = _pointer;
             if (!scene.Grid.Fixed && _gridUnfixedSaid.Add(scene.Definition.Key))
                 Shturmap.Session.AppLog.Warn($"Map grid: no fixed A1 for the map '{scene.Definition.Key}'; its grid starts at tarkov.dev's bounds until it gets one (GridOrigins)");
         }
@@ -719,6 +721,24 @@ public sealed partial class MapView : Grid
     /// <summary>The point at these fractions of this control's size (a developer script's "place").</summary>
     public Windows.Foundation.Point DevPointAt(double fx, double fy) => new(ActualWidth * fx, ActualHeight * fy);
 
+    /// <summary>The pointer onto the map at these fractions of its size, through the code its own moves call (a developer
+    /// script's "pointer"), or off the map with none, as its leaving does. What the frame then shows of the grid under it
+    /// goes into the app log.</summary>
+    public string DevPointer((double X, double Y)? at)
+    {
+        if (at is not { } f)
+        {
+            PointerLeft(default);
+            return "pointer: off the map";
+        }
+        var point = DevPointAt(f.X, f.Y);
+        PointerMovedTo(point);
+        var shown = _scene is null ? null : MapRenderer.PointerOf(Sized(), _scene, UiScale);
+        return FormattableString.Invariant($"pointer: at {point.X:0}, {point.Y:0} DIP on the map; ")
+               + (shown is null ? "no square under it (the grid off, a strip, or off the lettered grid)"
+                   : $"square {shown.Reference}{(shown.LineShown ? "" : ", the readout's line not drawn (the pointer on it, or a plate over it)")}");
+    }
+
     // A press that picks a place: kept until release, which says whether it was a drag (a facing).
     private bool DevPress(PointerRoutedEventArgs e, Microsoft.UI.Input.PointerPoint point)
     {
@@ -779,13 +799,56 @@ public sealed partial class MapView : Grid
         MarkerHovered?.Invoke(marker, at);
     }
 
-    /// <summary>Lets go of the marker under the pointer, as if the pointer had left the map.</summary>
-    public void ClearHover() => Hover(null, default);
+    /// <summary>Lets go of the marker under the pointer, and of the grid's square under it, as if the pointer had left the
+    /// map (the window no longer the active one: back in the game, the mouse may rest over the map).</summary>
+    public void ClearHover() => PointerLeft(default);
 
     // The edge arrow of an out-of-view player is a button: it shows them.
     private bool OverEdge(Windows.Foundation.Point at) =>
         _scene is not null && MapRenderer.EdgeOf(_camera, _scene, UiScale) is { } edge
         && SKPoint.Distance(edge, Pixels(at)) <= MapRenderer.EdgeReach * UiScale;
+
+    // ---- the grid under the pointer (owner, 2026-10-26: "When you are with the mouse over the map highlight the current
+    // square and sub-square and show the currently mouse-overed position somewhere where it makes sense"; docs/DESIGN.md
+    // "Map drawing", *The grid*, *Under the pointer*) ----
+
+    // Where the pointer is over the map (pixels), null off it; kept here too, so a scene shown next has it at once.
+    private SKPoint? _pointer;
+
+    // The pointer's place for the grid's square under it (MapScene.Pointer). A frame is drawn only when that changes what
+    // the last one drew, the square, its ninth or the readout's line: a move inside one ninth draws nothing, and none lays
+    // the map out anew (MapRenderer.PointerMoved works from the last frame's layout).
+    private void PointerAt(SKPoint? at)
+    {
+        _pointer = at;
+        if (_scene is not { } scene)
+            return;
+        scene.Pointer = at;
+        if (_fitPending || MapRenderer.PointerMoved(_camera, scene, UiScale))
+            Invalidate();
+    }
+
+    // The pointer moved over the map without a button held: the edge arrow, the marker under it, the grid's square.
+    private void PointerMovedTo(Windows.Foundation.Point at)
+    {
+        var overEdge = OverEdge(at);
+        if (overEdge != _overEdge)
+        {
+            _overEdge = overEdge;
+            ProtectedCursor = overEdge || _hovered is not null ? InputSystemCursor.Create(InputSystemCursorShape.Hand) : null;
+            ToolTipService.SetToolTip(this, overEdge ? AppTexts.MapEdgeTip : null);
+        }
+        var hit = _scene is null || overEdge ? null : MapRenderer.HitTest(_camera, _scene, Pixels(at), UiScale);
+        Hover(hit, at);
+        PointerAt(Pixels(at));
+    }
+
+    // The pointer left the map (onto the window's controls over it, too): no marker under it, no square lit.
+    private void PointerLeft(Windows.Foundation.Point at)
+    {
+        Hover(null, at);
+        PointerAt(null);
+    }
 
     private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
@@ -795,19 +858,12 @@ public sealed partial class MapView : Grid
 #endif
         if (_dragFrom is not { } from)
         {
-            var at = e.GetCurrentPoint(this).Position;
-            var overEdge = OverEdge(at);
-            if (overEdge != _overEdge)
-            {
-                _overEdge = overEdge;
-                ProtectedCursor = overEdge || _hovered is not null ? InputSystemCursor.Create(InputSystemCursorShape.Hand) : null;
-                ToolTipService.SetToolTip(this, overEdge ? AppTexts.MapEdgeTip : null);
-            }
-            var hit = _scene is null || overEdge ? null : MapRenderer.HitTest(_camera, _scene, Pixels(at), UiScale);
-            Hover(hit, at);
+            PointerMovedTo(e.GetCurrentPoint(this).Position);
             return;
         }
         var to = e.GetCurrentPoint(this).Position;
+        // The map moves under the pointer while it pans: the frames are drawn for the pan, the square under it with them.
+        PointerAt(Pixels(to));
         // A few pixels of hand jitter during a click is not a drag (and must not stop following the player).
         if (!_dragging && Math.Abs(to.X - _pressedAt.X) + Math.Abs(to.Y - _pressedAt.Y) < 4)
             return;

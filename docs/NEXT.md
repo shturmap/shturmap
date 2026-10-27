@@ -161,6 +161,55 @@ contents only while its window is open; the cost, the case's contents leave the 
 reading of the stash's other page can't tell a closed case from one not shown); (3) at most a few windows, the
 longest unseen leaving first (simple and bounded; the cost, an arbitrary number and contents lost). CLEAR, now, is the
 manual way out of all three.
+## 2026-10-26: the grid under the pointer
+
+**The ask** (owner, 2026-10-26, after trying 0.7.0's squad grid): "When you are with the mouse over the map highlight the
+current square and sub-square and show the currently mouse-overed position somewhere where it makes sense." On the grid's
+panel the owner had taken none of the spec's extras, its hover line among them; this takes that line, in the readout.
+
+**The design** (the coordinator, from the owner's "somewhere where it makes sense"): (1) under the pointer, while it is
+over the map and the grid is on, the 100 m square under it a faint fill and its keypad ninth a slightly stronger one, no
+hue (the grid's own lightening step at low strength, as its lines are), drawn with the grid in the artwork's layer under
+every symbol, name and route, at every zoom, no animation, gone when the pointer leaves the map; (2) the strips: the
+column's letter and the row's number of that square drawn stronger, as an index map's or a spreadsheet's headers light
+up, the others as they are; (3) the reference ("D5-8") in the fixed readout at the map's top left: a second line under
+"YOU D5-8 · 2 MIN OLD" in a raid with a position, the only line out of one, in the readout's type, the label small; it goes
+when the pointer leaves the map; the map's own hover cards keep their place and win, and the readout's keep-outs
+(`PlateOver`, the strips' insets) hold for its second line too. Performance: a pointer's move redraws only what changed and
+never lays the map's labels out anew.
+
+**Built (2026-10-26: the grid under the pointer).** As designed (DESIGN.md §4, "Map drawing", *The grid*, *Under the
+pointer*, with every number): the map view tells the scene where the pointer is (`MapScene.Pointer`) and each frame makes
+the square under it from its layout (`MapRenderer.GridPointer`). The square lit faintly and its ninth more, between its
+lines, Ink in the overlay blend with a floor in the plus blend on the artwork's drawn map (the plus blend alone on the
+sheet): `shturmap-cli render <map> <out> --pointer <fx> <fy>` measures a median ΔL* of 13.8 for the square and 16.3 for its
+ninth on Streets' whole view, 8.5 and 18.2 on Woods', 7.0 and 12.2 on The Lab's sheet, under the 100 m lines' 19.5 to 23.6.
+The strips: the letter and the number bold in full ink, and, the builder's judgement, each strip a step lighter along the
+square (`Raised`, the design system's "selected thing"): bold for semibold alone read as the same letter at 11 DIP. The
+readout: "POINTER D4-2" (German "MAUS"), small label as YOU, the reference a step under YOU's (17 to 22) and in ink, not
+sand, under YOU's line on one plate in a raid with a position and alone in YOU's place out of one, as wide as the map's
+widest reference so it doesn't change its width as the pointer moves. Not laid out (a pointer's move places nothing), so
+its room isn't kept from labels: while it shows it covers what lies under it, as the strips do; it isn't drawn while the
+pointer is on it (it would cover what the pointer is on) nor under a plate or note of the window (`PlateOver`), as YOU. It
+all goes as the pointer leaves the map, onto a strip or a control of the window too, and when the window stops being the
+active one (`MapView.ClearHover`: back in the game, the mouse may rest over the map). A frame is drawn only where a move
+changes the ninth or the readout's line (`MapRenderer.PointerMoved`, from the last frame's layout). Frame times with
+`shturmap-cli frames customs --scene plan --quests all`, main against this change without and with the new `--pointer`
+sweep, five runs each in turn, the median of their medians: 85.8, 87.1 and 87.2 ms at 1600 × 1000 (+1.6 % against main,
+whose own runs spread from 85.2 to 93.0), 11.6, 11.5 and 11.8 ms at 500 × 481 (+1.3 %). Help's grid paragraph names
+POINTER beside YOU ("YOU, top left, is your square, POINTER the one under the mouse"); the tour's chapter 5 stays true and
+unchanged. Texts for the senior translator: `MapGridPointer` "POINTER" / "MAUS" (new), `HelpGrid` (changed: "…, MAUS das
+unter der Maus; …"). Headless: the developer script's `pointer <fx> <fy> | leave` and the replay
+`tools\qa\grid-pointer.devscript` with its `.md` (Plan and a raid on Streets, English and German, 900×560 and 1600×900);
+`GridTests` (the reference and ninth under a point, the map's edges, a point over a strip and off the lettered grid, the
+fill, the strips, the readout's lines in and out of a raid, the pointer on the line, a plate over it, nothing with the grid
+off, a move that lays nothing out) and `DevToolsTests` (the step). The replay's stills looked at: the lit square and
+strips, the readout alone in Plan and under YOU's in the raid ("DU D5-8" over "MAUS D4-2" in German), not drawn under the
+tour's notice at 900×560, and in the raid, after the pointer left, the still pixel for pixel the one before it came; no ERROR or WARN in
+its four runs' app logs. The suite passed (2695, 43 skipped); the layout check (`-States plan,raid`, 900x560 and
+1600x900) passed in English, German and the pseudo-language. Open, for the UI QA pass and the owner: at the smallest
+window's whole view (squares about 46 px on Streets' busy artwork) the square's lift is faint; the band on the strips and
+the readout carry it there. The legend's grid row doesn't mention the lit square (a state of the grid, not a symbol).
 
 ## 2026-10-26: the 0.7.0 release check
 
