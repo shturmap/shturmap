@@ -62,8 +62,8 @@ public sealed class DeskLedger
         return (fresh, kept);
     }
 
-    // The mode's page a reading is taken into: none before the first reading, nor after CLEAR (a page of no region), so the
-    // next is the mode's first again.
+    // The mode's page a reading is taken into: none before the first reading, nor where the page has no region (a file
+    // written so by the desk's CLEAR, 2026-10-26 to 27), so the next is the mode's first again.
     private DeskPage? Held(GameMode mode) => Page(mode) is { Regions.Count: > 0 } page ? page : null;
 
     // What a reading makes of a page (none: the mode's first reading), as a change.
@@ -73,23 +73,8 @@ public sealed class DeskLedger
         return new DeskChange(merge.Page, merge.Changed, old is null) { Refused = merge.Refused, Kept = merge.Kept, Dropped = merge.Dropped };
     }
 
-    /// <summary>
-    /// Empties the mode's page (owner, 2026-10-26: "We need an option to clear the desk because it quickly gets messy"; the
-    /// desk's CLEAR): a page of no region, every region drawn as never read, until the next reading. The page it had, for
-    /// the notice's UNDO (<see cref="Restore"/>); null when there was none, or none with a region.
-    /// </summary>
-    /// <param name="at">When it was cleared: the empty page's time.</param>
-    public DeskPage? Clear(GameMode mode, DateTimeOffset at)
-    {
-        if (Page(mode) is not { Regions.Count: > 0 } had)
-            return null;
-        _pages[mode] = new DeskPage(at, []);
-        Dirty = true;
-        return had;
-    }
-
-    /// <summary>Puts a page back as the mode's, exactly as it was (the notice's UNDO): its regions, cells, picks and reading
-    /// times.</summary>
+    /// <summary>Puts a page back as the mode's, exactly as it was (the UNDO of a new page after a raid's notice): its
+    /// regions, cells, picks and reading times.</summary>
     public void Restore(GameMode mode, DeskPage page)
     {
         _pages[mode] = page;

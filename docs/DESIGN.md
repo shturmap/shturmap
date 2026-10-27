@@ -286,10 +286,10 @@ levels from the quest dependency tree, NOW (an active quest's BRING needs the it
 unlock needs it) and LATER (further down the tree), plus a hideout module's need, regardless of the hideout's progress
 (the logs don't say its level, and hideout tracking stays a not-goal, §1), each with its found-in-raid flag (owner,
 2026-10-19: the keep mark's levels, not a planner screen of their own; docs/NEXT.md). The page in hand is kept in
-`desk.json` and priced from tarkov.dev's item file, asked for again when it is five minutes old, as a reading arrives and
-every five minutes while the desk is on screen (owner, 2026-10-19: "Accept, once an hour"; then, after trying the desk the
-same day: "Maybe we need to fetch the prices more often then?"; 2026-10-26: "When finding prices in the stash it's
-important that they are recent"; §3). The boundary widens for the desk alone, and no further (and, decided the same
+`desk.json` and priced from tarkov.dev's item file, asked for again when tarkov.dev's next file is due, as a reading
+arrives and while the desk is on screen (owner, 2026-10-19: "Accept, once an hour"; then, after trying the desk the same
+day: "Maybe we need to fetch the prices more often then?"; 2026-10-26: "When finding prices in the stash it's important
+that they are recent"; 2026-10-27, D3 E: when the file is due; §3). The boundary widens for the desk alone, and no further (and, decided the same
 day, for the in-raid glance: "Which pictures", below):
 
 - **Which pictures:** the stash's (above): a menu screenshot of the player's own stash or inventory, new, named
@@ -575,7 +575,9 @@ day, for the in-raid glance: "Which pictures", below):
   1; the desk's panel had left them out): "Read your stash, gear and tasks from menu screenshots" (the GEAR tab is the
   screen the desk adds; its prices aren't read from the picture, so the words don't name them). Its note adds that the
   desk shows what each item is worth from tarkov.dev's prices, fetched again every five minutes while the desk is on
-  screen (§3; until 2026-10-26 at most every ten minutes, when a screenshot was read; once an hour until 2026-10-19), and that item ids, counts and places are kept, nothing of the picture. Unticked, no menu screenshot is
+  screen (§3; since 2026-10-27 when tarkov.dev's next file is due, about every ten minutes, which the note's "every five
+  minutes" still bounds from below; until 2026-10-26 at most every ten minutes, when a screenshot was read; once an hour
+  until 2026-10-19), and that item ids, counts and places are kept, nothing of the picture. Unticked, no menu screenshot is
   opened, for the desk either. Its note, the README and PRIVACY.md say what the desk reads, keeps and fetches; help with
   the desk's view, the website when its media are next made.
 
@@ -759,27 +761,50 @@ quoting it anywhere new.
     2026-10-19: the Dorm 104 key scanned 17:38, the file had at 18:14, the card said "8 min old" at 18:22; until then
     from when the file was had). Everything else keeps the ages above. Its requests and bytes per player are
     counted and said to the owner before it is built (the rule at the end of this list). **The exception: the item
-    file, every five minutes while the desk is on screen** (owner, 2026-10-19: "Accept, once an hour", on the count
-    below; built in step B part 1, `GameSession.RefreshDeskPrices`; then, after trying the desk the same day: "Maybe we
-    need to fetch the prices more often then?": ten minutes, a reading's; then 2026-10-26, picked from the coordinator's
-    options: "When finding prices in the stash it's important that they are recent": five minutes, and on a timer while
-    the desk is on screen; tarkov.dev scans every 5 minutes and caches 5, so sooner gains nothing). json.tarkov.dev has
-    no price file per item (the GraphQL API that answers per item was down all of 2026-10-19), so the whole item file is
-    asked for again with its ETag once the saved copy is five minutes old (`GameDataLoader.DeskPricesAge`; ten minutes
-    from 2026-10-19, an hour before): when a desk reading arrives, and while the desk is on screen (the window shows the
-    Desk view, out of a raid, and isn't minimised: `DeskSwitch.OnScreen`, which `MainWindow.TellDeskOnScreen` tells
-    `GameSession.SetDeskOnScreen` as the view switches, a raid takes the window or it is minimised and restored) each
-    time the copy turns five minutes old (`GameSession.WatchDeskPricesAsync`), so the prices on screen are never much
-    older than five minutes and tarkov.dev's scan; the desk coming back on screen with older prices asks at once. Nothing
-    is asked while the desk isn't on screen (Plan, a raid, the window minimised) or holds no page. One request at a time;
-    whatever comes of one (a failure, or tarkov.dev not reached and the saved copy given back no newer), the next is five
-    minutes after it, never a tight loop, each kind of trouble logged once until prices come in again. What comes in
-    prices the page again where it stands, quietly (§4, *The stash desk*, *Fun*). **Its count** (2026-10-26), per player:
-    at most 12 requests an hour of desk on screen (a reading's included: never two within five minutes); a few hundred
-    bytes each when the file is unchanged, about 1.4 MB compressed when it changed, which it does every few minutes, so
-    about 17 MB an hour of steady desk on screen (some 8 MB an hour at ten minutes, before); nothing with the desk off
-    screen. Each answer is read again on the PC: the item file parsed off the window's thread, the page priced and drawn
-    anew. Nothing is asked per item for a reading's prices, and no picture but the page's
+    file, when tarkov.dev's next file is due, while the desk is on screen** (owner, 2026-10-19: "Accept, once an hour", on
+    the count below; built in step B part 1, `GameSession.RefreshDeskPrices`; then, after trying the desk the same day:
+    "Maybe we need to fetch the prices more often then?": ten minutes, a reading's; then 2026-10-26, picked from the
+    coordinator's options: "When finding prices in the stash it's important that they are recent": five minutes, and on a
+    timer while the desk is on screen; then 2026-10-27, from the decision page, D3 E, "Ask when the file is due": "For
+    this it might be relevant if the prices are fetched in bulk or one at a time when needed, but especially when a price
+    is copied it should be as recent as possible."; `DeskPricesTiming`). **Measured** (2026-10-27, 19:20 to 19:21 UTC,
+    PvE, from the owner's PC; the decision page's facts): the item file (json.tarkov.dev's `/pve/items`) is 1.39 MB
+    compressed (17.2 MB unpacked, 5,480 items), fetched in 0.30 to 0.35 s; asked for with its ETag and unchanged, a 304 of
+    about 1.4 KB of headers in 0.08 to 0.10 s. It changes about every 10 minutes, about 3 minutes after each of
+    tarkov.dev's scans (Last-Modified 19:10:57, then 19:21:04, for the scans of 19:08 and 19:18; a scan every 10 minutes
+    from 18:28 to 19:18), and each scan updates part of the catalogue only (670 of 5,480 items at 19:18; of the 3,730
+    items with a flea price, 17 % from the last scan, 71 % from the last hour): an item's own scan, not the fetch, sets how
+    fresh its price can be, and the card and the copy notice count from it (§4, *The stash desk*, *The head line*, *The
+    click*). Until then this said tarkov.dev scans every 5 minutes and caches 5. json.tarkov.dev has no price file per
+    item, and the GraphQL API that answers per item answered HTTP 422, "GraphQL server unavailable", to every query on
+    2026-10-27 as all of 2026-10-19, so the whole item file is asked for again with its ETag. **When**: at the file in
+    hand's Last-Modified plus the file's rhythm plus 45 s, the rhythm the shortest of the last six gaps between two
+    Last-Modified values seen one after the other, of one to thirty minutes (a gap of two beats, a file missed while the
+    desk was off screen, never sets it while one of one beat is there); while the answer is unchanged (304), again each
+    minute; never more often than once a minute; every five minutes while no rhythm is known (after a start, until two
+    files a beat apart came in; the rhythm isn't kept over a restart), after a failure (or tarkov.dev not reached and the
+    saved copy given back no newer), and once a file is a whole beat late (its rhythm lost until a new file sets it again);
+    `GameDataLoader.DeskPricesAge` is that five minutes. A rhythm that grows shorter than the one learnt shows only after
+    a restart (the asks never come early enough to see it); a longer one costs a few 304s a beat until the shorter gaps
+    are six beats old. Asked when a desk reading arrives, and while the desk is on screen (the window shows the Desk view,
+    out of a raid, and isn't minimised: `DeskSwitch.OnScreen`, which `MainWindow.TellDeskOnScreen` tells
+    `GameSession.SetDeskOnScreen` as the view switches, a raid takes the window or it is minimised and restored) as the
+    file falls due (`GameSession.WatchDeskPricesAsync`), so the page is at most a minute or two behind tarkov.dev's newest
+    file and a click copies at once, without waiting; the desk coming back on screen with a file past due asks at once.
+    Each ask goes to tarkov.dev (the saved copy is given without one only within half a minute,
+    `GameDataLoader.DeskPricesAsk`); an unchanged file isn't read again (`ItemSources.Confirmed`) and changes nothing on
+    the page. Nothing is asked while the desk isn't on screen (Plan, a raid, the window minimised) or holds no page. One
+    request at a time; whatever comes of one, the next is a minute after it at the soonest, five after a failure, never a
+    tight loop, each kind of trouble logged once until prices come in again, and the head line's age says "OFFLINE" in amber
+    meanwhile (§4, *The head line*). What comes in prices the page again where it stands, quietly (§4, *The stash desk*,
+    *Fun*). **Its count** (2026-10-27), per player: with the file changing every 10 minutes, about 6 requests an hour of
+    desk on screen, each new file once (a reading's included), plus a 304 a minute while a file is late, so 6 to 12 in
+    practice, at most one a minute, and every five minutes again once a file is a beat late: about 1.4 MB compressed for
+    each new file and 1.4 KB for each 304, so about 8.4 MB an hour of steady desk on screen, the same bytes as the five
+    minutes' 12 requests had (about 6 of them full: the same files, sooner); nothing with the desk off screen. Until
+    2026-10-27 this said 12 requests and about 17 MB an hour, which assumed a file every 5 minutes (some 8 MB an hour at
+    ten minutes, before 2026-10-26). Each new file is read again on the PC: the item file parsed off the window's thread,
+    the page priced and drawn anew. Nothing is asked per item for a reading's prices, and no picture but the page's
     cells' grid images, fetched and kept as BRING's are today (*Grid images*, below). **The history is built** (step C,
     2026-10-19; `GameDataLoader.LoadPriceHistoryAsync`, `GameSession.DeskHistoryAsync`): asked for when a card first
     shows the item, one file per item from json.tarkov.dev (`{"data":[{priceMin, price, offerCount, timestamp}, …]}`, a
@@ -1434,8 +1459,10 @@ same day, by rendering them side by side:
   `E840` stays the Place quest type, the reason the quest card's pin went on 2026-10-03. A pinned card is framed in amber,
   1.5 DIP, as a held card is. **A region's place** (owner, 2026-10-25, the layout round's decision 1; "Screen anatomy",
   *The stash desk*, *What it mirrors*): a dashed `LineStrong` frame with "NOT IN A SCREENSHOT YET" in it is a region no
-  screenshot has shown yet, standing where the game has it; a region drawn a step dimmer (70 %) with a time after its
-  head ("BACKPACK · 23:08") is the last reading of one the newest screenshot didn't show. A dashed frame stays "not
+  screenshot has shown yet, standing where the game has it; a region drawn faint (25 %), its figures not shown, with a
+  time after its head ("BACKPACK · 23:08") is one of an earlier look than the newest, stepped back where it stands, and
+  an earlier look's window is a framed line with "▸" (2026-10-27, *The newest look in front*; until then a step dimmer,
+  70 %, for every region the newest screenshot didn't show). A dashed frame stays "not
   seen": an old position on the map, a region not yet read on the desk; never a cell's mark (contents unseen are the
   "+").
 - **Two meanings, resolved:** `E719` (a shopping bag) was both the Find-in-raid quest type and the flea market as an
@@ -2295,7 +2322,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   the layout round, docs/NEXT.md; `Rules.DeskPageRules`, `Controls.DeskBoard`): the page keeps the game's GEAR tab's
   shape at one cell size for the desk, LOADOUT as the game's slot grid, every region in its place whether the last
   screenshot showed it or not, a region never read a dashed frame, one not in the last screenshot a step dimmer and
-  dated; the fold is gone (*Its place*, *What it mirrors*, *The head line*, *As built*). Of the panel's other ways, B
+  dated (since 2026-10-27 one of an earlier look steps back: *The newest look in front*); the fold is gone (*Its place*, *What it mirrors*, *The head line*, *As built*). Of the panel's other ways, B
   (the page of 2026-10-19 pinned: the strip and the flow kept, the set, order and size fixed) and C (the adaptive page
   kept, the reading fixed) were not taken.
   - **Its place** (A1). Out of a raid the desk takes the map's place, and the rail becomes its card, where the item
@@ -2309,11 +2336,17 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     the cards; `Rules.DeskPageRules.Layout`, `Arrange`): the cell is the largest size from 40 to 128 DIP (twice the
     art's own 64 px) in steps of 8 (each a whole number of pixels at every Windows scale from 100 to 200 %) at which the
     three columns (LOADOUT's eight cells, the middle column's widest row, the stash's ten; *What it mirrors*) fit the
-    desk's width and the stash's column fits its height, the windows in a fourth column right of the stash where the
-    width allows, else under the stash and counted in its column. The size follows the desk's size and the regions' own
-    grids (a larger backpack, a longer stash page, a window), never what a reading put in them: a region never read and
-    one the last screenshot didn't show count as read, so a reading that changed the backpack's contents moves nothing.
-    Where LOADOUT or the middle column is taller than the desk at that size, the page scrolls, as the game scrolls the
+    desk's width and the stash fits its height, the windows in a fourth column right of the stash where the width
+    allows, else under the stash. **Windows never shrink the page** (owner, 2026-10-27, in the chat, on the windows that
+    shrank the desk: "windows never shrink the page; it scrolls for them"; docs/NEXT.md, 2026-10-26, *Decided after the
+    build*; `DeskPageRules.Arrangement.Held`): a container's window never counts in the height the cells must fit, the
+    cell size stays the desk's own and the page scrolls further for them; nothing seen is lost. Not taken: a closed case's
+    window leaving the page (its contents would leave the totals), both, or no change. Until then the windows under the
+    stash and the windows' own column counted, so each case opened shrank the cells (on the owner's page on a 2560
+    monitor's desk 80 DIP with no window, 56 with one or two, 48 with three, 40 from six). The size follows the desk's
+    size and the regions' own grids (a larger backpack, a longer stash page), never what a reading put in them: a region
+    never read and one stepped back count as read, so a reading that changed the backpack's contents moves nothing.
+    Where LOADOUT, the middle column or the windows are taller than the desk at that size, the page scrolls, as the game scrolls the
     middle column, rather than the cells shrinking below what the stash needs; where no size fits the stash's column,
     40, scrolling; where even 40 doesn't fit the three columns' width (900×560's desk, 516 DIP), the same blocks in one
     column in the same order at 40, scrolling: one shape for that window size too. **Where the page runs past the desk's
@@ -2384,8 +2417,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       is an empty box, the cell's ground in its frame. No grid under the boxes. Until 2026-10-25 a strip of slot cells
       (80×40 DIP a slot, 164×40 a weapon) one per filled slot, without names (the card named the slot), the empty ones
       left out: the boxes' height was the strip's reason, which a fixed shape no longer weighs.
-    - **A region never read** (no reading of this mode has shown it, or none since CLEAR or a new page after a raid,
-      *Clearing the page*; owner, 2026-10-25; `DeskBlock.Placeholder`): its
+    - **A region never read** (no reading of this mode has shown it, or none since a new page after a raid, *A new page
+      after a raid*; owner, 2026-10-25; `DeskBlock.Placeholder`): its
       head, and in its place a dashed `LineStrong` frame (1 px, dashes of 4 and gaps of 3) five cells wide and two high,
       with "NOT IN A SCREENSHOT YET" muted inside it in the note style; a container region's empty slot box beside it;
       LOADOUT the words under its head and its boxes dashed. POCKETS' frame is four cells wide and SPECIAL SLOTS' three,
@@ -2403,8 +2436,28 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       alone (read in part, no grid and no cell in it; `DeskLedger.HeadingAlone`) is left off a page that has no version of
       it, which draws it as never read; a page that has one keeps its own (the ledger's rule; code review's cleanups,
       2026-10-25).
-    - **A region not in the last screenshot** (its reading older than the page in hand's; owner, 2026-10-25;
-      `DeskRegion.ReadAt`, `DeskPageRules.Kept`): drawn whole but a step dimmer (its block at 70 %), its head dated,
+    - **The newest look in front** (owner, 2026-10-27, from the decision page on the desk: D1 B, "The newest screenshot
+      in front", no notes: "I also think right now that the manual clean up might not be a good idea, maybe we should do
+      in general a better job just showing the items the player is currently interested in."; `DeskRegion.ReadAt`,
+      `DeskPageRules.SteppedBack`, `Folds`, `Controls.DeskBoard`). A screenshot is the one signal of interest the app
+      has: the regions of the newest look stand full, those of earlier ones step back in place. **One look**: the page's
+      newest screenshot and every one taken within 2 minutes of it ("Screenshots within 2 min of the newest count as one
+      look, so scrolling the stash and taking three shots keeps all three in front"; `DeskPageRules.Look`). **A region
+      of an earlier look** steps back where it stands: its head whole and dated (below), what it holds faint, its grid,
+      slot boxes and slot names at 25 % (the decision page drew 22 %), its cells' figures, counts and changes not shown,
+      their art, notches and pins kept; **an earlier look's container window** folds to its head line in a `Line`
+      hairline frame 8 DIP out at the sides and 6 over and under (in the gaps around it, so it takes no room), as wide as
+      the windows' column, "▸" after its head ("ZHUK · IN THE BACKPACK · 14:02 ▸"), its "Not attached" line with the rest.
+      **Pointing at one shows it whole** ("as the page drawing does"): the faint parts whole and the figures back while
+      the pointer is anywhere on the region, a folded window unfolded in place with "▾", the windows under it moving down;
+      at once, without motion (the desk moves three ways and no more, *Fun*), and stepped back again when the pointer
+      leaves it. Its cards and clicks as ever, and the totals count it all along. **The fixed layout stays** (layout A,
+      2026-10-25): nothing of LOADOUT, the middle column or the stash changes height or place when a region steps back or
+      is pointed at; only the windows' tail gets shorter, and it stands at the page's foot. The decision page as first
+      written folded old regions to their heads, which changes the page's height: that was the fold of 2026-10-19 to 25,
+      which the owner replaced with the fixed layout, so only the windows fold. Not taken: A (a new page after a raid by
+      itself), C (a list of what is worth acting on over the grid), D (CLEAR kept as built). **Its head is dated** as
+      it was for a region the last screenshot didn't show (owner, 2026-10-25):
       "BACKPACK · 23:08" for a screenshot of the day, "BACKPACK · 19 OCT 23:08" for another day (the language's day,
       month and time, as the operational rail's "As of" writes them), a window's "KEYS · IN THE STASH · 23:08". A no-break
       space after the "·" and within the date: where a head wraps (SPECIAL SLOTS, three cells wide) the "·" goes to the
@@ -2419,9 +2472,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       right over its grid as every head stands (UI QA re-check, 2026-10-25: at the room's top POCKETS and SPECIAL SLOTS
       stood 23 px over their grids on the first reading, where every other head stands 10 to 11 over its own, and read
       as parted from them): where the date wraps a head, the name's line goes up into the room and the date's line
-      stands where the name stood. The dimming
-      and the date are the only marks: its cells keep their look, their cards and clicks. A region of a file written
-      before the reading's time was kept is the page's.
+      stands where the name stood. Since 2026-10-27 the stepping back, the fold and the date are its marks; until then
+      the dimming (its block at 70 %, every region older than the page's newest screenshot) and the date were, its cells
+      keeping their look. A region of a file written before the reading's time was kept is the page's.
     - **A container in a grid** (a bag in a bag, a Zhuk rig in the backpack) is a cell with its own price, its figure
       ending in "+" (*The cell*), until a screenshot with its floating window open (the same or a later one) is read.
       Then the window's grid stands under a head of its own, "<NAME> · IN THE <REGION>" ("ZHUK · IN THE BACKPACK"),
@@ -2446,8 +2499,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     total; the coordinator's rule; `DeskLedger.Blank`): a window in which no cell was read (no item, no "one of N") keeps
     the page's version of it, and so does a region that comes out with fewer than a third of the cells read that the page
     has for it while more of its grid held something unread than was read (shapes no label fit, labels that fit
-    nothing: the lines between its items weren't found). The page's version stays, unchanged (drawn as a region the
-    last screenshot didn't show, dimmed and dated; until 2026-10-25 the fold didn't open it), and the app log says so. A region the player emptied reads its empty cells as empty and still replaces the
+    nothing: the lines between its items weren't found). The page's version stays, unchanged (drawn as a region of an earlier look, stepped back and dated, since 2026-10-27;
+    dimmed and dated until then; until 2026-10-25 the fold didn't open it), and the app log says so. A region the player emptied reads its empty cells as empty and still replaces the
     page's (an unloaded backpack after a raid, a stash paged to an emptier page): the coordinator's rule asked for the
     third alone; the unread share is mine, for that case.
     **A region read in part keeps the page's rest** (owner, 2026-10-25; the test of 2026-10-19: the backpack's grid ran
@@ -2492,50 +2545,51 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     after a stash's alone, "KEEP 0 · 2 · 1" alone where neither was (a page of a window alone); KEEP stays. Each is a whole sentence of the texts
     file (`DeskHeadLine`, `DeskHeadLineOnYou`, `DeskHeadLineStash`, `DeskHeadLineKeep`). Until then the line said "STASH
     0 ₽" over a stash never read, a stash worth nothing beside a frame that said "not seen" (UI QA pass of 5410c4d, F1).
-    Not taken: "STASH —" (B), "STASH 0 ₽" as it was (C).
+    Not taken: "STASH —" (B), "STASH 0 ₽" as it was (C). **The prices' age at its right** (owner, 2026-10-27, from the
+    decision page on the desk: D2 C, "Both", no notes: "Also, it should be clear when the prices were fetched the last
+    time. … especially when a price is copied it should be as recent as possible."; `DeskPageRules.PricesAge`,
+    `DeskView.PricesScannedAt`, `PricesReached`): always, at the desk's right edge 18 DIP in, on the head line's row, its
+    top level with the head line's, in its muted capitals, "PRICES 3 MIN OLD" („PREISE 3 MIN ALT“; `DeskHeadPrices`,
+    in hours from two on), counted from the newest scan in the item file in hand (`ItemSources.ScannedAt`, the newest of
+    its items' `updated`; the file's confirmation where none says), ticking with the minutes; amber past 20 minutes, and
+    amber with "· OFFLINE" after it where tarkov.dev wasn't reached at the desk's last ask or the file in hand is a saved
+    copy had offline ("PRICES 26 MIN OLD · OFFLINE", as the decision page drew it; `DeskHeadPricesOffline`). It answers
+    "are prices still coming in": the page's age, normally 3 to 18 minutes (a file every 10, about 3 to build it, up to a
+    minute or two ours). The copied item's own age is the copy notice's (*The click*): for 29 % of flea items it is over an
+    hour (2026-10-27), so "prices" (the page's) and "price" (one item's) are kept apart. Where the head line is long it
+    wraps before it, 16 DIP from it; it stands still while the totals count up (it took CLEAR's place, which went the same
+    day). Not taken: the head line alone (A), the copy notice alone (B).
     What a reading changed (compared with the page in hand only, never with a register, §1) comes in (*Fun*); a reading
     that changed nothing changes nothing. **Until 2026-10-25, the fold** (the addendum, B1; built in step B): each
     reading opened the regions it changed and folded the rest into one line where they stood, "UNCHANGED · POUCH ▸ ·
     STASH ▸", each name opening its region until the next reading. Its written cost, the page changing shape between
     readings, became the owner's complaint after the test of 2026-10-19 ("it might be a good idea to have a consistent
     layout"), and the GEAR tab's fixed shape took its place, each region whole where it stands, one the last screenshot
-    didn't show a step dimmer and dated (*What it mirrors*): the panel's "shown whole or muted", once turned down for the
+    didn't show a step dimmer and dated (*What it mirrors*; since 2026-10-27 one of an earlier look stepped back): the panel's "shown whole or muted", once turned down for the
     scroll it cost.
-  - **Clearing the page** (owner, 2026-10-26, after 0.7.0's release: "We need an option to clear the desk because it
-    quickly gets messy"; from the coordinator's options, "Button + fresh after raid"; docs/NEXT.md, "2026-10-26: clearing
-    the desk"; `Rules.DeskClearing`, `GameSession.ClearDeskAsync`, `UndoDeskAsync`, `DeskLedger.Clear`, `Restore`,
-    `ApplyFresh`). The page grows with each screenshot, and nothing but a reading takes a region away, so the regions and
-    windows of readings long past pile up.
-    - **CLEAR** at the head line's right, at the desk's right edge 18 DIP in, its baseline level with the head line's, in
-      the app's text links' style (FORGET ALL MARKS, help's TAKE THE TOUR: 11 px, amber, capitals; German LEEREN), its tip
-      saying what it does; at the desk's edge it stands still while the totals count up. A long head line wraps before it,
-      16 DIP from it. It stands while the page has a region: not on a page of none, nor without a page, nor in a raid (the
-      desk is a menu view). One click empties the page in hand for the game mode at once, with no question (principle 7):
-      every region back to never read (*A region never read*: LOADOUT's boxes dashed, each region's head over its dashed
-      frame, the container regions' empty slot boxes), no window, the head line as for a page with no part read, "KEEP 0 ·
-      0 · 0" alone (*The head line*), the pins and the card pointed at gone, the rail's hint in their place, the page at
-      its top. The page of no region is kept so in `desk.json` (§8, "The desk file") and stands so at the next start
-      (until 2026-10-26 a page of no region drew the one line of a mode never read, "Screenshot your stash in the game's
-      menus.", which only a mode with no page at all keeps; `DeskBoard`); the next reading is the mode's first again,
-      every region it shows coming in (*Fun*). The other mode's page stays. While the page stands empty, no prices are
-      asked for on the desk's five minutes, as without a page (§3, "The stash desk's prices come per reading";
-      `GameSession.LookAtDeskPrices`). The cell size is the layout's for the regions as they stand (*Its place*): on a
-      large desk a page of dashed frames stands at a larger size than a page with the stash and its windows read, as
-      before a first reading.
-    - **UNDO instead of a question**: a one-line notice, "Desk cleared." (German „Desk geleert.“), with UNDO (RÜCKGÄNGIG)
-      beside it in amber capitals where a notice's REPORT link stands, for 8 s (the 6 s of most notices and a little more,
-      for the click; principle 4). UNDO puts the page back exactly as it was (its regions, cells, picks and reading times,
-      and the pins with it), standing at once (it is no reading: nothing comes in, the totals don't count up), and kept so
-      in `desk.json`. It stands while the notice does and no reading came since: the notice going (its seconds, its ×,
-      another notice in its place) takes the link with it, and a reading in between ends it (the session holds the page
-      until the next reading; the window drops the link when a view of a later reading comes).
-    - **A new page after a raid**: the first desk reading after a raid (the game's logs: a raid of the mode that started
+  - **A new page after a raid** (owner, 2026-10-26, after 0.7.0's release: "We need an option to clear the desk because
+    it quickly gets messy"; from the coordinator's options, "Button + fresh after raid"; docs/NEXT.md, "2026-10-26:
+    clearing the desk"; `Rules.DeskFreshPage`, `GameSession.UndoDeskAsync`, `DeskLedger.Restore`, `ApplyFresh`). The
+    page grows with each screenshot, and nothing but a reading takes a region away, so the regions and windows of
+    readings long past pile up; a raid is the natural moment to start anew, the haul changed. **CLEAR is gone** (owner,
+    2026-10-27, from the decision page: D1 B, the newest look in front; "I also think right now that the manual clean up
+    might not be a good idea, maybe we should do in general a better job just showing the items the player is currently
+    interested in."): from 2026-10-26 to 27 CLEAR, a small amber word at the head line's right, emptied the page in hand
+    at once, every region back to never read, with a notice "Desk cleared." whose UNDO put it back for 8 s; built on local
+    main only and never tried by the owner. Its texts, its developer script's `desk clear` and `desk undo` and its replay
+    went with it; a desk file it left with a page of no region is read as before (*A region never read*), the next
+    reading the mode's first. The new page after a raid stays, and so does its UNDO: it is the one page change the
+    player didn't ask for, so it is the one that is undone without a question (principle 7), and it costs nothing more:
+    the notice's link, two texts and the session's held page, all built and tested.
+    - **The new page**: the first desk reading after a raid (the game's logs: a raid of the mode that started
       after the page's last reading and ended before the screenshot was taken; a load cancelled before its start is no
-      raid; a PvP raid is the PvP page's) starts from an empty page: nothing of the page before is kept, dimmed or not; the
-      reading's regions as a first reading has them, every one coming in. Its notice says so, "A new desk page after the
-      raid." („Neue Desk-Seite nach dem Raid.“), with the same UNDO for 8 s: it puts back the page this reading would have
+      raid; a PvP raid is the PvP page's) starts from an empty page: nothing of the page before is kept, stepped back or
+      not; the reading's regions as a first reading has them, every one coming in. Its notice says so, "A new desk page
+      after the raid." („Neue Desk-Seite nach dem Raid.“), with UNDO (RÜCKGÄNGIG) beside it in amber capitals where a
+      notice's REPORT link stands, for 8 s (the 6 s of most notices and a little more, for the click; principle 4); it
+      stands while the notice does and no reading came since (`DeskFreshPage.UndoStands`). UNDO puts back the page this reading would have
       made of the page before the raid (the reading taken into it as without a raid between: the regions it showed
-      replaced, the rest kept, dimmed and dated), standing at once; the pins don't come back with it. The notice comes
+      replaced, the rest kept, stepped back and dated), standing at once; the pins don't come back with it. The notice comes
       after the reading's other words, so "Seen in your stash: …" of the same screenshot doesn't take its UNDO away (the
       BRING rows' marks glow all the same, principle 11). The raids are the logs' as Shturmap read them, live or read back
       at start: the newest log session's, so a raid in an older session, while Shturmap wasn't running, starts no new page.
@@ -2630,7 +2684,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     there should be a visual feedback and UI elements for setting what is copied clearly visible."): the cell is the
     button. Point at a cell to read its card; click it to copy its list price to the clipboard, and only there: nothing
     is ever typed into the game (§2). Its frame flashes gold once and its figure decodes, and a one-line notice says what
-    and why, "611,100 ₽ copied · 3% under the last low", and dismisses itself after 4 s (principle 4); the player pastes
+    and why, "611,100 ₽ copied · 3% under the last low · price 2 min old", and dismisses itself after 4 s (principle 4);
+    **the copied price's own age** ends it (owner, 2026-10-27, from the decision page: D2 C; `DeskCards.CopiedAge`,
+    `DeskCopiedAge`): from tarkov.dev's scan of that item, counted as the card counts it (its `updated`, the file's
+    confirmation where none says; in hours from two on), muted, amber past 30 minutes ("price 52 min old" for an item
+    tarkov.dev hasn't scanned for a while: "honest exactly when it matters, the price on the clipboard"); the player pastes
     it into the flea's price field (the clipboard gets the digits alone). Of a figure scaled to a printed condition, the
     click copies the scaled price (the addendum, Da), and the notice says ", scaled to 1469/1800". **The rule is on the
     card**, visible (the owner, 2026-10-19): the plate under the gold figure, "A CLICK COPIES", with − and + around the
@@ -2664,7 +2722,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     where they stand: every one on the mode's first reading, none on a reading that changed nothing; until 2026-10-25
     the regions it opened from the fold); its totals count up once (both built, step B, 2026-10-19, part 2:
     "Design system", *Motion*); a copy flashes and decodes (built, step C, 2026-10-19). Nothing else
-    moves: new prices (every five minutes while the desk is on screen, §3; 2026-10-26) price the page again where it
+    moves: new prices (when tarkov.dev's next item file is due while the desk is on screen, §3; 2026-10-27, every five
+    minutes from 2026-10-26) price the page again where it
     stands, the cells' figures, the regions' totals, the head line and an open or pinned card, with no motion (nothing
     comes in, the totals don't count up: those are for what a reading changed); the card's prices' age counts from the
     new scan, and a click copies by the new prices. The pictures don't blink: a page built again (new prices, a reading,
@@ -2735,7 +2794,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     - *Pins* (step C, 2026-10-19; `Rules.DeskPins`): a right-click on a cell or the pin on a card toggles it; pins stack
       newest on top, without a limit; a pin stays with its cell while the page holds it as read (place, items, count,
       condition: a reading that shows it as it was keeps it, a pick too) and goes when a reading changes or takes the
-      cell, or the mode's page goes (CLEAR takes them all, its UNDO brings them back; *Clearing the page*). Esc leaves
+      cell, or the mode's page goes (a new page after a raid takes them, its UNDO doesn't bring them back; CLEAR took
+      them all and its UNDO brought them back, 2026-10-26 to 27). Esc leaves
       the pins alone (it closes cards, then leaves the desk as before): they are cheap to make and dear to lose; the
       developer script's "desk unpin all" takes them all.
     - *The page* (the layout round's step 2, 2026-10-25; `Controls.DeskBoard`, `Rules.DeskPageRules`): the head line over
@@ -2821,10 +2881,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     others stay, the cells a window covered keep their last reading; a region read too blank keeps the page's (*What it
     mirrors*, 2026-10-19); a region read in part keeps the page's rest, a window attached to nothing leaves after three
     readings that didn't show it, and one with no cell and no title is never kept (*What it mirrors*, 2026-10-25); a
-    container whose slot reads another container keeps nothing of the page's version (2026-10-26). CLEAR leaves the mode
-    a page of no region (`DeskLedger.Clear`, the page it had given back for UNDO, `Restore`), and the first reading after a
-    raid is taken into none (`ApplyFresh`, with the page it would have made, for UNDO); a page of no region takes the next
-    reading as the mode's first (2026-10-26, *Clearing the page*). A file
+    container whose slot reads another container keeps nothing of the page's version (2026-10-26). The first reading
+    after a raid is taken into none (`ApplyFresh`, with the page it would have made, for UNDO, `Restore`); a page of no
+    region takes the next reading as the mode's first (2026-10-26, *A new page after a raid*; CLEAR, which left one,
+    2026-10-26 to 27). A file
     written before 2026-10-19 with a cell read twice (a window's compartment found twice)
     takes each place once when read back. What the rules decided where the panels left it
     open, for the owner to overrule:
@@ -4731,7 +4791,8 @@ Rules:
   keycard Therapist pays more for, ammunition that can't be listed, the Grizzly at 1469/1800, the keycards' "?", real
   quests and hideout stations for the keep lines, and a made-up price history for every item, so the card's band shows
   without a request, `DeskExample.History`), `-DeskReading 2` a reading seven minutes later that showed and changed the
-  backpack alone, so the rest is kept, a step dimmer and dated (until 2026-10-25 folded), `3` the same screenshot again,
+  backpack alone, so the rest is kept, stepped back and dated, its windows folded (2026-10-27; a step dimmer until
+  then; until 2026-10-25 folded), `3` the same screenshot again,
   which changed nothing (step B, 2026-10-19), `4` another first reading whose POCKETS, SPECIAL SLOTS and STASH came from
   their headings alone (no grid, no cell), each the dashed frame of a region never read, and no wallets' window (UI QA
   re-check of 94591a5, F2); the layout check's `desk` view is reading 1, taken in screens where its
@@ -5018,8 +5079,8 @@ more; both owner, 2026-10-25); and `cells`, each with `i`, `j`, `w`, `h`, `ids` 
 for unread), a slot's `slot`, `count` when more than one, `print` ("46/50"), `fir`, `holds` (`contents`, `mods`) and a
 "?" cell's `pick` (a candidate clicked on its card, step C, 2026-10-19; carried over every reading in which the item
 picked is still among the cell's candidates, gone with one in which it isn't; until 2026-10-25 only over one that showed
-the cell as it was). A mode's `regions` may be empty: CLEAR emptied its page, or the notice's UNDO hasn't put it back
-(owner, 2026-10-26; §4, *Clearing the page*), and it is read back so. Item ids and the containers' names only: no pixel,
+the cell as it was). A mode's `regions` may be empty (the desk's CLEAR left it so, 2026-10-26 to 27), and it is read
+back so, the next reading the mode's first. Item ids and the containers' names only: no pixel,
 no path, no other word. Read back, a window with
 no cell read whose title names no container (or that has none; until the owner's second test of 2026-10-25 only one of
 no cell and no title), and one attached to nothing that `missed` three readings, are left out (§4, *What it mirrors*); a

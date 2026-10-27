@@ -1746,15 +1746,15 @@
               <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.NoticeText, Mode=OneWay}" TextWrapping="Wrap" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" TextWrapping="Wrap" VerticalAlignment="Center"><Run Text="{x:Bind ViewModel.NoticeText, Mode=OneWay}" /><Run Text="{x:Bind ViewModel.NoticeTail, Mode=OneWay}" Foreground="{x:Bind NoticeTailBrush(ViewModel.NoticeTailAmber), Mode=OneWay}" /></TextBlock>
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
               <!-- A notice that asks for a report says where: the Report dialog (Copy diagnostics in a build without one). -->
               <HyperlinkButton Padding="6,0" Click="OnNoticeReportClick" VerticalAlignment="Center"
                                Visibility="{x:Bind ShownIfTrue(ViewModel.NoticeOffersReport), Mode=OneWay}">
                 <TextBlock Text="{x:Bind ReportOfferText}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
               </HyperlinkButton>
-              <!-- A notice that took the desk's page away (its CLEAR, a new page after a raid) offers it back while it stands
-                   and no reading came since (owner, 2026-10-26; docs/DESIGN.md §4, *The stash desk*, *Clearing the page*). -->
+              <!-- A notice that took the desk's page away (a new page after a raid) offers it back while it stands and no
+                   reading came since (owner, 2026-10-26; docs/DESIGN.md §4, *The stash desk*, *A new page after a raid*). -->
               <HyperlinkButton x:Name="NoticeUndo" Padding="6,0" Click="OnNoticeUndoClick" VerticalAlignment="Center"
                                Visibility="{x:Bind ShownIfTrue(ViewModel.NoticeOffersUndo), Mode=OneWay}"
                                ToolTipService.ToolTip="{x:Bind local:ViewTexts.NoticeUndoTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.NoticeUndoTip}">

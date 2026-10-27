@@ -28,10 +28,10 @@ public class DeskExampleTests
         Assert.Equal(["backpack"], second.Changed.ToList());
         Assert.Equal(Cells(first).Count() + 1, Cells(second).Count());
         Assert.Equal(TimeSpan.FromMinutes(7), second.Sheet.Page.ReadAt - first.Sheet.Page.ReadAt);
-        Assert.Equal(["backpack"], second.Sheet.Page.Regions.Where(r => !DeskPageRules.Kept(r, second.Sheet.Page)).Select(r => r.Key));
+        Assert.Equal(["backpack"], second.Sheet.Page.Regions.Where(r => !DeskPageRules.SteppedBack(r, second.Sheet.Page)).Select(r => r.Key));
         var third = Reading(3);
         Assert.Empty(third.Changed);
-        Assert.Equal(["backpack"], third.Sheet.Page.Regions.Where(r => !DeskPageRules.Kept(r, third.Sheet.Page)).Select(r => r.Key));
+        Assert.Equal(["backpack"], third.Sheet.Page.Regions.Where(r => !DeskPageRules.SteppedBack(r, third.Sheet.Page)).Select(r => r.Key));
         Assert.All(new[] { first, second, third }, view => Assert.DoesNotContain(view.Sheet.Regions, r => r.Region.Kind == DeskRegionKind.Pouch));
         // Out of range: the nearest.
         Assert.True(DeskExample.View(0, GameMode.Pve, 1, null, DateTimeOffset.UnixEpoch).First);

@@ -8,11 +8,13 @@ using static Shturmap.Session.Tests.DeskSessionTests;
 namespace Shturmap.Session.Tests;
 
 // The stash desk's prices while it is on screen (owner, 2026-10-26: "When finding prices in the stash it's important that
-// they are recent"; docs/DESIGN.md §3, "The stash desk's prices come per reading"): the item file is asked for again as it
-// turns five minutes old while the desk is on screen, out of a raid, and at once when the desk comes back with older
-// prices; never while it is off screen or in a raid; one request at a time, a failure (or a saved copy no newer) tried
-// again five minutes on, never in a loop; what comes in prices the page again, quietly. A clock and a loader of the test's
-// own: no request leaves the PC, and five minutes pass at the test's word.
+// they are recent"; 2026-10-27, D3 E: "Ask when the file is due"; docs/DESIGN.md §3, "The stash desk's prices come per
+// reading"): while no rhythm of the file is known, the item file is asked for again as it turns five minutes old; once two
+// files a beat apart were seen, when the next is due by its Last-Modified, then each minute while it is late; always while
+// the desk is on screen, out of a raid, and at once when the desk comes back with a file past due; never while it is off
+// screen or in a raid; one request at a time, a failure (or a saved copy no newer) tried again five minutes on, never in a
+// loop, the head line's age offline meanwhile; what comes in prices the page again, quietly, and the same file again
+// changes nothing. A clock and a loader of the test's own: no request leaves the PC, and minutes pass at the test's word.
 public class DeskPricesSessionTests
 {
     // The clock the session's prices go by, moved by the test.
@@ -40,6 +42,12 @@ public class DeskPricesSessionTests
         public bool Saved { get; set; }
         public TaskCompletionSource? Held { get; set; }
 
+        // The file's Last-Modified as tarkov.dev would send it; asked for again while it is the same, the file in hand comes
+        // back confirmed ("not modified"), as GameDataLoader gives it.
+        public DateTimeOffset? Modified { get; set; }
+
+        private ItemSources? _last;
+
         public async Task<ItemSources> LoadAsync(GameMode mode, string language, CancellationToken ct)
         {
             Interlocked.Increment(ref _asked);
@@ -47,16 +55,20 @@ public class DeskPricesSessionTests
                 await held.Task.WaitAsync(ct);
             if (Fails is { } e)
                 throw e;
-            return PricedAt(Price, Saved ? savedAt : new DateTimeOffset(clock.Now));
+            var now = new DateTimeOffset(clock.Now);
+            if (Modified is { } file && _last is { ModifiedAt: { } had } last && had == file)
+                return last.Confirmed(now);
+            return _last = PricedAt(Price, Saved ? savedAt : now, Modified);
         }
     }
 
-    private static ItemSources PricedAt(double water, DateTimeOffset at) => new()
+    // The water scanned three minutes before the file was had.
+    private static ItemSources PricedAt(double water, DateTimeOffset at, DateTimeOffset? modified = null) => new()
     {
         Items = new Dictionary<string, ApiItem>
         {
             [Water] = new(Water, ["provisions"], 1, water, [], BasePrice: 10_000, Width: 1, Height: 2, LastOfferCount: 80,
-                SellToTrader: [new ApiTraderPrice("trader-a", 5_000, "RUB", 5_000)]),
+                SellToTrader: [new ApiTraderPrice("trader-a", 5_000, "RUB", 5_000)], Updated: (at - TimeSpan.FromMinutes(3)).ToString("o")),
             [Wallet] = new(Wallet, ["container"], 1, null, [], BasePrice: 1_000, HasGrid: true,
                 SellToTrader: [new ApiTraderPrice("trader-a", 900, "RUB", 900)]),
         },
@@ -65,6 +77,7 @@ public class DeskPricesSessionTests
         Stations = new Dictionary<string, string>(),
         FleaMarket = new ApiFleaMarket(15, true, 0.05, 0.05, false),
         PricesAt = at,
+        ModifiedAt = modified,
     };
 
     private static TimeSpan Minutes(double m) => TimeSpan.FromMinutes(m);
@@ -122,6 +135,9 @@ public class DeskPricesSessionTests
         Assert.True(after.Sheet.Totals.Stash > before.Sheet.Totals.Stash);
         Assert.Equal(before.Reading, after.Reading);
         Assert.Equal(before.First, after.First);
+        // The head line's age from the newest scan in the file (owner, 2026-10-27, D2 C), tarkov.dev reached.
+        Assert.Equal(clock.At(Minutes(2)), after.PricesScannedAt);
+        Assert.True(after.PricesReached);
 
         // The next five minutes after that file, not before.
         clock.Set(Minutes(9.99));
@@ -200,10 +216,13 @@ public class DeskPricesSessionTests
         var (rig, clock, loader) = await DeskAsync();
         await using var _ = rig;
         var before = rig.Snapshot.Desk!;
+        Assert.True(before.PricesReached);
         loader.Fails = new HttpRequestException("no route to json.tarkov.dev");
         rig.Session.SetDeskOnScreen(true);
         clock.Set(Minutes(5));
         await rig.Until(() => loader.Asked == 1, "the prices asked for");
+        // tarkov.dev not reached: the head line's age says so (owner, 2026-10-27, D2 C), the prices as they were.
+        Assert.False((await rig.Until(s => !s.Desk!.PricesReached, "the prices offline")).Desk!.PricesReached);
         await Quiet();
         Assert.Equal(1, loader.Asked);
         clock.Set(Minutes(9.99));
@@ -230,5 +249,57 @@ public class DeskPricesSessionTests
         await rig.Until(() => loader.Asked == 3, "the third ask");
         var after = (await rig.Until(s => s.Desk!.PricesAt == clock.At(Minutes(15)), "the page priced again")).Desk!;
         Assert.Equal(2 * 30_000, WaterOf(after).Figure!.Value);
+        Assert.True(after.PricesReached);
+    }
+
+    // D3 E (owner, 2026-10-27): files of 0:04 and 0:09 seen at five and ten minutes, a beat of five: the next is due at
+    // 14:45 (0:09 + 5:00 + 0:45), sooner than five minutes after the last ask; still the same file then, so each minute,
+    // the page untouched; the file of 14:50 at 15:45, and the next due at 20:35.
+    [Fact]
+    public async Task Once_the_files_rhythm_is_seen_the_prices_are_asked_for_when_the_next_file_is_due_and_each_minute_while_it_is_late()
+    {
+        var (rig, clock, loader) = await DeskAsync();
+        await using var _ = rig;
+        rig.Session.SetDeskOnScreen(true);
+
+        // No rhythm yet: every five minutes.
+        loader.Modified = clock.At(Minutes(4));
+        clock.Set(Minutes(5));
+        await rig.Until(() => loader.Asked == 1, "the first ask, five minutes on");
+        await rig.Until(s => s.Desk!.PricesAt == clock.At(Minutes(5)), "the file of 0:04");
+        loader.Modified = clock.At(Minutes(9));
+        clock.Set(Minutes(10));
+        await rig.Until(() => loader.Asked == 2, "the second ask, five minutes on");
+        await rig.Until(s => s.Desk!.PricesAt == clock.At(Minutes(10)), "the file of 0:09");
+
+        // Two files a beat apart: the next is due at 14:45.
+        clock.Set(Minutes(14.7));
+        await Quiet();
+        Assert.Equal(2, loader.Asked);
+        clock.Set(Minutes(14.75));
+        await rig.Until(() => loader.Asked == 3, "the ask when the next file is due");
+
+        // Still the same file: nothing on the page changes, and the next ask is a minute on.
+        var unchanged = rig.Snapshot.Desk!;
+        await Quiet();
+        Assert.Same(unchanged, rig.Snapshot.Desk);
+        clock.Set(Minutes(15.7));
+        await Quiet();
+        Assert.Equal(3, loader.Asked);
+        clock.Set(Minutes(15.75));
+        await rig.Until(() => loader.Asked == 4, "the ask a minute on");
+
+        // The next file at last: the page priced again; due a beat after it.
+        loader.Modified = clock.At(Minutes(14) + TimeSpan.FromSeconds(50));
+        loader.Price = 40_000;
+        clock.Set(Minutes(16.75));
+        await rig.Until(() => loader.Asked == 5, "the ask another minute on");
+        var after = (await rig.Until(s => WaterOf(s.Desk!).Figure?.Value == 2 * 40_000, "the file of 14:50")).Desk!;
+        Assert.Equal(unchanged.Reading, after.Reading);
+        clock.Set(Minutes(20.55));
+        await Quiet();
+        Assert.Equal(5, loader.Asked);
+        clock.Set(Minutes(20.6));
+        await rig.Until(() => loader.Asked == 6, "the ask when the file after is due");
     }
 }

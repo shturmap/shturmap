@@ -13,10 +13,9 @@ namespace Shturmap.Core.Desk;
 /// <param name="Sheet">The page and its values: <see cref="DeskSheet.Page"/> (when it was read, its regions),
 /// <see cref="DeskSheet.Regions"/> (in reading order, each with its part ON YOU, STASH or neither, its total and its "+",
 /// its cells' figures and notches), <see cref="DeskSheet.Totals"/> (the head line "ON YOU … · STASH … · KEEP n · n · n").</param>
-/// <param name="Changed">The keys of the regions the last reading changed (*The head line and the fold*): the view opens
-/// these and folds the rest into "UNCHANGED · POUCH ▸ · STASH ▸"; empty when the last reading changed nothing (then the
-/// fold stays as it was).</param>
-/// <param name="First">The last reading was the mode's first: every region opens.</param>
+/// <param name="Changed">The keys of the regions the last reading changed: their cells come in (*Fun*); empty when the last
+/// reading changed nothing.</param>
+/// <param name="First">The last reading was the mode's first: every region comes in.</param>
 /// <param name="Reading">Counts up with every reading taken (a reading that changed nothing too), so a view can tell a new
 /// one from a republish.</param>
 /// <param name="PricesAt">When the item file with the prices was last confirmed current with tarkov.dev (the card's "Prices 4
@@ -33,4 +32,12 @@ public sealed record DeskView(GameMode Mode, DeskSheet Sheet, IReadOnlySet<strin
 
     /// <summary>The flea's rules the figures were made with, for a click's copy.</summary>
     public DeskFleaRules Flea { get; init; } = DeskFleaRules.Default;
+
+    /// <summary>The newest scan in the item file in hand (owner, 2026-10-27, D2 C: the head line's "PRICES 3 MIN OLD");
+    /// null where no item says when it was scanned (<see cref="PricesAt"/> then stands for it).</summary>
+    public DateTimeOffset? PricesScannedAt { get; init; }
+
+    /// <summary>tarkov.dev was reached at the desk's last ask for prices (and the file in hand isn't a saved copy had
+    /// offline); false makes the head line's age amber and say so (owner, 2026-10-27, D2 C).</summary>
+    public bool PricesReached { get; init; } = true;
 }

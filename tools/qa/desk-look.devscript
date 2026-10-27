@@ -1,0 +1,48 @@
+# QA replay of the stash desk's newest look in front (owner, 2026-10-27, from the decision page: D1 B, "The newest
+# screenshot in front"; D2 C, the prices' age in the head line and the copy notice; docs/DESIGN.md §4, *The stash desk*,
+# *The newest look in front*): the regions of the newest look stand full, those of an earlier look step back where they
+# stand (faint, no figures, dated), an earlier look's windows fold to one framed line, and pointing at one shows it
+# whole. The page's shape never changes for it. A developer build plays it with --dev-view --dev-script; how to run it
+# and what each still must show: desk-look.md beside this file. Times are in seconds.
+
+# The tour that opens by itself in a --dev-view session ends first, and its notice is waited out.
+tour end
+map customs
+wait 7
+
+# The first reading: one look, every region full; at the head line's right, PRICES 3 MIN OLD.
+desk 1
+wait 7
+snapshot %TEMP%\shturmap-qa\desk-look\first
+
+# Seven minutes on, a screenshot of the backpack alone: the backpack in front, the rest stepped back and dated, the
+# Zhuk's and the wallets' windows folded to a line each.
+desk 2
+wait 4
+snapshot %TEMP%\shturmap-qa\desk-look\stepped-back
+
+# The rig pointed at: shown whole, its figures back; the rest as it was.
+desk point rig
+wait 1
+snapshot %TEMP%\shturmap-qa\desk-look\rig-pointed
+
+# The Zhuk's folded window pointed at: unfolded in place, the windows under it moved down.
+desk point zhuk
+wait 1
+snapshot %TEMP%\shturmap-qa\desk-look\window-pointed
+
+# The backpack pointed at (the newest look's), the rig back; a click on its Grizzly: the notice says the price's age.
+desk copy backpack 4 1
+wait 1
+snapshot %TEMP%\shturmap-qa\desk-look\copied
+
+# A click on the stash's LEDX, stepped back: shown whole while pointed, its notice's age in amber (52 minutes).
+desk copy stash 8 0
+wait 1
+snapshot %TEMP%\shturmap-qa\desk-look\copied-old
+
+# The same screenshot again two minutes on: nothing changes, nothing comes in.
+desk 3
+wait 4
+snapshot %TEMP%\shturmap-qa\desk-look\again
+exit

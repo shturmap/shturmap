@@ -67,15 +67,15 @@ public static class DevScript
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
         ["stash"] = "the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it",
         ["desk"] = "[<n>] | point|pin|copy <region> [<i> <j> | <slot>] | unpin [<region> <i> <j> | all] | pick <region> <i> <j> | <slot> <n> "
-            + "| rule match|under:<n>|over:<n> | plan | show [<n>] | clear | undo: the made-up stash desk's n-th reading as a reading in the menus brings it "
-            + "(1, the first, every region read but the POUCH, which no reading shows; 2, one that showed and changed the backpack alone, the rest kept, "
-            + "dimmed and dated; 3, the same again, which changed nothing); "
-            + "point, the pointer on a region's cell at that grid place or slot (alone, its first cell: a slot, else its top left item), as the pointer's events do; "
+            + "| rule match|under:<n>|over:<n> | plan | show [<n>]: the made-up stash desk's n-th reading as a reading in the menus brings it "
+            + "(1, the first, every region read but the POUCH, which no reading shows; 2, seven minutes on, one that showed and changed the backpack alone, "
+            + "the rest stepped back and dated, its windows folded; 3, the same again, which changed nothing); "
+            + "point, the pointer on a region's cell at that grid place or slot (alone, its first cell: a slot, else its top left item), as the pointer's events do "
+            + "(a stepped-back region or a folded window shown whole while pointed at); "
             + "pin, the cell right-clicked (its card pinned in the rail, or unpinned); unpin, a pinned card's pin clicked, all of them with all or nothing; "
             + "copy, the cell clicked (its flash, decode and notice; the clipboard left alone in a script); pick, the n-th candidate (from 1) clicked on a \"?\" cell's card; "
             + "rule, the copy's rule as the card's − and + set it; plan and show, PLAN and DESK at the rail's head; "
-            + "show n, the n-th pinned line in the rail's foot clicked, from the top (its card whole in the pointed card's place); "
-            + "clear, CLEAR in the desk's head clicked (the page emptied, its notice with UNDO); undo, the notice's UNDO clicked",
+            + "show n, the n-th pinned line in the rail's foot clicked, from the top (its card whole in the pointed card's place)",
         ["glance"] = "[<n>]: the made-up in-raid glance's n-th reading (1, a drawer with three items; 2, a body: its slots, an UNSEARCHED rig, "
             + "pockets being searched and a searched backpack) as a raid screenshot of an inventory screen brings it; in a raid only",
         ["tasks"] = "[<n>] [ended]: the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, n made-up tasks (3; at most 9: "
@@ -149,8 +149,6 @@ public static class DevScript
         Pick,
         Rule,
         Prices,
-        Clear,
-        Undo,
     }
 
     /// <summary>A "desk" step's parts: the act; the reading; the region and the cell's grid place (−1, −1 for its first
@@ -178,8 +176,8 @@ public static class DevScript
     /// plan" and "desk show" PLAN and DESK clicked, "desk show &lt;n&gt;" the n-th pinned line in the rail's foot clicked, from
     /// the top (UI QA pass of the second round, F3, 2026-10-19), so its card shows whole. "desk prices" the made-up desk's
     /// flea prices a tenth up, as the session's new prices every five minutes bring them, and "desk probe &lt;n&gt;" its reading
-    /// n: each says how many of the page's pictures the first frame after it drew (2026-10-26). "desk clear" CLEAR in the
-    /// desk's head clicked, "desk undo" the notice's UNDO clicked (owner, 2026-10-26). A region is its key (loadout, rig,
+    /// n: each says how many of the page's pictures the first frame after it drew (2026-10-26). ("desk clear" and "desk
+    /// undo", CLEAR and its UNDO, went with them on 2026-10-27.) A region is its key (loadout, rig,
     /// pockets, special, backpack, pouch, stash) or a window's title (zhuk); a slot its key (headwear, armband). Null for
     /// anything else.
     /// </summary>
@@ -195,8 +193,6 @@ public static class DevScript
             [var n] when Number(n, out var reading) && reading is >= 1 and <= 3 => new DeskStep(DeskAct.Reading, reading),
             [var probe, var n] when Is(probe, "probe") && Number(n, out var reading) && reading is >= 1 and <= 3 => new DeskStep(DeskAct.Reading, reading) { Probe = true },
             [var prices] when Is(prices, "prices") => new DeskStep(DeskAct.Prices) { Probe = true },
-            [var clear] when Is(clear, "clear") => new DeskStep(DeskAct.Clear),
-            [var undo] when Is(undo, "undo") => new DeskStep(DeskAct.Undo),
             [var plan] when Is(plan, "plan") => new DeskStep(DeskAct.Plan),
             [var show] when Is(show, "show") => new DeskStep(DeskAct.Show),
             [var show, var n] when Is(show, "show") && Number(n, out var line) && line >= 1 => new DeskStep(DeskAct.ShowPin) { N = line },
@@ -357,7 +353,7 @@ public static class DevScript
             if (verb == "desk" && DeskOf(step) is null)
             {
                 errors.Add($"line {i + 1}: 'desk' takes a reading (1 to 3), 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
-                    + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan', 'show [<n>]', 'prices', 'probe <n>', 'clear' or 'undo'");
+                    + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan', 'show [<n>]', 'prices' or 'probe <n>'");
                 continue;
             }
             if (verb == "glance" && GlanceOf(step) is null)

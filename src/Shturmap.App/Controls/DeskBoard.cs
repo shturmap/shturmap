@@ -20,8 +20,10 @@ namespace Shturmap.App.Controls;
 /// grid, each box under its slot's name; TACTICAL RIG, POCKETS beside SPECIAL SLOTS, BACKPACK and POUCH, a container's
 /// slot box beside its grid; STASH; the windows in a fourth column or under the stash (<see cref="DeskPageRules.Layout"/>:
 /// the cell's size by the desk's size alone, 40 to 128 DIP). A region no reading showed is its head over a dashed frame
-/// ("NOT IN A SCREENSHOT YET"); one the last screenshot didn't show is drawn a step dimmer, its head saying since when
-/// ("BACKPACK · 23:08"). A click on a cell copies its list price, a right-click pins its card. Each cell mirrors the
+/// ("NOT IN A SCREENSHOT YET"); the newest look's regions stand full, one of an earlier look steps back where it stands,
+/// faint, its figures not shown, its head saying since when ("BACKPACK · 23:08"), an earlier look's window folds to its head
+/// line, and pointing at either shows it whole (owner, 2026-10-27, D1 B). At the head line's right, how old the prices are
+/// ("PRICES 3 MIN OLD"; D2 C). A click on a cell copies its list price, a right-click pins its card. Each cell mirrors the
 /// screenshot's, drawn from the catalogue's art with its figure, count, keep notch, change and tint (<see cref="DeskCells"/>);
 /// a container's open window stands under "ZHUK · IN THE BACKPACK", stemmed to its cell, and pointing at either lights the
 /// other. What a reading changed comes in cell by cell, 50 ms apart, as the kit's pictures do, and the totals count up
@@ -40,9 +42,6 @@ public sealed partial class DeskBoard : Grid
     /// <summary>A cell was right-clicked: its card is pinned in the rail, or unpinned.</summary>
     public event Action<DeskCellView>? CellPinToggled;
 
-    /// <summary>CLEAR in the head was clicked: the page in hand is emptied (owner, 2026-10-26; Rules.DeskClearing).</summary>
-    public event Action? ClearClicked;
-
     // The cells whose cards are pinned in the rail: their tab on the page.
     private IReadOnlySet<DeskCellKey> _pinned = new HashSet<DeskCellKey>();
 
@@ -53,27 +52,20 @@ public sealed partial class DeskBoard : Grid
     // The head line's margins: 14 DIP over it, 4 under it, the page's lane under that (DeskPageRules.Lane).
     private const double HeadTop = 14, HeadBottom = 4;
 
-    // The room between the head line and CLEAR at its right.
-    private const double ClearGap = 16;
+    // The room between the head line and the prices' age at its right.
+    private const double AgeGap = 16;
 
-    /// <summary>CLEAR's name in the desk's head, for the layout check and the developer view.</summary>
-    public const string ClearName = "DeskClear";
+    /// <summary>The prices' age's name in the desk's head, for the layout check and the developer view.</summary>
+    public const string AgeName = "DeskPricesAge";
 
-    /// <summary>Whether CLEAR stands in the desk's head (the developer view).</summary>
-    public bool ClearShown => _clear.Visibility == Visibility.Visible && _headRow.Visibility == Visibility.Visible;
-
-    // CLEAR's word and tip, said anew with each build: a language switch builds the page anew (MainWindow.RetellDesk).
-    private void ClearWords()
-    {
-        _clearWords.Text = AppTexts.DeskClear;
-        ToolTipService.SetToolTip(_clear, AppTexts.DeskClearTip);
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_clear, AppTexts.DeskClear);
-    }
+    /// <summary>The prices' age as it stands at the head line's right ("PRICES 3 MIN OLD"), empty where none shows; and
+    /// whether it is amber (the developer view, tests by eye).</summary>
+    public (string Text, bool Amber) AgeShown => (_age.Visibility == Visibility.Visible ? _age.Text : "", _ageAmber);
 
     private readonly TextBlock _head;
     private readonly Grid _headRow;
-    private readonly HyperlinkButton _clear;
-    private readonly TextBlock _clearWords;
+    private readonly TextBlock _age;
+    private bool _ageAmber;
     private readonly TextBlock _empty;
     private readonly ScrollViewer _scroll;
     private readonly Grid _more;
@@ -114,37 +106,29 @@ public sealed partial class DeskBoard : Grid
         {
             Style = (Style)Application.Current.Resources["StatusText"],
             Foreground = Brush("MutedBrush"),
-            Margin = new Thickness(Gap, HeadTop, ClearGap, HeadBottom),
+            Margin = new Thickness(Gap, HeadTop, AgeGap, HeadBottom),
             TextWrapping = TextWrapping.Wrap,
         };
-        // CLEAR at the head line's right, in the app's text links' style (FORGET ALL MARKS, help's TAKE THE TOUR): small,
-        // amber, a word in capitals (owner, 2026-10-26: "Button + fresh after raid"; docs/DESIGN.md §4, *The stash desk*,
-        // *Clearing the page*). At the desk's right edge it stands still while the totals count up beside it.
-        _clearWords = new TextBlock
+        // The prices' age at the head line's right, in its muted capitals, amber past 20 minutes or offline (owner,
+        // 2026-10-27, from the decision page: D2 C; docs/DESIGN.md §4, *The stash desk*, *The head line*). At the desk's
+        // right edge, where CLEAR stood until then, it stands still while the totals count up beside it.
+        _age = new TextBlock
         {
+            Name = AgeName,
             Style = (Style)Application.Current.Resources["StatusText"],
-            FontSize = 11,
-            Foreground = Brush("AmberBrush"),
-            Text = AppTexts.DeskClear,
-        };
-        _clear = new HyperlinkButton
-        {
-            Name = ClearName,
-            Padding = new Thickness(0),
+            Foreground = Brush("MutedBrush"),
             Margin = new Thickness(0, HeadTop, Gap, HeadBottom),
             VerticalAlignment = VerticalAlignment.Top,
-            Content = _clearWords,
+            TextWrapping = TextWrapping.NoWrap,
             Visibility = Visibility.Collapsed,
         };
-        _clear.Click += (_, _) => ClearClicked?.Invoke();
         _headRow = new Grid();
         _headRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         _headRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         _headRow.Children.Add(_head);
-        SetColumn(_clear, 1);
-        _headRow.Children.Add(_clear);
+        SetColumn(_age, 1);
+        _headRow.Children.Add(_age);
         Children.Add(_headRow);
-        ClearWords();
         _empty = new TextBlock
         {
             Style = (Style)Application.Current.Resources["NoteText"],
@@ -273,13 +257,12 @@ public sealed partial class DeskBoard : Grid
     /// apart, and the totals count up from what the head line said (from nothing on the page's first showing); without,
     /// the page stands at once (animation effects off, a snapshot run).
     /// </summary>
-    /// <param name="clearable">CLEAR stands in the head (<see cref="DeskClearing.Offered"/>).</param>
-    public void Show(DeskView? view, IReadOnlySet<string> entering, bool motion, bool clearable = false)
+    public void Show(DeskView? view, IReadOnlySet<string> entering, bool motion)
     {
         var had = _view is not null;
         _view = view;
-        _clear.Visibility = clearable && view is not null ? Visibility.Visible : Visibility.Collapsed;
         var cells = Build(motion ? entering : null);
+        ShowAge(DateTimeOffset.Now);
         if (view is null)
             return;
         var to = (view.Sheet.Totals.OnYou, view.Sheet.Totals.Stash);
@@ -306,10 +289,13 @@ public sealed partial class DeskBoard : Grid
     /// <summary>The first cell of a region (its slot, else its first grid cell), for the developer script.</summary>
     public DeskCellView? FirstCellOf(string region) => _cellViews.FirstOrDefault(c => c.Region.Key == region);
 
-    /// <summary>Points at a cell as the pointer does: its card in the rail, and a window's or its cell's light. The page
-    /// scrolls to the cell first, as the pointer could only reach it in view (the developer script's "desk point").</summary>
+    /// <summary>Points at a cell as the pointer does: its card in the rail, a window's or its cell's light, and its region
+    /// shown whole where it steps back (the others stepped back again). The page scrolls to the cell first, as the pointer
+    /// could only reach it in view (the developer script's "desk point").</summary>
     public void Point(DeskCellView? cell)
     {
+        foreach (var (key, show) in _steppedBack)
+            show(cell is not null && key == cell.Region.Key);
         cell?.StartBringIntoView(new BringIntoViewOptions { AnimationDesired = false, VerticalAlignmentRatio = 0.15 });
         foreach (var link in _links)
             Light(link, cell is not null && (ReferenceEquals(link.Anchor, cell) || link.Panel == PanelOf(cell)));
@@ -317,8 +303,27 @@ public sealed partial class DeskBoard : Grid
             CellPointed?.Invoke(cell);
     }
 
-    /// <summary>The page back at its top, at once (CLEAR: the empty page stands from its head, as a first reading's does).</summary>
-    public void ScrollToTop() => _scroll.ChangeView(null, 0, null, disableAnimation: true);
+    /// <summary>
+    /// The prices' age at the head line's right, as it is now (owner, 2026-10-27, D2 C; DeskPageRules.PricesAge): "PRICES 3
+    /// MIN OLD" in the head line's muted capitals, amber past 20 minutes or where tarkov.dev wasn't reached; none while no
+    /// prices are in. The window says it again every second (its clock), so it ticks with the minutes.
+    /// </summary>
+    public void ShowAge(DateTimeOffset now)
+    {
+        if (_view is not { } view || DeskPageRules.PricesAge(view, now) is not { } age)
+        {
+            _age.Visibility = Visibility.Collapsed;
+            return;
+        }
+        if (_age.Text != age.Text)
+            _age.Text = age.Text;
+        if (_ageAmber != age.Amber || _age.Visibility != Visibility.Visible)
+        {
+            _ageAmber = age.Amber;
+            _age.Foreground = Brush(age.Amber ? "AmberBrush" : "MutedBrush");
+        }
+        _age.Visibility = Visibility.Visible;
+    }
 
     /// <summary>PgUp and PgDn: the page up or down by most of what shows.</summary>
     public void PageBy(int direction)
@@ -473,10 +478,10 @@ public sealed partial class DeskBoard : Grid
         _links.Clear();
         _cellViews.Clear();
         _boxes.Clear();
+        _steppedBack.Clear();
         var entered = new List<DeskCellView>();
-        ClearWords();
-        // No page: the one line. A page of no region (cleared, or a reading that read nothing) stands as the page does,
-        // every region in its place as never read (owner, 2026-10-26: CLEAR).
+        // No page: the one line. A page of no region (a reading that read nothing; the desk file as CLEAR left it, 2026-10-26
+        // to 27) stands as the page does, every region in its place as never read.
         if (_view is not { } view)
         {
             _headRow.Visibility = Visibility.Collapsed;
@@ -569,24 +574,33 @@ public sealed partial class DeskBoard : Grid
         return entered;
     }
 
-    // A region under its head (dated where the last screenshot didn't show it, the block then a step dimmer): the muted
-    // "Not attached" line of a window attached to none; LOADOUT's slot grid; a container's slot box beside its grid; a grid.
+    // The regions stepped back on the page, by key: each shows itself whole while pointed at, or steps back again.
+    private readonly Dictionary<string, Action<bool>> _steppedBack = new(StringComparer.Ordinal);
+
+    // Before a folded window's head, and while it is shown whole: what pointing at it does.
+    private const string FoldedMark = "\u00A0▸", UnfoldedMark = "\u00A0▾";
+
+    // A region under its head (dated where it steps back, an earlier look's): the muted "Not attached" line of a window
+    // attached to none; LOADOUT's slot grid; a container's slot box beside its grid; a grid.
     private (FrameworkElement Block, FrameworkElement Head, Border Light) RegionBlock(DeskRegionSheet sheet, DeskPage page, DateTimeOffset now, double size,
         double width, IReadOnlySet<string>? entering, List<DeskCellView> entered)
     {
         var region = sheet.Region;
+        var folds = DeskPageRules.Folds(region, page);
         var block = new StackPanel
         {
             Spacing = DeskPageRules.HeadGap, Tag = region.Key, Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
             HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
         };
-        var head = Head(DeskPageRules.HeadOf(region, page, now), size, width);
+        var headWords = DeskPageRules.HeadOf(region, page, now);
+        var head = Head(folds ? headWords + FoldedMark : headWords, size, width);
         // The linked highlight's gold behind the head of a window whose cell is pointed at, as wide as the words.
         var light = new Border { Background = Brush("LinkBrush"), Opacity = 0, IsHitTestVisible = false, Margin = new Thickness(-4, -2, -4, -2) };
         var lit = new Grid { HorizontalAlignment = HorizontalAlignment.Left };
         lit.Children.Add(light);
         lit.Children.Add(head);
-        block.Children.Add(HeadCell(DeskPageRules.Head(region, page), lit, size, width));
+        block.Children.Add(HeadCell(folds ? DeskPageRules.Head(region, page) + FoldedMark : DeskPageRules.Head(region, page), lit, size, width));
+        var firstCell = _cellViews.Count;
         if (DeskPageRules.NotAttached(sheet) is { } line)
             block.Children.Add(new TextBlock { Style = (Style)Application.Current.Resources["NoteText"], Text = line, MaxWidth = width });
 
@@ -609,10 +623,71 @@ public sealed partial class DeskBoard : Grid
         }
         else if (GridOf(region, sheet, size, comes, entered) is { } grid)
             block.Children.Add(grid);
-        // A region the last screenshot didn't show: whole, a step dimmer; its cards and clicks as ever.
-        if (DeskPageRules.Kept(region, page))
-            block.Opacity = DeskPageRules.KeptOpacity;
-        return (block, head, light);
+        if (!DeskPageRules.SteppedBack(region, page))
+            return (block, head, light);
+        return (StepBack(block, head, headWords, _cellViews.Skip(firstCell).ToList(), folds, width), head, light);
+    }
+
+    // An earlier look's region stepped back where it stands (owner, 2026-10-27, from the decision page: D1 B, "The newest
+    // screenshot in front"; docs/DESIGN.md §4, *The stash desk*, *The newest look in front*): its head whole and dated, what
+    // it holds faint (its grid, slot boxes and slot names at 25 %) and its cells' figures not shown; a window folds to its
+    // head line in a hairline frame, "▸" after it. Pointing at it shows it whole (a window unfolds in place, "▾", the windows
+    // under it moving down: they stand at the page's tail, so the three columns never move), at once, as the page's other
+    // states change (the desk moves three ways and no more); its cards and clicks as ever. The totals count it all along.
+    private FrameworkElement StepBack(StackPanel block, TextBlock head, string headWords, List<DeskCellView> cells, bool folds, double width)
+    {
+        var held = block.Children.Skip(1).OfType<FrameworkElement>().ToList();
+        var shown = true;
+        void Show(bool whole)
+        {
+            if (whole == shown)
+                return;
+            shown = whole;
+            foreach (var part in held)
+            {
+                if (folds)
+                    part.Visibility = whole ? Visibility.Visible : Visibility.Collapsed;
+                else
+                    part.Opacity = whole ? 1 : DeskPageRules.SteppedBackOpacity;
+            }
+            foreach (var cell in cells)
+                cell.Hushed = !whole;
+            if (folds)
+            {
+                head.Text = headWords + (whole ? UnfoldedMark : FoldedMark);
+                // The windows under it move: their stems follow.
+                _stemsDue = true;
+            }
+        }
+        Show(false);
+        FrameworkElement outer = block;
+        if (folds)
+        {
+            // The fold's hairline frame round the window, 8 DIP out at the sides and 6 over and under, in the gaps around it:
+            // it takes no room, so the window stands where it would.
+            var framed = new Grid
+            {
+                Tag = block.Tag, Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Width = width,
+            };
+            block.Tag = null;
+            framed.Children.Add(block);
+            framed.Children.Add(new Rectangle
+            {
+                Stroke = Brush("LineBrush"), StrokeThickness = 1, Margin = new Thickness(-8, -6, -8, -6), IsHitTestVisible = false,
+            });
+            outer = framed;
+        }
+        outer.PointerEntered += (_, _) => Show(true);
+        outer.PointerExited += (_, e) =>
+        {
+            // A cell's own leaving comes here too: only the pointer off the region steps it back.
+            var at = e.GetCurrentPoint(outer).Position;
+            if (at.X < 0 || at.Y < 0 || at.X >= outer.ActualWidth || at.Y >= outer.ActualHeight)
+                Show(false);
+        };
+        _steppedBack[(string)outer.Tag] = Show;
+        return outer;
     }
 
     // POCKETS and SPECIAL SLOTS side by side: their heads' cells as tall as the taller, so their grids stand level as the

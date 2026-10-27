@@ -72,11 +72,11 @@ public sealed partial class DeskCellView : Grid
         if (Marks.Plate)
             Children.Add(Plate(Marks.PlateLow ? 2 : Marks.Notch != DeskNotch.None ? DeskCells.NotchAt(size) + 2 : 2, Marks.PlateLow, size));
         if (Marks.Figure is { } figure)
-            Children.Add(FigureRow(figure));
+            Children.Add(Figure(FigureRow(figure)));
         if (Marks.Count is { } count)
-            Children.Add(Corner(count, HorizontalAlignment.Right));
+            Children.Add(Figure(Corner(count, HorizontalAlignment.Right)));
         if (Marks.Change is { } change)
-            Children.Add(Corner(change, HorizontalAlignment.Left));
+            Children.Add(Figure(Corner(change, HorizontalAlignment.Left)));
         // The linked highlight: gold at 18 % over the cell while its window's head is pointed at (DeskBoard).
         Light = new Border { Background = DeskBoard.Brush("LinkBrush"), BorderBrush = DeskBoard.Brush("AmberBrush"), BorderThickness = new Thickness(1), Opacity = 0, IsHitTestVisible = false };
         Children.Add(Light);
@@ -119,6 +119,29 @@ public sealed partial class DeskCellView : Grid
 
     /// <summary>The figure's number as shown, without its "~".</summary>
     public string? FigureNumber { get; private set; }
+
+    // The figure, the count and the change: hidden while the cell's region steps back (Hushed).
+    private readonly List<FrameworkElement> _figures = [];
+    private bool _hushed;
+
+    private FrameworkElement Figure(FrameworkElement figure)
+    {
+        _figures.Add(figure);
+        return figure;
+    }
+
+    /// <summary>The cell's figures not shown, its region stepped back (owner, 2026-10-27, D1 B: "no figures, faint"); shown
+    /// again while the region is pointed at. Its art, notch and pin stay.</summary>
+    public bool Hushed
+    {
+        get => _hushed;
+        set
+        {
+            _hushed = value;
+            foreach (var figure in _figures)
+                figure.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+        }
+    }
 
     /// <summary>Marks the cell as pinned or not.</summary>
     public bool Pinned

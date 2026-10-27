@@ -140,10 +140,7 @@ public static class DeskCards
         IReadOnlyList<DeskCardSource>? sources = null)
     {
         var cell = sheet.Cell;
-        // The prices' age from tarkov.dev's scan of the item (owner, 2026-10-19: "Prices 8 min old" counted from the fetch
-        // while the scan was 50 minutes old); of a "?" cell its candidates' newest scan; the file's fetch where none says.
-        var scanned = (cell.ItemId is { } item ? [item] : cell.Ids).Select(context.Facts).Select(f => f?.Updated).OfType<DateTimeOffset>().ToList();
-        var age = Age(scanned.Count > 0 ? scanned.Max() : context.PricesAt, context.Now);
+        var age = Age(ScannedAt(cell, context), context.Now);
         var copy = DeskCopies.Of(cell, cell.ItemId is { } one ? context.Facts(one) : null, context.Flea, context.Rule);
         if (cell.ItemId is not { } id)
         {
@@ -319,6 +316,32 @@ public static class DeskCards
         var text = RuleTexts.DeskChange(change: sign + Math.Abs(tenth).ToString("0.#", UiLanguage.Culture));
         // The arrow joined to its change by a no-break space, so a line never ends in it (the senior translator, 2026-10-19).
         return tenth > 0 ? "↑\u00A0" + text : tenth < 0 ? "↓\u00A0" + text : text;
+    }
+
+    /// <summary>When a cell's prices were scanned, as the card counts their age (owner, 2026-10-19: "Prices 8 min old"
+    /// counted from the fetch while the scan was 50 minutes old): tarkov.dev's scan of the item; of a "?" cell its
+    /// candidates' newest scan; the file's fetch where none says. Null while the prices haven't loaded.</summary>
+    public static DateTimeOffset? ScannedAt(DeskCell cell, DeskCardContext context)
+    {
+        var scanned = (cell.ItemId is { } item ? [item] : cell.Ids).Select(context.Facts).Select(f => f?.Updated).OfType<DateTimeOffset>().ToList();
+        return scanned.Count > 0 ? scanned.Max() : context.PricesAt;
+    }
+
+    /// <summary>The copy notice's age turns amber past this (owner, 2026-10-27, D2 C: "In amber past 30 min").</summary>
+    public static readonly TimeSpan CopiedStale = TimeSpan.FromMinutes(30);
+
+    /// <summary>
+    /// The end of a copy's notice (owner, 2026-10-27, from the decision page: D2 C, the item's own age in the copy notice):
+    /// how old the copied price is, from tarkov.dev's scan of that item as the card counts it (<see cref="ScannedAt"/>),
+    /// "price 2 min old", in hours from two on; amber past <see cref="CopiedStale"/>. Null while the prices haven't loaded.
+    /// </summary>
+    public static (string Text, bool Amber)? CopiedAge(DeskCell cell, DeskCardContext context)
+    {
+        if (ScannedAt(cell, context) is not { } at)
+            return null;
+        var age = context.Now - at;
+        var minutes = (int)Math.Max(0, Math.Floor(age.TotalMinutes));
+        return (minutes < 120 ? RuleTexts.DeskCopiedAge(minutes: minutes) : RuleTexts.DeskCopiedAgeHours(hours: minutes / 60), age > CopiedStale);
     }
 
     /// <summary>"Prices 4 min old · tarkov.dev", in hours from two on, counted from tarkov.dev's scan; null while the prices

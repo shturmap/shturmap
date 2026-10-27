@@ -471,15 +471,6 @@ public sealed partial class MainWindow
         return line;
     }
 
-    /// <summary>The developer script's "desk clear" and "desk undo" (owner, 2026-10-26): CLEAR in the desk's head clicked, the
-    /// notice's UNDO clicked, through the code the clicks call; what was done, or why not.</summary>
-    internal async Task<string> DevDeskClearAsync(DevScript.DeskStep step)
-    {
-        var line = step.Act == DevScript.DeskAct.Clear ? await ClearDeskAsync("dev") : await UndoNoticeAsync("dev");
-        AppLog.Info("Developer view: " + line + (step.Act == DevScript.DeskAct.Clear ? $" (CLEAR now {(StashDesk.ClearShown ? "shown" : "gone")})" : ""));
-        return line;
-    }
-
     /// <summary>The developer script's "desk" (DevScript.DeskOf): what was done, or why not.</summary>
     internal string DevDesk(DevScript.DeskStep step)
     {

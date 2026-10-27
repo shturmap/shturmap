@@ -8,7 +8,13 @@ namespace Shturmap.Data.Http;
 /// <param name="FromNetwork">A new body was downloaded in this call.</param>
 /// <param name="Stale">No usable answer came (the network failed, or a page came in place of the data) and an older
 /// copy is being used.</param>
-public sealed record CachedResponse(string FilePath, bool FromNetwork, bool Stale, DateTimeOffset FetchedAt);
+public sealed record CachedResponse(string FilePath, bool FromNetwork, bool Stale, DateTimeOffset FetchedAt)
+{
+    /// <summary>The body's Last-Modified as the server sent it with the body (kept over its "not modified" answers); null
+    /// where it sent none. The stash desk times its asks for the item file by it (docs/DESIGN.md §3, "The stash desk's
+    /// prices come per reading").</summary>
+    public DateTimeOffset? LastModified { get; init; }
+}
 
 /// <summary>
 /// An answer 200 that isn't the data asked for (<see cref="CachedHttp.GetAsync"/> with json): a page a sign-in portal,
@@ -105,7 +111,7 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
         var cached = meta is not null && File.Exists(body);
 
         if (cached && DateTimeOffset.UtcNow - meta!.FetchedAt < maxAge)
-            return new CachedResponse(body, false, false, meta.FetchedAt);
+            return new CachedResponse(body, false, false, meta.FetchedAt) { LastModified = meta.LastModified };
 
         try
         {
@@ -120,7 +126,7 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
             if (response.StatusCode == HttpStatusCode.NotModified && cached)
             {
                 await WriteMetaAsync(metaPath, meta! with { FetchedAt = now });
-                return new CachedResponse(body, false, false, now);
+                return new CachedResponse(body, false, false, now) { LastModified = meta.LastModified };
             }
             // Which address answered what, for the app log; the player sees LoadProblem's words.
             if (!response.IsSuccessStatusCode)
@@ -139,9 +145,10 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
             {
                 TryDelete(temp);
             }
-            await WriteMetaAsync(metaPath, new Meta(response.Headers.ETag?.ToString(), response.Content.Headers.LastModified, now));
+            var lastModified = response.Content.Headers.LastModified;
+            await WriteMetaAsync(metaPath, new Meta(response.Headers.ETag?.ToString(), lastModified, now));
             TryDelete(MissingNote(body));
-            return new CachedResponse(body, true, false, now);
+            return new CachedResponse(body, true, false, now) { LastModified = lastModified };
         }
         catch (IOException) when (!cached && File.Exists(body))
         {
@@ -150,7 +157,7 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
         }
         catch (Exception e) when (cached && e is HttpRequestException or TaskCanceledException or TimeoutException or IOException)
         {
-            return new CachedResponse(body, false, true, meta!.FetchedAt);
+            return new CachedResponse(body, false, true, meta!.FetchedAt) { LastModified = meta.LastModified };
         }
     }
 

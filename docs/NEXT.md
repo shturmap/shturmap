@@ -6,9 +6,73 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-27: the newest look in front, the prices' age, the file when due
+
+**Decided** (owner, 2026-10-27, from the decision page on the desk and What's New; the page stays outside the repository):
+**D1 B**, "The newest screenshot in front"; **D2 C**, the prices' age in the head line and in the copy notice; **D3 E**,
+"Ask when the file is due"; no notes. The owner's words on the page: D1, "I also think right now that the manual clean up
+might not be a good idea, maybe we should do in general a better job just showing the items the player is currently
+interested in."; D2, "Also, it should be clear when the prices were fetched the last time. … especially when a price is
+copied it should be as recent as possible."; D3, "For this it might be relevant if the prices are fetched in bulk or one
+at a time when needed, but especially when a price is copied it should be as recent as possible." (D4, What's New's
+pictures, is another builder's.) With them the windows decision of the same morning (2026-10-26's entry, below).
+
+**Built (2026-10-27)** (DESIGN.md §3, "The stash desk's prices come per reading"; §4, *The stash desk*, *Its place*,
+*The newest look in front*, *The head line*, *A new page after a raid*, *The click*):
+
+- **D1 B.** The regions of the newest look (the page's newest screenshot and any taken within 2 minutes of it,
+  `DeskPageRules.Look`) stand full; a region of an earlier look steps back where it stands (`DeskPageRules.SteppedBack`):
+  its head whole and dated, its grid, slot boxes and slot names at 25 %, its cells' figures, counts and changes hidden
+  (`DeskCellView.Hushed`); an earlier look's window folds to its head in a hairline frame with "▸" (`Folds`); pointing
+  anywhere on one shows it whole at once (a window unfolds in place, "▾", the windows under it moving down), the
+  developer script's `desk point` too (`DeskBoard.StepBack`, `Point`). The fixed layout stands: nothing but the windows'
+  tail changes height. **CLEAR and its UNDO are gone**: the head line's link, `GameSession.ClearDeskAsync`,
+  `DeskLedger.Clear`, `Rules.DeskClearing` (its rest now `Rules.DeskFreshPage`), the developer script's `desk clear` and
+  `desk undo`, `tools\qa\desk-clear.*` (in its place `tools\qa\desk-look.devscript` with its `.md`), the texts
+  `AppTexts.DeskClear`, `DeskClearTip`, `SessionTexts.DeskCleared` in English and German. **The fresh page after a raid
+  stays, with its UNDO** (the coordinator's call, the owner's to overrule): it is the one page change the player didn't
+  ask for, so it is the one to undo without a question (principle 7), and it costs nothing more than what is built and
+  tested (the notice's link, `ViewTexts.NoticeUndo`, `NoticeUndoTip`, the session's held page).
+- **Windows never shrink the page** (2026-10-27's decision below): `Arrangement.Held` counts the stash alone
+  (`StashHeight`), never the windows; the made-up desk on a 2560 monitor's desk now stands at 72 DIP with its windows
+  under the stash and scrolls (at 64 before, its windows beside it), the owner's page of 2026-10-19 at 72 (56 before),
+  however many cases are open.
+- **D2 C.** At the head line's right, where CLEAR stood, "PRICES 3 MIN OLD" from the newest scan in the item file in
+  hand (`ItemSources.ScannedAt`, published as `DeskView.PricesScannedAt`), ticking with the window's clock, amber past
+  20 minutes, and "· OFFLINE" in amber where tarkov.dev wasn't reached (`DeskView.PricesReached`: the desk's last ask
+  failed, or the file in hand is a saved copy had offline; `DeskPageRules.PricesAge`). A copy's notice ends with the
+  copied item's own age, counted as the card counts it, muted, amber past 30 minutes (`DeskCards.CopiedAge`; the notice's
+  tail a run of its own, `MainViewModel.NoticeTail`). The made-up desk's file was scanned 3 minutes before it was made,
+  its items 4, its LEDX 52, so the replay shows both colours. The decision page's notice said "price 4 min old"
+  (singular, the item's) and its head line "PRICES 3 MIN OLD" (the page's), keeping the two apart; built so.
+- **D3 E.** `DeskPricesTiming`: the next ask at the file in hand's Last-Modified (`CachedResponse.LastModified`,
+  `ItemSources.ModifiedAt`) plus its rhythm (the shortest of the last six gaps of one to thirty minutes between files
+  seen one after the other, learnt this run, not kept over a restart) plus 45 s; each minute while unchanged; every five
+  minutes with no rhythm, after a failure and once a file is a whole beat late (the coordinator's bound: asking each
+  minute for a stalled file would be 60 asks an hour); never two within a minute; one at a time. An unchanged file isn't
+  parsed again (`GameDataLoader.LoadSourcesAsync`'s `had`, `ItemSources.Confirmed`) and changes nothing on the page;
+  each ask goes to tarkov.dev (`GameDataLoader.DeskPricesAsk`, half a minute). DESIGN.md's figures corrected with the
+  decision page's measurements (a file every 10 minutes, 3 minutes after its scan, each scan part of the catalogue,
+  8.4 MB an hour), and the new count: about 6 asks an hour of desk on screen plus a 304 a minute while a file is late,
+  6 to 12 in practice, the same 8.4 MB.
+- Texts (English and German, `TranslationTests`): `RuleTexts.DeskHeadPrices`, `DeskHeadPricesHours`,
+  `DeskHeadPricesOffline`, `DeskCopiedAge`, `DeskCopiedAgeHours` new; `ViewTexts.NoticeUndo` and `NoticeUndoTip`'s comments
+  without CLEAR. To be reviewed by the senior translator.
+- Tests: `DeskPageRulesTests` (the newest look, the fold, the head line's age, windows never shrink the page, the sizes
+  without the windows' height), `DeskCardTests` (the copy's age), `DeskPricesTimingTests` (the rhythm and when an ask is
+  due), `DeskPricesSessionTests` (the rhythm learnt from two files, the ask when due and each minute while late, the page
+  untouched by the same file, offline said and gone), `DeskFreshSessionTests` (was `DeskClearSessionTests`, CLEAR's tests
+  out), `DeskFreshPageTests`, `DeskLedgerTests` (`Restore`, a page of no region), `DevToolsTests`. The layout check has a
+  `desklook` view (reading 2: stepped back and folded).
+
+**Open**: the UI QA pass on the new look (once per feature, CLAUDE.md); the senior translator's review of the five texts;
+whether the card's own "Prices 4 min old · tarkov.dev", one item's age, should say "Price" now that the head line says
+the page's "PRICES" (the coordinator's suggestion, not built); a rhythm that grows shorter than the one learnt shows only
+after a restart.
+
 ## 2026-10-26: clearing the desk
 
-**Decided after the build** (owner, 2026-10-27, in the chat, on the windows that shrink the desk, measured below): **windows never shrink the page; it scrolls for them.** A container window no longer counts in the height the cells must fit (`DeskPageRules.Arrangement.Held`); the cell size stays the desk's own and the page scrolls further; nothing seen is lost, and CLEAR and the fresh page after a raid tidy up. Not taken: a closed case's window leaving the page (its contents would leave the totals), both, or no change. Not built yet.
+**Decided after the build** (owner, 2026-10-27, in the chat, on the windows that shrink the desk, measured below): **windows never shrink the page; it scrolls for them.** A container window no longer counts in the height the cells must fit (`DeskPageRules.Arrangement.Held`); the cell size stays the desk's own and the page scrolls further; nothing seen is lost, and CLEAR and the fresh page after a raid tidy up. Not taken: a closed case's window leaving the page (its contents would leave the totals), both, or no change. Built 2026-10-27 (above); CLEAR went the same day (D1 B, above), the fresh page after a raid stays.
 
 **Asked** (owner, 2026-10-26, after 0.7.0's release): "We need an option to clear the desk because it quickly gets
 messy".

@@ -37,11 +37,13 @@ public class DeskPageRulesTests
     private static readonly (double W, double H)[] Desks = [(516, 440), (1216, 760), (2176, 1330), (2544, 1401)];
 
     // The cell size follows the desk's size alone (owner, 2026-10-25): the largest at which the three columns fit the desk's
-    // width and the stash's column its height, the windows beside the stash where the width allows, else under it. At
-    // 900×560's desk, 40 in one column, scrolling; at 1600×900's, 40 in three columns, the windows under the stash; at a 2560
-    // monitor's, the owner's page at 56 with the Keys window in a fourth column (64 would take it under the stash, and the
-    // stash's column past the desk's height), the made-up desk at 64, its windows beside the stash. Until 2026-10-25 the
-    // page flowed and folded: 96 for the owner's page folded to the stash at a 2560 monitor's desk, 48 at 1600×900's.
+    // width and the stash its height, the windows beside the stash where the width allows, else under it, never counted in
+    // the height (owner, 2026-10-27: "windows never shrink the page; it scrolls for them"). At 900×560's desk, 40 in one
+    // column, scrolling; at 1600×900's, 40 in three columns, the windows under the stash, scrolling for them; at a 2560
+    // monitor's, the owner's page and the made-up desk at 72, their windows under the stash and the page scrolling for
+    // them. Until 2026-10-27 the windows counted: the owner's page at 56 with the Keys window in a fourth column, the
+    // made-up desk at 64 with its windows beside the stash. Until 2026-10-25 the page flowed and folded: 96 for the owner's
+    // page folded to the stash at a 2560 monitor's desk, 48 at 1600×900's.
     [Fact]
     public void The_cell_size_follows_the_desk_alone()
     {
@@ -50,24 +52,25 @@ public class DeskPageRulesTests
         Assert.True(small.Height > 440);
 
         // 1600×900: three columns at 40, the Zhuk's and the WZ's windows under the stash; the stash's column with them is
-        // taller than the desk, so the page scrolls; LOADOUT and the middle column fit.
+        // taller than the desk, so the page scrolls; the stash itself, LOADOUT and the middle column fit.
         var mid = DeskPageRules.Layout(Made(), 1216, 760);
         Assert.Equal((40, false, 3, false), (mid.Cell, mid.OneColumn, mid.ColumnWidths.Count, mid.WindowsBeside));
         Assert.Equal(2, mid.ColumnOf("window:zhuk"));
         Assert.True(mid.Width + 2 * DeskPageRules.Margin <= 1216);
-        Assert.True(mid.Held > 760);
+        Assert.True(mid.Held <= 760);
+        Assert.True(mid.Height > 760);
         Assert.True(DeskPageRules.Lane + mid.ColumnHeights[0] + DeskPageRules.PageBottom <= 760);
         Assert.True(DeskPageRules.Lane + mid.ColumnHeights[1] + DeskPageRules.PageBottom <= 760);
 
         var owners = DeskPageRules.Layout(OwnersPage(), 2176, 1330);
-        Assert.Equal((56, true, 3), (owners.Cell, owners.WindowsBeside, owners.ColumnOf("window:keys")));
+        Assert.Equal(72, owners.Cell);
         Assert.True(owners.Fits(2176, 1330));
         Assert.Equal((40, false), (DeskPageRules.Layout(OwnersPage(), 1216, 760).Cell, DeskPageRules.Layout(OwnersPage(), 1216, 760).WindowsBeside));
 
         var large = DeskPageRules.Layout(Made(), 2176, 1330);
-        Assert.Equal((64, true, 3), (large.Cell, large.WindowsBeside, large.ColumnOf("window:zhuk")));
-        Assert.True(large.Height <= 1330, "the made-up desk at a 2560 monitor's desk doesn't scroll");
-        Assert.Equal(72, DeskPageRules.Layout(Made(), 2544, 1401).Cell);
+        Assert.Equal((72, false, 2), (large.Cell, large.WindowsBeside, large.ColumnOf("window:zhuk")));
+        Assert.True(large.Height > 1330, "the made-up desk at a 2560 monitor's desk scrolls for its windows");
+        Assert.Equal(88, DeskPageRules.Layout(Made(), 2544, 1401).Cell);
 
         // Each size chosen fits, and the next size up doesn't (where three columns fit at all).
         foreach (var page in new[] { Made(), OwnersPage() })
@@ -105,13 +108,14 @@ public class DeskPageRulesTests
             Assert.Equal(first.Shape, DeskPageRules.Layout(Made(3), w, h).Shape);
             Assert.Equal(first.Shape, DeskPageRules.Layout(Emptied(Made(2)), w, h).Shape);
         }
-        // A backpack of eight by eight: the middle column two cells wider, so at a 2560 monitor's desk the windows stand under
-        // the stash; a stash page of twenty rows read: the size smaller.
+        // A backpack of eight by eight: the middle column two cells wider, so on a desk of 2544 × 1401 the size smaller; a
+        // stash page of twenty rows read: the size smaller, and at a 2560 monitor's desk the windows fit beside the stash.
         var larger = Made().Select(r => r.Kind == DeskRegionKind.Backpack ? r with { Cols = 8, Rows = 8 } : r).ToList();
-        Assert.True(DeskPageRules.Layout(Made(), 2176, 1330).WindowsBeside);
-        Assert.False(DeskPageRules.Layout(larger, 2176, 1330).WindowsBeside);
+        Assert.True(DeskPageRules.Layout(larger, 2544, 1401).Cell < DeskPageRules.Layout(Made(), 2544, 1401).Cell);
         var longer = Made().Select(r => r.Kind == DeskRegionKind.Stash ? r with { Rows = 20 } : r).ToList();
         Assert.True(DeskPageRules.Layout(longer, 2176, 1330).Cell < DeskPageRules.Layout(Made(), 2176, 1330).Cell);
+        Assert.False(DeskPageRules.Layout(Made(), 2176, 1330).WindowsBeside);
+        Assert.True(DeskPageRules.Layout(longer, 2176, 1330).WindowsBeside);
     }
 
     // Every region stands in its place whether or not the last screenshot showed it: the seven fixed regions in the game's
@@ -156,8 +160,8 @@ public class DeskPageRulesTests
         // Reading 2 kept every region but the backpack from reading 1: each the same block as read.
         var kept = DeskExample.Page(2);
         Assert.Equal(["loadout", "pockets", "rig", "special", "stash", "window:wz", "window:zhuk"],
-            kept.Regions.Where(r => DeskPageRules.Kept(r, kept)).Select(r => r.Key).Order(StringComparer.Ordinal));
-        Assert.Empty(DeskExample.Page(1).Regions.Where(r => DeskPageRules.Kept(r, DeskExample.Page(1))));
+            kept.Regions.Where(r => DeskPageRules.SteppedBack(r, kept)).Select(r => r.Key).Order(StringComparer.Ordinal));
+        Assert.Empty(DeskExample.Page(1).Regions.Where(r => DeskPageRules.SteppedBack(r, DeskExample.Page(1))));
     }
 
     // A region a reading made from its heading alone, no grid and no cell (code review of 2026-10-25: a POCKETS, SPECIAL
@@ -306,16 +310,100 @@ public class DeskPageRulesTests
         var backpack = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 6, []) { ReadAt = Local(2026, 1, 1, 23, 8) };
         var stash = new DeskRegion("stash", DeskRegionKind.Stash, 10, 13, []) { ReadAt = Local(2026, 1, 1, 23, 15) };
         var page = new DeskPage(Local(2026, 1, 1, 23, 15), [backpack, stash]);
-        Assert.True(DeskPageRules.Kept(backpack, page));
-        Assert.False(DeskPageRules.Kept(stash, page));
+        Assert.True(DeskPageRules.SteppedBack(backpack, page));
+        Assert.False(DeskPageRules.SteppedBack(stash, page));
         // The "·" and the date go to the next line together where a head wraps: no-break spaces after it and within the date.
         Assert.Equal("BACKPACK · 23:08", DeskPageRules.HeadOf(backpack, page, now));
         Assert.Equal("STASH", DeskPageRules.HeadOf(stash, page, now));
         Assert.Equal("BACKPACK · 31 DEC 23:08", DeskPageRules.HeadOf(backpack with { ReadAt = Local(2025, 12, 31, 23, 8) }, page, now));
-        Assert.False(DeskPageRules.Kept(backpack with { ReadAt = DateTimeOffset.MinValue }, page));
+        Assert.False(DeskPageRules.SteppedBack(backpack with { ReadAt = DateTimeOffset.MinValue }, page));
         // A window's head with its date.
         var keys = new DeskRegion("window:keys", DeskRegionKind.ContainerWindow, 11, 7, []) { Title = "Keys", AttachedTo = new DeskAnchor("stash", 7, 9), ReadAt = backpack.ReadAt };
         Assert.Equal("KEYS · IN THE STASH · 23:08", DeskPageRules.HeadOf(keys, page with { Regions = [backpack, stash, keys] }, now));
+    }
+
+    // The newest look in front (owner, 2026-10-27, D1 B: "Screenshots within 2 min of the newest count as one look"): a
+    // region read within two minutes of the page's newest screenshot stands full and undated, an older one steps back,
+    // dated; an earlier look's window folds, a region of the newest look's or one of a file older than the reading times
+    // doesn't. Reading 2 of the made-up desk, seven minutes after reading 1, keeps the backpack in front; reading 3, two
+    // minutes on, the backpack again, so everything else still steps back.
+    [Fact]
+    public void The_newest_look_stands_in_front_and_earlier_looks_step_back()
+    {
+        var at = new DateTimeOffset(2026, 1, 1, 14, 31, 0, TimeSpan.Zero);
+        var stash = new DeskRegion("stash", DeskRegionKind.Stash, 10, 13, []) { ReadAt = at };
+        var backpack = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 6, []) { ReadAt = at - TimeSpan.FromSeconds(110) };
+        var rig = new DeskRegion("rig", DeskRegionKind.Rig, 5, 2, []) { ReadAt = at - TimeSpan.FromSeconds(130) };
+        var keys = new DeskRegion("window:keys", DeskRegionKind.ContainerWindow, 11, 7, []) { Title = "Keys", AttachedTo = new DeskAnchor("stash", 7, 9), ReadAt = rig.ReadAt };
+        var zhuk = new DeskRegion("window:zhuk", DeskRegionKind.ContainerWindow, 5, 4, []) { Title = "Zhuk", ReadAt = at };
+        var page = new DeskPage(at, [stash, backpack, rig, keys, zhuk]);
+        Assert.Equal(TimeSpan.FromMinutes(2), DeskPageRules.Look);
+        Assert.False(DeskPageRules.SteppedBack(stash, page));
+        Assert.False(DeskPageRules.SteppedBack(backpack, page));
+        Assert.True(DeskPageRules.SteppedBack(rig, page));
+        Assert.Equal("BACKPACK", DeskPageRules.HeadOf(backpack, page, at));
+        Assert.StartsWith("TACTICAL RIG ·", DeskPageRules.HeadOf(rig, page, at));
+        Assert.True(DeskPageRules.Folds(keys, page));
+        Assert.False(DeskPageRules.Folds(zhuk, page));
+        Assert.False(DeskPageRules.Folds(rig, page));
+        Assert.False(DeskPageRules.SteppedBack(rig with { ReadAt = DateTimeOffset.MinValue }, page));
+
+        static IEnumerable<string> Back(DeskPage made) => made.Regions.Where(r => DeskPageRules.SteppedBack(r, made)).Select(r => r.Key);
+        Assert.Empty(Back(DeskExample.Page(1)));
+        Assert.DoesNotContain("backpack", Back(DeskExample.Page(2)));
+        Assert.Contains("stash", Back(DeskExample.Page(2)));
+        Assert.Equal(["window:wz", "window:zhuk"], DeskExample.Page(2).Regions.Where(r => DeskPageRules.Folds(r, DeskExample.Page(2))).Select(r => r.Key).Order(StringComparer.Ordinal));
+        Assert.Equal(Back(DeskExample.Page(2)), Back(DeskExample.Page(3)));
+    }
+
+    // The prices' age in the head line (owner, 2026-10-27, D2 C: "PRICES 3 MIN OLD" from the newest scan in the item file in
+    // hand, in amber past 20 minutes or when tarkov.dev isn't reached): from the newest scan, else the file's confirmation;
+    // in hours from two on; "· OFFLINE" and amber where tarkov.dev wasn't reached; none while no prices are in.
+    [Fact]
+    public void The_head_line_says_how_old_the_prices_are()
+    {
+        var now = new DateTimeOffset(2026, 1, 1, 14, 31, 0, TimeSpan.Zero);
+        var view = View with { PricesAt = now - TimeSpan.FromMinutes(1), PricesScannedAt = now - TimeSpan.FromMinutes(3) };
+        Assert.Equal((RuleTexts.DeskHeadPrices(minutes: 3), false), DeskPageRules.PricesAge(view, now));
+        Assert.Equal("PRICES 3 MIN OLD", DeskPageRules.PricesAge(view, now)!.Value.Text);
+        Assert.Equal((RuleTexts.DeskHeadPrices(minutes: 20), false), DeskPageRules.PricesAge(view, now + TimeSpan.FromMinutes(17)));
+        Assert.Equal((RuleTexts.DeskHeadPrices(minutes: 21), true), DeskPageRules.PricesAge(view, now + TimeSpan.FromMinutes(18)));
+        Assert.Equal((RuleTexts.DeskHeadPricesHours(hours: 2), true), DeskPageRules.PricesAge(view, now + TimeSpan.FromMinutes(120)));
+        Assert.Equal((RuleTexts.DeskHeadPrices(minutes: 1), false), DeskPageRules.PricesAge(view with { PricesScannedAt = null }, now));
+        var offline = DeskPageRules.PricesAge(view with { PricesReached = false }, now)!.Value;
+        Assert.Equal((RuleTexts.DeskHeadPricesOffline(age: RuleTexts.DeskHeadPrices(minutes: 3)), true), offline);
+        Assert.Equal("PRICES 3 MIN OLD · OFFLINE", offline.Text);
+        Assert.Null(DeskPageRules.PricesAge(view with { PricesAt = null, PricesScannedAt = null }, now));
+    }
+
+    // Windows never shrink the page (owner, 2026-10-27, in the chat: "windows never shrink the page; it scrolls for them";
+    // docs/NEXT.md, 2026-10-26: clearing the desk): the size the page has without its windows, however many cases are
+    // open; the page scrolls for them. Measured before on the owner's page with cases of 8×8, 7×7, 7×7, 4×4 and 5×10
+    // attached in turn: 80 DIP with no window on a 2560 monitor's desk, 56 with one or two, 48 with three, 40 from six (the
+    // test's owner's page, its Keys window counted, 56); now 72 there however many.
+    [Fact]
+    public void Windows_never_shrink_the_page()
+    {
+        var owners = OwnersPage().Where(r => r.Kind != DeskRegionKind.ContainerWindow).ToList();
+        var cases = new[] { (8, 8), (7, 7), (7, 7), (4, 4), (5, 10), (8, 8), (7, 7) };
+        foreach (var (w, h) in Desks)
+        {
+            var bare = DeskPageRules.Layout(owners, w, h);
+            var page = owners.ToList();
+            for (var n = 0; n < cases.Length; n++)
+            {
+                page.Add(new DeskRegion($"window:case{n}", DeskRegionKind.ContainerWindow, cases[n].Item1, cases[n].Item2, [])
+                    { Title = $"Case {n}", AttachedTo = new DeskAnchor("stash", 0, n) });
+                var laid = DeskPageRules.Layout(page, w, h);
+                Assert.Equal(bare.Cell, laid.Cell);
+                Assert.Equal(bare.OneColumn, laid.OneColumn);
+            }
+        }
+        Assert.Equal(72, DeskPageRules.Layout(OwnersPage(), 2176, 1330).Cell);
+        // The windows run past the desk's foot: the page scrolls.
+        var many = OwnersPage().Concat(cases.Select((c, n) => new DeskRegion($"window:case{n}", DeskRegionKind.ContainerWindow, c.Item1, c.Item2, [])
+            { Title = $"Case {n}", AttachedTo = new DeskAnchor("stash", 0, n) })).ToList();
+        Assert.True(DeskPageRules.Layout(many, 2176, 1330).Height > 1330);
     }
 
     // A head takes the room of its dated form from the first reading (UI QA pass of step 2, F1: after reading 2 at 40 DIP
@@ -391,13 +479,12 @@ public class DeskPageRulesTests
         Assert.False(DeskPageRules.MoreBelow(440 + DeskPageRules.PageBottom, 440, 0));
         Assert.False(DeskPageRules.MoreBelow(300, 440, 0));
 
-        // The made-up desk at 900×560 (one column) and at 1600×900 (its windows under the stash) runs past the desk; at a
-        // 2560 monitor's desk it doesn't.
-        foreach (var (w, h, more) in new[] { (516.0, 440.0, true), (1216.0, 760.0, true), (2176.0, 1330.0, false) })
-        {
-            var page = DeskPageRules.Layout(Made(), w, h);
-            Assert.Equal(more, DeskPageRules.MoreBelow(page.Height, h, 0));
-        }
+        // The made-up desk at 900×560 (one column), at 1600×900 and at a 2560 monitor's desk (its windows under the stash,
+        // which never shrink the page: owner, 2026-10-27) runs past the desk; without its windows, at a 2560 monitor's desk
+        // it doesn't.
+        var bare = Made().Where(r => r.Kind != DeskRegionKind.ContainerWindow).ToList();
+        foreach (var (page, w, h, more) in new[] { (Made(), 516.0, 440.0, true), (Made(), 1216.0, 760.0, true), (Made(), 2176.0, 1330.0, true), (bare, 2176.0, 1330.0, false) })
+            Assert.Equal(more, DeskPageRules.MoreBelow(DeskPageRules.Layout(page, w, h).Height, h, 0));
     }
 
     // The page in screens for the layout check (UI QA pass of step 2, F4): from its top, each the desk's room less the scroll

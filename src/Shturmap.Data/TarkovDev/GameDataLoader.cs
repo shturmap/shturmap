@@ -302,12 +302,15 @@ public sealed class GameDataLoader(CachedHttp http)
     /// <summary>How old a saved item file may be and still be used without asking: a day, as the item cards need it.</summary>
     public static readonly TimeSpan ItemsAge = TimeSpan.FromHours(24);
 
-    /// <summary>How old the item file may be for the stash desk's prices: five minutes, then it is asked for again with its
-    /// ETag, when the desk reads a screenshot and, while the desk is on screen, as it turns that old (docs/DESIGN.md §3, "The
-    /// stash desk's prices come per reading"; owner, 2026-10-26: "When finding prices in the stash it's important that they
-    /// are recent"; tarkov.dev scans every 5 minutes and caches 5, so sooner gains nothing; ten minutes from 2026-10-19,
-    /// an hour before).</summary>
+    /// <summary>How often the item file is asked for the stash desk's prices while no rhythm of the file is known: every five
+    /// minutes (docs/DESIGN.md §3, "The stash desk's prices come per reading"; owner, 2026-10-26: "When finding prices in the
+    /// stash it's important that they are recent"; ten minutes from 2026-10-19, an hour before). Once the file's own rhythm is
+    /// seen, the desk asks when the next file is due (owner, 2026-10-27, D3 E; <c>DeskPricesTiming</c>).</summary>
     public static readonly TimeSpan DeskPricesAge = TimeSpan.FromMinutes(5);
+
+    /// <summary>How old a saved item file may be and still be given for the stash desk without asking: half a minute, so
+    /// each ask the desk's timing makes (never more often than once a minute) goes to tarkov.dev.</summary>
+    public static readonly TimeSpan DeskPricesAsk = TimeSpan.FromSeconds(30);
 
     /// <summary>How old an item's price history may be and still be shown without asking: an hour (its points come every
     /// 2 h), then it is asked for again with its ETag when a card shows the item (docs/DESIGN.md §3).</summary>
@@ -331,11 +334,23 @@ public sealed class GameDataLoader(CachedHttp http)
 
     /// <summary>The item sources, the item file (its prices) asked for again when older than <paramref name="itemsAge"/>;
     /// the barters, crafts and hideout keep their day.</summary>
-    public async Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, TimeSpan itemsAge, CancellationToken ct = default)
+    /// <param name="had">The sources in hand: where the item file comes back as the same file (tarkov.dev's "not modified",
+    /// or a saved copy of the same Last-Modified), these are given back confirmed at the answer's time
+    /// (<see cref="ItemSources.Confirmed"/>), and the 17 MB aren't read again (the stash desk asks each minute while the
+    /// next file is late; owner, 2026-10-27).</param>
+    public async Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, TimeSpan itemsAge, CancellationToken ct = default, ItemSources? had = null)
     {
         var fetched = new List<Task<CachedResponse>>();
         try
         {
+            if (had is { ModifiedAt: { } modified })
+            {
+                var slug = GameData.Slug(mode);
+                var endpoint = $"{slug}/items";
+                var items = await http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", itemsAge, ct, json: true);
+                if (!items.FromNetwork && items.LastModified == modified)
+                    return had.Confirmed(items.FetchedAt, items.Stale);
+            }
             return await LoadSourcesAsync(mode, language, itemsAge, fetched, ct);
         }
         catch (Exception e) when (LoadProblem.Explain(e).Kind == LoadFailure.Unreadable)
@@ -396,6 +411,8 @@ public sealed class GameDataLoader(CachedHttp http)
             HideoutNeeds = HideoutNeeds(stations.Values),
             FleaMarket = itemsData?.Data?.FleaMarket,
             PricesAt = items.Result.FetchedAt,
+            ModifiedAt = items.Result.LastModified,
+            Stale = items.Result.Stale,
         };
     }
 

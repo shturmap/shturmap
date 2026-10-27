@@ -298,9 +298,12 @@ public static class DeskExample
                 }).ToList(),
             };
         }
-        Func<string, DeskItemFacts?> facts = priced == 1 ? id => Facts.GetValueOrDefault(id)
+        // Each item scanned 4 minutes ago, the LEDX 52 (a rarely traded item tarkov.dev hasn't scanned for a while: its copy
+        // notice's age in amber; owner, 2026-10-27, D2 C), as the cards and the copy notice count them.
+        DeskItemFacts Scanned(DeskItemFacts f, string id) => f with { Updated = now - TimeSpan.FromMinutes(id == Ledx ? 52 : 4) };
+        Func<string, DeskItemFacts?> facts = priced == 1 ? id => Facts.GetValueOrDefault(id) is { } f ? Scanned(f, id) : null
             : id => Facts.GetValueOrDefault(id) is { } f
-                ? f with { LastLow = f.LastLow * priced, Avg24h = f.Avg24h * priced, Low24h = f.Low24h * priced, High24h = f.High24h * priced }
+                ? Scanned(f, id) with { LastLow = f.LastLow * priced, Avg24h = f.Avg24h * priced, Low24h = f.Low24h * priced, High24h = f.High24h * priced }
                 : null;
         var sheet = DeskSheet.Of(page, facts, DeskFleaRules.Default, Keep, default, traderName);
         IReadOnlySet<string> changed = reading switch
@@ -313,6 +316,8 @@ public static class DeskExample
         {
             FactsOf = facts,
             Flea = DeskFleaRules.Default,
+            // The newest scan in a made-up item file: the head line's "PRICES 3 MIN OLD".
+            PricesScannedAt = now - TimeSpan.FromMinutes(3),
         };
     }
 

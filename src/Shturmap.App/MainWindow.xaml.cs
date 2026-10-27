@@ -275,6 +275,9 @@ public sealed partial class MainWindow : Window
     private void OnClockTick()
     {
         UpdateClockTexts();
+        // The desk's prices' age ticks with the minutes (owner, 2026-10-27, D2 C).
+        if (_deskChosen)
+            StashDesk.ShowAge(DateTimeOffset.Now);
         if (_snapshot is { } now && ViewModel.RaidClock?.In != _noteMinute && now.Extracts.Any(e => e.Notes.Count > 0))
             UpdateRaidLists(now);
         if (_snapshot is not { RaidFix: { } fix } s)
@@ -294,6 +297,9 @@ public sealed partial class MainWindow : Window
     // ---- x:Bind helpers ----
 
     public Brush RaidBrush(bool inRaid) => Resource(inRaid ? "AmberBrush" : "InkBrush");
+
+    // The end of a notice that says an age (the desk's copy), amber where it is old (owner, 2026-10-27, D2 C).
+    public Brush NoticeTailBrush(bool amber) => Resource(amber ? "AmberBrush" : "MutedBrush");
 
     // The OR row under EXIT (Rules.ExitsNote.Plain).
     public string PlainExitNote => Caps.Of(Rules.ExitsNote.PlainNote);
@@ -2227,11 +2233,16 @@ public sealed partial class MainWindow : Window
     // Each type's glyph widths, in DIPs (DecodeGlyphs).
     private static readonly Dictionary<string, Dictionary<char, double>> GlyphWidths = new(StringComparer.Ordinal);
 
-    private void ShowNotice(string message, TimeSpan? duration = null, bool offersReport = false, NoticeUndoAct? undo = null)
+    /// <param name="tail">Said after the message, muted or amber (the desk's copy: "· price 2 min old"; owner,
+    /// 2026-10-27).</param>
+    private void ShowNotice(string message, TimeSpan? duration = null, bool offersReport = false, NoticeUndoAct? undo = null,
+        (string Text, bool Amber)? tail = null)
     {
         if (DemoQuiet)
             return;
         ViewModel.NoticeText = message;
+        ViewModel.NoticeTail = tail is { } t ? " · " + t.Text : "";
+        ViewModel.NoticeTailAmber = tail is { Amber: true };
         ViewModel.NoticeOffersReport = offersReport;
         // A notice offers the desk's page back only while it is the one standing (MainWindow.Desk).
         _noticeUndo = undo;

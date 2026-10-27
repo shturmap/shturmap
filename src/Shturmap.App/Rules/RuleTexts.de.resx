@@ -652,6 +652,26 @@
     <value>{rule}, über dem besten Netto</value>
     <comment>en: {rule}, over the best net</comment>
   </data>
+  <data name="DeskCopiedAge" xml:space="preserve">
+    <value>{minutes, plural, =0 {Preis gerade geholt} one {Preis # min alt} other {Preis # min alt}}</value>
+    <comment>en: {minutes, plural, =0 {price just in} one {price # min old} other {price # min old}}</comment>
+  </data>
+  <data name="DeskCopiedAgeHours" xml:space="preserve">
+    <value>{hours, plural, one {Preis # h alt} other {Preis # h alt}}</value>
+    <comment>en: {hours, plural, one {price # h old} other {price # h old}}</comment>
+  </data>
+  <data name="DeskHeadPrices" xml:space="preserve">
+    <value>{minutes, plural, =0 {PREISE GERADE GEHOLT} one {PREISE # MIN ALT} other {PREISE # MIN ALT}}</value>
+    <comment>en: {minutes, plural, =0 {PRICES JUST IN} one {PRICES # MIN OLD} other {PRICES # MIN OLD}}</comment>
+  </data>
+  <data name="DeskHeadPricesHours" xml:space="preserve">
+    <value>{hours, plural, one {PREISE # H ALT} other {PREISE # H ALT}}</value>
+    <comment>en: {hours, plural, one {PRICES # H OLD} other {PRICES # H OLD}}</comment>
+  </data>
+  <data name="DeskHeadPricesOffline" xml:space="preserve">
+    <value>{age} · OFFLINE</value>
+    <comment>en: {age} · OFFLINE</comment>
+  </data>
   <data name="DeskNothingTrader" xml:space="preserve">
     <value>Nichts kopiert: {trader} zahlt mehr, {price}</value>
     <comment>en: Nothing copied: {trader} pays more, {price}</comment>

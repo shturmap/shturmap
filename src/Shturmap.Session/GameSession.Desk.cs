@@ -35,20 +35,26 @@ public sealed partial class GameSession
     private DeskView? _deskView;
     private (DeskPage? Page, ItemSources? Sources, DeskKeep? Keep, DeskChange? Change) _deskViewOf;
 
-    // A refresh of the item file for the desk's prices on its way; the last one asked for, by mode (the next is never
-    // asked sooner than DeskPricesAge after it, whatever came of it); the troubles said since prices last came in.
+    // A refresh of the item file for the desk's prices on its way; the last one asked for, by mode, and whether it failed
+    // or gave back the saved copy, tarkov.dev not reached (the next is never asked sooner than a minute after it, five
+    // after a failure: DeskPricesTiming); the troubles said since prices last came in.
     private bool _deskPricesLoading;
-    private (GameMode Mode, DateTimeOffset At)? _deskPricesAsked;
+    private (GameMode Mode, DateTimeOffset At, bool Failed)? _deskPricesAsked;
     private readonly HashSet<string> _deskPricesSaid = [];
+
+    // The item file's Last-Modified values seen this run, by mode, oldest first: its rhythm (DeskPricesTiming.Rhythm;
+    // owner, 2026-10-27, D3 E). Not kept over a restart: until two files a beat apart are seen, the asks are five minutes
+    // apart.
+    private readonly Dictionary<GameMode, List<DateTimeOffset>> _deskFileTimes = [];
 
     // Whether the desk is on screen (MainWindow says), and what wakes the watch over its prices when that changes or prices
     // come in.
     private volatile bool _deskOnScreen;
     private readonly SemaphoreSlim _deskPricesWake = new(0, 1);
 
-    // What a CLEAR or a new page after a raid took away, for the notice's UNDO (owner, 2026-10-26: "Button + fresh after
-    // raid"): the page to put back, and the change it showed; until a reading comes, or it is put back. The notice's going is
-    // the window's to say: it drops the link (the page held here is then let go with the next reading).
+    // What a new page after a raid took away, for its notice's UNDO (owner, 2026-10-26: "Button + fresh after raid"; CLEAR
+    // gone, 2026-10-27): the page to put back, and the change it showed; until a reading comes, or it is put back. The
+    // notice's going is the window's to say: it drops the link (the page held here is then let go with the next reading).
     private sealed record DeskUndoHeld(int Id, GameMode Mode, DeskPage Page, DeskChange? Change);
 
     private DeskUndoHeld? _deskUndo;
@@ -62,7 +68,7 @@ public sealed partial class GameSession
     // ended (wall-clock times in Zone). The next desk reading after one starts a new page.
     private readonly Dictionary<GameMode, (DateTime Started, DateTime Ended)> _raidsOver = [];
 
-    /// <summary>How long the notices with UNDO stand: a few seconds, as notices do, a little longer than most's 6 s for the
+    /// <summary>How long the notice with UNDO stands: a few seconds, as notices do, a little longer than most's 6 s for the
     /// click.</summary>
     public const double DeskUndoSeconds = 8;
 
@@ -99,8 +105,8 @@ public sealed partial class GameSession
     }
 
     // Under the gate: a desk reading taken into the mode's page (a newer reading replaces the regions it shows and keeps
-    // the others; DeskLedger), and the prices asked for when the item file is five minutes old. What the page did, for the
-    // readings log; null when the screen was none of the desk's.
+    // the others; DeskLedger), and the prices asked for when the item file is due (DeskPricesTiming). What the page did,
+    // for the readings log; null when the screen was none of the desk's.
     private DeskChange? TakeDesk(DeskReading reading, double ms)
     {
         if (reading.Page is not { } page)
@@ -108,7 +114,7 @@ public sealed partial class GameSession
             Study.Game("desk.screen", ("screen", reading.Screen), ("ms", ms));
             return null;
         }
-        // A new reading: what a CLEAR or a new page took away can't come back over it (owner, 2026-10-26).
+        // A new reading: what a new page after a raid took away can't come back over it (owner, 2026-10-26).
         _deskUndo = null;
         _deskFreshOwed = null;
         DeskChange change;
@@ -191,41 +197,10 @@ public sealed partial class GameSession
     }
 
     /// <summary>
-    /// The desk's CLEAR (owner, 2026-10-26: "We need an option to clear the desk because it quickly gets messy"; from the
-    /// coordinator's options, "Button + fresh after raid"; docs/DESIGN.md §4, *The stash desk*, *Clearing the page*): the
-    /// mode's page emptied at once, every region back to never read, kept so in desk.json, and a notice "Desk cleared." whose
-    /// UNDO puts the page back exactly as it was. No question (principle 7). False when there was nothing to clear.
-    /// </summary>
-    public async Task<bool> ClearDeskAsync()
-    {
-        await _gate.WaitAsync();
-        try
-        {
-            var change = _deskChangeMode == _mode ? _deskChange : null;
-            if (_desk.Clear(_mode, DateTimeOffset.Now) is not { } had)
-                return false;
-            _deskUndo = new DeskUndoHeld(++_deskUndoIds, _mode, had, change);
-            _deskFreshOwed = null;
-            _deskChange = new DeskChange(_desk.Page(_mode)!, new HashSet<string>(), false);
-            _deskChangeMode = _mode;
-            AppLog.Info($"Desk page cleared ({_mode}): {had.Regions.Count} regions");
-            Study.Ui("desk.clear", ("regions", had.Regions.Count));
-            SaveDeskIfDirty();
-            Publish();
-            Say(SessionTexts.DeskCleared, DeskUndoSeconds, undo: new DeskUndoOffer(_deskUndo.Id, _deskReadings));
-            return true;
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
-    /// <summary>
-    /// The notice's UNDO (owner, 2026-10-26): the page a CLEAR or a new page after a raid took away put back as the mode's,
-    /// exactly as it was (its regions, cells, picks and reading times; after a raid, the page this reading would have made
-    /// of it), standing at once (it is no reading: nothing comes in). False when that page is no longer held: a reading came
-    /// since, or it was put back already.
+    /// The notice's UNDO (owner, 2026-10-26; kept with the new page after a raid when CLEAR went, 2026-10-27): the page a new
+    /// page after a raid took away put back as the mode's, the page the first reading after the raid would have made of the
+    /// page before it (its regions, cells, picks and reading times), standing at once (it is no reading: nothing comes in).
+    /// False when that page is no longer held: a reading came since, or it was put back already.
     /// </summary>
     public async Task<bool> UndoDeskAsync(int id)
     {
@@ -256,8 +231,8 @@ public sealed partial class GameSession
     /// <summary>
     /// Whether the desk is on screen: the window shows the Desk view and isn't minimised (MainWindow says so as that
     /// changes). While it is, out of a raid and with a page in hand, the desk's prices are asked for again each time the item
-    /// file turns <see cref="GameDataLoader.DeskPricesAge"/> old, and at once when the desk comes on screen with older ones
-    /// (owner, 2026-10-26; docs/DESIGN.md §3, "The stash desk's prices come per reading").
+    /// file is due (owner, 2026-10-27, D3 E: <see cref="DeskPricesTiming"/>), and at once when the desk comes on screen with
+    /// a file past due (owner, 2026-10-26; docs/DESIGN.md §3, "The stash desk's prices come per reading").
     /// </summary>
     public void SetDeskOnScreen(bool onScreen)
     {
@@ -266,8 +241,8 @@ public sealed partial class GameSession
     }
 
     /// <summary>The longest the watch over the desk's prices waits before it looks again (a test gives a shorter one): it
-    /// waits until the item file turns five minutes old, or until it is woken, but no longer than this, so a PC's sleep
-    /// doesn't hold it past the time.</summary>
+    /// waits until the item file is due, or until it is woken, but no longer than this, so a PC's sleep doesn't hold it past
+    /// the time.</summary>
     public TimeSpan DeskPricesLook { get; init; } = TimeSpan.FromMinutes(1);
 
     /// <summary>The item file asked for again for the desk's prices, by mode and data language, in place of the loader's
@@ -290,24 +265,54 @@ public sealed partial class GameSession
     // The time for the desk's prices: the PC's clock unless a test gives its own (Clock).
     private DateTimeOffset PricesNow() => new(Clock());
 
-    // What asks for the item file again: a test's own, else the loader's; none for a session given its item sources.
-    private Func<GameMode, string, CancellationToken, Task<ItemSources>>? DeskPricesLoad() =>
-        GivenDeskPrices ?? (GivenSources is null && _loader is { } loader
-            ? (mode, language, ct) => loader.LoadSourcesAsync(mode, language, GameDataLoader.DeskPricesAge, ct)
-            : null);
+    // What asks for the item file again, given the file in hand: a test's own, else the loader's (each ask goes to
+    // tarkov.dev, an unchanged file not read again: GameDataLoader.DeskPricesAsk); none for a session given its item sources.
+    private Func<GameMode, string, ItemSources, CancellationToken, Task<ItemSources>>? DeskPricesLoad() =>
+        GivenDeskPrices is { } given ? (mode, language, _, ct) => given(mode, language, ct)
+        : GivenSources is null && _loader is { } loader
+            ? (mode, language, had, ct) => loader.LoadSourcesAsync(mode, language, GameDataLoader.DeskPricesAsk, ct, had)
+            : null;
 
-    // Under the gate: when the desk's prices are due again: once the item file is DeskPricesAge old, and never sooner than
-    // DeskPricesAge after the last ask in this mode, whatever came of it (a failure, a saved copy no newer, waits for the
-    // next five minutes, never a tight loop).
-    private DateTimeOffset DeskPricesDue(ItemSources sources) =>
-        (_deskPricesAsked is { } asked && asked.Mode == _mode && asked.At > sources.PricesAt ? asked.At : sources.PricesAt) + GameDataLoader.DeskPricesAge;
+    // Under the gate: a Last-Modified of the mode's item file seen (the file in hand's, or one that came in), for its rhythm.
+    private void NoteDeskFile(GameMode mode, DateTimeOffset? modified)
+    {
+        if (modified is not { } at)
+            return;
+        if (!_deskFileTimes.TryGetValue(mode, out var times))
+            _deskFileTimes[mode] = times = [];
+        if (times.Count > 0 && times[^1] == at)
+            return;
+        times.Add(at);
+        if (times.Count > DeskPricesTiming.Beats + 2)
+            times.RemoveAt(0);
+    }
+
+    // Under the gate: the item file's rhythm in the mode, as seen this run; null while none is known.
+    private TimeSpan? DeskFileRhythm(GameMode mode) => _deskFileTimes.TryGetValue(mode, out var times) ? DeskPricesTiming.Rhythm(times) : null;
+
+    // Under the gate: when the desk's prices are due again (owner, 2026-10-27, D3 E: DeskPricesTiming): the file in hand's
+    // Last-Modified plus its rhythm plus 45 s, then each minute while the answer is unchanged; every five minutes with no
+    // rhythm known and after a failure (a saved copy given back no newer too); never sooner than a minute after the last
+    // ask in this mode, whatever came of it, never a tight loop.
+    private DateTimeOffset DeskPricesDue(ItemSources sources)
+    {
+        NoteDeskFile(_mode, sources.ModifiedAt);
+        var asked = _deskPricesAsked is { } a && a.Mode == _mode ? a : default((GameMode Mode, DateTimeOffset At, bool Failed)?);
+        return DeskPricesTiming.Due(sources.ModifiedAt, DeskFileRhythm(_mode), sources.PricesAt, asked?.At, asked?.Failed == true);
+    }
+
+    // Under the gate: whether tarkov.dev was reached for the prices in hand: the file isn't a saved copy had offline and the
+    // desk's last ask in this mode didn't fail (the head line's age in amber otherwise; owner, 2026-10-27, D2 C).
+    private bool DeskPricesReached() =>
+        _sources is not { Stale: true } && !(_deskPricesAsked is { Failed: true } asked && asked.Mode == _mode);
 
     // Under the gate. The desk's prices (docs/DESIGN.md §3, "The stash desk's prices come per reading"): json.tarkov.dev
     // has no price file per item, so the item file (every item's prices, about 1.4 MB compressed) is asked for again with its
-    // ETag when it is five minutes old (GameDataLoader.DeskPricesAge; ten minutes until 2026-10-26, an hour until
-    // 2026-10-19), as a desk reading arrives and, while the desk is on screen, as it turns that old (WatchDeskPricesAsync);
-    // an unchanged one costs a few hundred bytes. One at a time; what comes in prices the page again (Publish: the view's
-    // reading stays, so nothing on it comes in or glows).
+    // ETag when it is due (DeskPricesTiming; owner, 2026-10-27, D3 E: at the file's Last-Modified plus its rhythm plus 45 s,
+    // each minute while unchanged; five minutes from 2026-10-26, ten until then, an hour until 2026-10-19), as a desk
+    // reading arrives and, while the desk is on screen, as it falls due (WatchDeskPricesAsync); an unchanged one costs a
+    // few hundred bytes and isn't read again. One at a time; what comes in prices the page again (Publish: the view's
+    // reading stays, so nothing on it comes in or glows); the same file again changes nothing on the page.
     private void RefreshDeskPrices()
     {
         if (_sources is not { } sources || _deskPricesLoading || _data is null || DeskPricesLoad() is not { } load)
@@ -316,7 +321,7 @@ public sealed partial class GameSession
         if (now < DeskPricesDue(sources))
             return;
         _deskPricesLoading = true;
-        _deskPricesAsked = (_mode, now);
+        _deskPricesAsked = (_mode, now, false);
         var mode = _mode;
         var language = _data.Language;
         var round = _sourcesRound;
@@ -327,7 +332,7 @@ public sealed partial class GameSession
             (string Kind, string Why)? trouble = null;
             try
             {
-                fresh = await load(mode, language, _stop.Token);
+                fresh = await load(mode, language, sources, _stop.Token);
             }
             catch (Exception e) when (!_stop.IsCancellationRequested)
             {
@@ -340,17 +345,37 @@ public sealed partial class GameSession
             try
             {
                 _deskPricesLoading = false;
+                var reached = DeskPricesReached();
                 // tarkov.dev not reached with a copy saved: the loader gives that copy back, no newer.
-                if (fresh is not null && fresh.PricesAt <= had)
+                if (fresh is not null && (fresh.Stale || fresh.PricesAt <= had))
                     (fresh, trouble) = (null, ("SavedCopy", $"the copy of {had.ToLocalTime():HH:mm} kept"));
-                // Each kind of trouble said once until prices come in again; the next ask is five minutes on.
-                if (trouble is { } t && _deskPricesSaid.Add(t.Kind))
-                    AppLog.Warn($"Desk prices not refreshed ({t.Kind}): {t.Why}; asking again in {GameDataLoader.DeskPricesAge.TotalMinutes:0} min");
+                if (trouble is { } t)
+                {
+                    if (_deskPricesAsked is { } asked && asked.Mode == mode)
+                        _deskPricesAsked = asked with { Failed = true };
+                    // Each kind of trouble said once until prices come in again; the next ask is five minutes on.
+                    if (_deskPricesSaid.Add(t.Kind))
+                        AppLog.Warn($"Desk prices not refreshed ({t.Kind}): {t.Why}; asking again in {DeskPricesTiming.Fallback.TotalMinutes:0} min");
+                    // The head line's age turns amber and says so (owner, 2026-10-27, D2 C).
+                    if (reached && mode == _mode)
+                        Publish();
+                }
                 if (fresh is null || mode != _mode || round != _sourcesRound)
                     return;
                 _deskPricesSaid.Clear();
+                NoteDeskFile(mode, fresh.ModifiedAt);
+                // The same file again (tarkov.dev's "not modified": the next isn't out yet): nothing on the page changes, and
+                // the next ask is a minute on (DeskPricesTiming); the head line's age back from amber where it was offline.
+                if (_sources is { } inHand && ReferenceEquals(fresh.Items, inHand.Items) && !inHand.Stale)
+                {
+                    AppLog.Debug($"Desk prices unchanged: the item file of {(inHand.ModifiedAt ?? inHand.PricesAt).ToLocalTime():HH:mm:ss} still tarkov.dev's newest");
+                    if (!reached)
+                        Publish();
+                    return;
+                }
                 _sources = fresh;
-                AppLog.Debug($"Desk prices refreshed: the item file of {fresh.PricesAt.ToLocalTime():HH:mm:ss}");
+                AppLog.Debug($"Desk prices refreshed: the item file of {(fresh.ModifiedAt ?? fresh.PricesAt).ToLocalTime():HH:mm:ss}" +
+                             (DeskFileRhythm(mode) is { } rhythm ? $", a file every {rhythm.TotalMinutes:0.#} min" : ", its rhythm not known yet"));
                 Study.Game("desk.prices", ("age", (int)(DateTimeOffset.Now - fresh.PricesAt).TotalMinutes));
                 Publish();
             }
@@ -363,9 +388,9 @@ public sealed partial class GameSession
     }
 
     // While the desk is on screen, out of a raid and with a page in hand (owner, 2026-10-26: "When finding prices in the
-    // stash it's important that they are recent"): its prices asked for again as the item file turns five minutes old, so
-    // they are never much older than that and tarkov.dev's scan; nothing while it isn't, and at once when it comes back with
-    // older ones (SetDeskOnScreen wakes it).
+    // stash it's important that they are recent"; 2026-10-27, D3 E): its prices asked for again as the item file falls due
+    // (DeskPricesTiming), so the page is at most a minute or two behind tarkov.dev's newest file; nothing while it isn't,
+    // and at once when it comes back with a file past due (SetDeskOnScreen wakes it).
     private async Task WatchDeskPricesAsync()
     {
         while (!_stop.IsCancellationRequested)
@@ -408,7 +433,7 @@ public sealed partial class GameSession
     {
         if (!_deskOnScreen)
             return Timeout.InfiniteTimeSpan;
-        // A page of no region (CLEAR) has nothing to price, as no page hasn't.
+        // A page of no region (a reading that read nothing) has nothing to price, as no page hasn't.
         if (_tracker.State.Phase != RaidPhase.Menu || _desk.Page(_mode) is not { Regions.Count: > 0 })
             return DeskPricesLook;
         RefreshDeskPrices();
@@ -426,8 +451,9 @@ public sealed partial class GameSession
             return null;
         var keep = DeskKeepNow();
         var change = _deskChangeMode == _mode ? _deskChange : null;
+        var reached = DeskPricesReached();
         if (_deskView is not null && ReferenceEquals(_deskViewOf.Page, page) && ReferenceEquals(_deskViewOf.Sources, _sources) &&
-            ReferenceEquals(_deskViewOf.Keep, keep) && ReferenceEquals(_deskViewOf.Change, change))
+            ReferenceEquals(_deskViewOf.Keep, keep) && ReferenceEquals(_deskViewOf.Change, change) && _deskView.PricesReached == reached)
             return _deskView;
         var sources = _sources;
         var data = _data;
@@ -439,6 +465,8 @@ public sealed partial class GameSession
         {
             FactsOf = facts,
             Flea = flea,
+            PricesScannedAt = sources?.ScannedAt,
+            PricesReached = reached,
         };
         _deskViewOf = (page, sources, keep, change);
         return _deskView;

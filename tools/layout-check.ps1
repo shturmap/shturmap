@@ -19,7 +19,7 @@ param(
   # Window sizes in DIP, as Windows counts a window (title bar and frame included): 900x560 is the smallest Shturmap
   # allows (docs/DESIGN.md §4, "The window"). Scaled to the pixels of the monitor the app opens on.
   [string[]] $Sizes = @('900x560', '1600x900'),
-  # Which views (all when empty): plan, raid, report, crash, whatsnew, quest, desk, glance, tour1 … tour7. Settings (settings.png) is
+  # Which views (all when empty): plan, raid, report, crash, whatsnew, quest, desk, desklook, glance, tour1 … tour7. Settings (settings.png) is
   # in every one, as each snapshot opens it; help (help.png) in those where it opens by itself, all but the tour's.
   [string[]] $States,
   # Also start in English, switch to each other language once the data is there (--switch-language), and compare every
@@ -53,6 +53,9 @@ $views = [ordered]@{
   # past the desk's foot the app pictures it screen by screen (screen-2\window.png and on); each screen is a view of its
   # own here, desk-2, desk-3 and on (UI QA pass of step 2, F4).
   desk     = @{ PlanOnly = $true; AppArgs = @('--desk', '1') }
+  # The desk's reading 2, seven minutes on: the backpack in front, every other region stepped back and dated, the windows
+  # folded to a framed line each (owner, 2026-10-27, D1 B: the newest look in front).
+  desklook = @{ PlanOnly = $true; AppArgs = @('--desk', '2') }
   # The in-raid glance's plate over the map, the made-up body (tools\fake-raid.ps1 -Glance 2: a Scav raid, no roll call to
   # end the plate; UI QA pass of 2026-10-19, F6).
   glance   = @{ PlanOnly = $false; Glance = 2 }

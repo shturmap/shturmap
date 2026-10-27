@@ -14,14 +14,15 @@ namespace Shturmap.Session;
 /// <param name="OffersReport">The notice asks the player to report it: the UI offers the Report dialog (docs/DESIGN.md §8, "Reports").</param>
 public sealed record SessionNotice(string Text, TimeSpan Duration, bool OffersReport = false)
 {
-    /// <summary>The notice offers UNDO for the desk's page (owner, 2026-10-26: the desk's CLEAR, and a new page after a
-    /// raid): what <see cref="GameSession.UndoDeskAsync"/> takes; null for every other notice.</summary>
+    /// <summary>The notice offers UNDO for the desk's page (owner, 2026-10-26: a new page after a raid; the desk's CLEAR,
+    /// which had it too, gone 2026-10-27): what <see cref="GameSession.UndoDeskAsync"/> takes; null for every other
+    /// notice.</summary>
     public DeskUndoOffer? Undo { get; init; }
 }
 
 /// <summary>
-/// The desk's page a CLEAR or a new page after a raid took away, as a notice offers it back (owner, 2026-10-26: "Button +
-/// fresh after raid"; docs/DESIGN.md §4, *The stash desk*, *Clearing the page*): UNDO stands while the notice does and no
+/// The desk's page a new page after a raid took away, as its notice offers it back (owner, 2026-10-26: "Button + fresh
+/// after raid"; docs/DESIGN.md §4, *The stash desk*, *A new page after a raid*): UNDO stands while the notice does and no
 /// reading came after <paramref name="Reading"/>.
 /// </summary>
 /// <param name="Id">Which page: <see cref="GameSession.UndoDeskAsync"/> puts it back while it is the one held.</param>

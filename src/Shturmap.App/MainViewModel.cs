@@ -704,9 +704,15 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The notice asks for a report: it shows a REPORT link (COPY DIAGNOSTICS where reporting isn't set up).</summary>
     [ObservableProperty] public partial bool NoticeOffersReport { get; set; }
 
-    /// <summary>The notice offers the desk's page back: it shows an UNDO link (owner, 2026-10-26: the desk's CLEAR, a new page
-    /// after a raid).</summary>
+    /// <summary>The notice offers the desk's page back: it shows an UNDO link (owner, 2026-10-26: a new page after a
+    /// raid).</summary>
     [ObservableProperty] public partial bool NoticeOffersUndo { get; set; }
+
+    /// <summary>What the notice says after its message, " · price 2 min old" (the desk's copy; owner, 2026-10-27), muted, or
+    /// amber with <see cref="NoticeTailAmber"/>; empty for most notices.</summary>
+    [ObservableProperty] public partial string NoticeTail { get; set; } = "";
+
+    [ObservableProperty] public partial bool NoticeTailAmber { get; set; }
 
     /// <summary>The "Crash reports" setting in settings: "Ask", "Always" or "Never".</summary>
     [ObservableProperty] public partial string CrashMode { get; set; } = "Ask";

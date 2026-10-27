@@ -150,10 +150,14 @@ public static class DeskPageRules
         /// <summary>The page's height: the lane over it, its tallest column, the room under it.</summary>
         public double Height => Lane + ColumnHeights.Max() + PageBottom;
 
-        /// <summary>What has to fit the desk's height for the size to stand: the stash's column (the windows with it where
-        /// they stand under it) and the windows' own column; LOADOUT and the middle column may scroll, as the game scrolls
-        /// the middle column. In one column, the page.</summary>
-        public double Held => OneColumn ? Height : Lane + ColumnHeights.Skip(2).DefaultIfEmpty(0).Max() + PageBottom;
+        /// <summary>The stash's own height in its column, the windows under it not counted.</summary>
+        public double StashHeight { get; init; }
+
+        /// <summary>What has to fit the desk's height for the size to stand: the stash, never the windows (owner,
+        /// 2026-10-27: "windows never shrink the page; it scrolls for them"; until then the windows under the stash and
+        /// the windows' own column counted, so each case opened shrank the cells); LOADOUT and the middle column may
+        /// scroll, as the game scrolls the middle column. In one column, the page.</summary>
+        public double Held => OneColumn ? Height : Lane + StashHeight + PageBottom;
 
         /// <summary>Whether it fits a desk this wide (with the page's margins) and the stash this high.</summary>
         public bool Fits(double deskWidth, double deskHeight) => Width + 2 * Margin <= deskWidth && Held <= deskHeight;
@@ -179,9 +183,9 @@ public static class DeskPageRules
     /// The page's cell size and columns for a desk this wide and this high (owner, 2026-10-25, decision 1 of the layout
     /// round: the cell size follows the desk's size alone, never what was read): the largest size of <see cref="Sizes"/>
     /// at which the three columns (LOADOUT's eight cells, the middle column's widest row, the stash's ten) fit the desk's
-    /// width and the stash's column its height, the windows in a fourth column right of the stash where the width allows,
-    /// else under the stash (counted in its column's height). Where the middle column or LOADOUT is taller than the desk at
-    /// that size, the page scrolls. Where no size fits the stash's height, 40, scrolling; where even 40 doesn't fit the
+    /// width and the stash its height, the windows in a fourth column right of the stash where the width allows, else under
+    /// the stash; the windows never count in the height (owner, 2026-10-27: "windows never shrink the page; it scrolls for
+    /// them"). Where the middle column, LOADOUT or the windows are taller than the desk at that size, the page scrolls. Where no size fits the stash's height, 40, scrolling; where even 40 doesn't fit the
     /// three columns' width (the smallest window's desk, 516 DIP), the same blocks in one column at 40, scrolling. A
     /// placeholder and a region the last screenshot didn't show count as one read. Until 2026-10-25 the page flowed into
     /// columns, what was folded counting as its fold line (owner, 2026-10-19: "the cells fill the desk").
@@ -259,6 +263,7 @@ public static class DeskPageRules
         // Each column's height: its blocks under each other, POCKETS and SPECIAL SLOTS one row as tall as the taller.
         var heights = new double[columnWidths.Count];
         var count = new int[columnWidths.Count];
+        var stashHeight = 0d;
         for (var i = 0; i < blocks.Count; i++)
         {
             if (i == special)
@@ -268,8 +273,10 @@ public static class DeskPageRules
                 ? Math.Max(BlockHeight(blocks[i], size, widths[i], textScale, head), BlockHeight(blocks[special], size, widths[special], textScale, head))
                 : BlockHeight(blocks[i], size, columnWidths[c], textScale, head);
             heights[c] += (count[c]++ > 0 ? BlockGap : 0) + height;
+            if (blocks[i].Kind == DeskRegionKind.Stash)
+                stashHeight = height;
         }
-        return new Arrangement(size, blocks, columns, columnWidths, heights, oneColumn, beside);
+        return new Arrangement(size, blocks, columns, columnWidths, heights, oneColumn, beside) { StashHeight = stashHeight };
     }
 
     /// <summary>A block's width in DIP: LOADOUT's eight cells; a container's slot box, the gap and its grid; the stash's ten
@@ -452,14 +459,30 @@ public static class DeskPageRules
         return (Math.Floor(low * 64) / 64, 0);
     }
 
-    // ---- when a region was read: one the last screenshot didn't show ----
+    // ---- when a region was read: the newest look in front ----
 
-    /// <summary>Whether the last screenshot didn't show a region (owner, 2026-10-25): it is older than the page in hand. A
-    /// region of a file written before its time was kept (<see cref="DateTimeOffset.MinValue"/>) is the page's.</summary>
-    public static bool Kept(DeskRegion region, DeskPage page) => region.ReadAt != DateTimeOffset.MinValue && region.ReadAt < page.ReadAt;
+    /// <summary>Screenshots within this of the page's newest count as one look (owner, 2026-10-27, D1 B: "Screenshots within
+    /// 2 min of the newest count as one look, so scrolling the stash and taking three shots keeps all three in front").</summary>
+    public static readonly TimeSpan Look = TimeSpan.FromMinutes(2);
 
-    /// <summary>A region the last screenshot didn't show is drawn whole, a step dimmer: its block at 70 %.</summary>
-    public const double KeptOpacity = 0.7;
+    /// <summary>
+    /// Whether a region steps back (owner, 2026-10-27, from the decision page: D1 B, "The newest screenshot in front"): its
+    /// screenshot is older than the page's newest look, more than <see cref="Look"/> before the page's newest screenshot.
+    /// It stands in its place, faint, its figures not shown and its head dated; a window folds to its head
+    /// (<see cref="Folds"/>); pointing at it shows it whole. A region of a file written before its time was kept
+    /// (<see cref="DateTimeOffset.MinValue"/>) is the page's. Until 2026-10-27 every region older than the last screenshot
+    /// stood whole a step dimmer (owner, 2026-10-25).
+    /// </summary>
+    public static bool SteppedBack(DeskRegion region, DeskPage page) =>
+        region.ReadAt != DateTimeOffset.MinValue && region.ReadAt < page.ReadAt - Look;
+
+    /// <summary>Whether a region folds to its head line: a container's window stepped back (owner, 2026-10-27, D1 B: "older
+    /// windows fold to one line"). The windows stand at the page's tail, so the three columns never move for it.</summary>
+    public static bool Folds(DeskRegion region, DeskPage page) => region.Kind == DeskRegionKind.ContainerWindow && SteppedBack(region, page);
+
+    /// <summary>A stepped-back region's grid, slot boxes and slot names: faint, at 25 % (the decision page drew 22 %), its
+    /// head whole.</summary>
+    public const double SteppedBackOpacity = 0.25;
 
     /// <summary>When the screenshot that last showed a region was taken, as its head says it: "23:08" on the day it is now,
     /// else the date and time as the language writes them, in capitals ("19 OCT 23:08", German "19. OKT., 23:08"), as the
@@ -472,10 +495,32 @@ public static class DeskPageRules
             : UiLanguage.Upper(UiLanguage.DayMonthTime(local.DateTime)).Replace(' ', ' ');
     }
 
-    /// <summary>A region's head as the page draws it: its head (<see cref="Head"/>), and where the last screenshot didn't
-    /// show it, since when: "BACKPACK · 23:08", "KEYS · IN THE STASH · 19 OCT 23:08".</summary>
+    /// <summary>A region's head as the page draws it: its head (<see cref="Head"/>), and where it steps back
+    /// (<see cref="SteppedBack"/>), since when: "BACKPACK · 23:08", "KEYS · IN THE STASH · 19 OCT 23:08".</summary>
     public static string HeadOf(DeskRegion region, DeskPage page, DateTimeOffset now) =>
-        Kept(region, page) ? RuleTexts.DeskHeadSince(head: Head(region, page), time: Since(region.ReadAt, now)) : Head(region, page);
+        SteppedBack(region, page) ? RuleTexts.DeskHeadSince(head: Head(region, page), time: Since(region.ReadAt, now)) : Head(region, page);
+
+    // ---- the prices' age in the head line ----
+
+    /// <summary>The head line's prices' age turns amber past this (owner, 2026-10-27, D2 C: "in amber past 20 min or
+    /// offline").</summary>
+    public static readonly TimeSpan PricesStale = TimeSpan.FromMinutes(20);
+
+    /// <summary>
+    /// The prices' age at the head line's right (owner, 2026-10-27, from the decision page: D2 C, the page's age in the head
+    /// line, always): "PRICES 3 MIN OLD", from the newest scan in the item file in hand (<see cref="DeskView.PricesScannedAt"/>,
+    /// else when the file was confirmed), in hours from two on; "PRICES 26 MIN OLD · OFFLINE" where tarkov.dev wasn't reached
+    /// (<see cref="DeskView.PricesReached"/>); amber past <see cref="PricesStale"/> or offline. Null while no prices are in.
+    /// </summary>
+    public static (string Text, bool Amber)? PricesAge(DeskView view, DateTimeOffset now)
+    {
+        if ((view.PricesScannedAt ?? view.PricesAt) is not { } at)
+            return null;
+        var age = now - at;
+        var minutes = (int)Math.Max(0, Math.Floor(age.TotalMinutes));
+        var text = minutes < 120 ? RuleTexts.DeskHeadPrices(minutes: minutes) : RuleTexts.DeskHeadPricesHours(hours: minutes / 60);
+        return view.PricesReached ? (text, age > PricesStale) : (RuleTexts.DeskHeadPricesOffline(age: text), true);
+    }
 
     /// <summary>The regions whose cells come in, 50 ms apart, as a reading's page does (docs/DESIGN.md §4, *Fun*): of a new
     /// reading, what it changed (every region on the mode's first); nothing otherwise, so a reading that changed nothing

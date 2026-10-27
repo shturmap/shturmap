@@ -652,6 +652,26 @@
     <value>{rule}, over the best net</value>
     <comment>The rule in the notice DeskCopied when the price is above the price that nets the most after the fee (the card's plate says more). {rule}: as in DeskCopiedScaled.</comment>
   </data>
+  <data name="DeskCopiedAge" xml:space="preserve">
+    <value>{minutes, plural, =0 {price just in} one {price # min old} other {price # min old}}</value>
+    <comment>The end of the notice DeskCopied, after " · " ("611,100 ₽ copied · 3% under the last low · price 2 min old"; owner, 2026-10-27): how old the copied item's own price is, from tarkov.dev's last scan of that item, as the card's DeskCardAge counts it; amber past 30 minutes. Singular "price", the one on the clipboard, kept apart from the head line's "PRICES … OLD" (DeskHeadPrices), the page's. {minutes}: whole minutes.</comment>
+  </data>
+  <data name="DeskCopiedAgeHours" xml:space="preserve">
+    <value>{hours, plural, one {price # h old} other {price # h old}}</value>
+    <comment>The end of the notice DeskCopied, as DeskCopiedAge, from two hours on. {hours}: whole hours.</comment>
+  </data>
+  <data name="DeskHeadPrices" xml:space="preserve">
+    <value>{minutes, plural, =0 {PRICES JUST IN} one {PRICES # MIN OLD} other {PRICES # MIN OLD}}</value>
+    <comment>The stash desk's head line, at its right in its muted capitals (owner, 2026-10-27): how old the newest prices of tarkov.dev's item file in hand are, the newest scan in it; it answers "are prices still coming in", and turns amber past 20 minutes. Plural "prices", the page's, kept apart from the copy notice's "price … old" (DeskCopiedAge), one item's. {minutes}: whole minutes. Capitals.</comment>
+  </data>
+  <data name="DeskHeadPricesHours" xml:space="preserve">
+    <value>{hours, plural, one {PRICES # H OLD} other {PRICES # H OLD}}</value>
+    <comment>The stash desk's head line, as DeskHeadPrices, from two hours on. {hours}: whole hours. Capitals.</comment>
+  </data>
+  <data name="DeskHeadPricesOffline" xml:space="preserve">
+    <value>{age} · OFFLINE</value>
+    <comment>The stash desk's head line, in amber, when tarkov.dev couldn't be reached for new prices, so the ones shown may be old (owner, 2026-10-27: the decision page's "PRICES 26 MIN OLD · OFFLINE"). {age}: DeskHeadPrices or DeskHeadPricesHours. Capitals.</comment>
+  </data>
   <data name="DeskNothingTrader" xml:space="preserve">
     <value>Nothing copied: {trader} pays more, {price}</value>
     <comment>A one-line notice after a click on a stash desk's cell that copies nothing: the best trader pays more than the flea nets at the rule's price. {trader}: the trader's name; {price}: a full price in roubles.</comment>

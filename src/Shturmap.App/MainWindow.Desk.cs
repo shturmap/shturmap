@@ -68,7 +68,6 @@ public sealed partial class MainWindow
         StashDesk.CellPointed += OnDeskCellPointed;
         StashDesk.CellClicked += cell => CopyDeskCell(cell, "click");
         StashDesk.CellPinToggled += cell => ToggleDeskPin(cell.Key, "right-click");
-        StashDesk.ClearClicked += () => _ = ClearDeskAsync("click");
         _deskRule = DeskCopyRule.Of(_session.GetSetting(DeskCopyRule.Setting));
         ShowCopyRuleSetting();
         // Minimised or restored: the desk leaves the screen or comes back to it, for its prices.
@@ -79,8 +78,8 @@ public sealed partial class MainWindow
     private bool _deskOnScreenTold;
 
     /// <summary>Tells the session whether the desk is on screen (<see cref="DeskSwitch.OnScreen"/>) when that changed: while
-    /// it is, the session asks for the desk's prices again as they turn five minutes old, and at once when it comes back
-    /// with older ones (owner, 2026-10-26; docs/DESIGN.md §3).</summary>
+    /// it is, the session asks for the desk's prices again as tarkov.dev's next item file falls due, and at once when it comes
+    /// back with a file past due (owner, 2026-10-26 and 27; docs/DESIGN.md §3).</summary>
     private void TellDeskOnScreen()
     {
         var minimised = AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized };
@@ -98,8 +97,8 @@ public sealed partial class MainWindow
         var fresh = DeskSwitch.IsNew(view?.Reading, _deskReadingSeen);
         if (view is not null)
             _deskReadingSeen = Math.Max(_deskReadingSeen, view.Reading);
-        // A reading since the page was taken away: the notice's UNDO is gone (owner, 2026-10-26).
-        if (_noticeUndo is { } undo && !DeskClearing.UndoStands(undo.Reading, view?.Reading))
+        // A reading since a new page after a raid took the page away: the notice's UNDO is gone (owner, 2026-10-26).
+        if (_noticeUndo is { } undo && !DeskFreshPage.UndoStands(undo.Reading, view?.Reading))
             DropNoticeUndo();
         var chosen = DeskSwitch.ChosenAfter(_deskChosen, ViewModel.InRaid, fresh, TourOpen);
         if (view is not null && (fresh || !ReferenceEquals(view, _deskShown)))
@@ -111,15 +110,8 @@ public sealed partial class MainWindow
                 _deskHistories.Clear();
                 _deskHistoriesMode = view.Mode;
             }
-            // The pins stay with their cells; a reading that changed a pinned cell takes its pin. A CLEAR took them all; its
-            // UNDO puts its page back, and the pins come back with it.
-            if (_deskPinsCleared is { } cleared && ReferenceEquals(cleared.Page, view.Sheet.Page))
-            {
-                _deskPins = DeskPins.Kept(cleared.Pins, view.Sheet);
-                _deskPinsCleared = null;
-            }
-            else
-                _deskPins = DeskPins.Kept(_deskPins, view.Sheet);
+            // The pins stay with their cells; a reading that changed a pinned cell takes its pin.
+            _deskPins = DeskPins.Kept(_deskPins, view.Sheet);
             _deskShown = view;
             _deskBoardDue = true;
             _deskVersion++;
@@ -191,7 +183,7 @@ public sealed partial class MainWindow
         _deskBoardDue = false;
         var entering = _deskEntering;
         _deskEntering = new HashSet<string>();
-        StashDesk.Show(_deskShown, entering, motion, DeskClearing.Offered(_deskShown));
+        StashDesk.Show(_deskShown, entering, motion);
         StashDesk.ShowPinned(_deskPins.Select(p => p.Key).ToHashSet());
     }
 
@@ -422,16 +414,14 @@ public sealed partial class MainWindow
         RenderDeskRail();
     }
 
-    // ---- clearing the page: CLEAR, and the notice's UNDO (owner, 2026-10-26: "Button + fresh after raid") ----
+    // ---- a new page after a raid: its notice's UNDO (owner, 2026-10-26: "Button + fresh after raid"; CLEAR, which had the
+    // same notice and UNDO, gone 2026-10-27) ----
 
     /// <summary>What a notice's UNDO does, and the desk's reading counter it was offered at (a later reading ends it).</summary>
     private sealed record NoticeUndoAct(int Reading, Func<Task<bool>> Run);
 
     // The UNDO of the notice standing; null while it offers none.
     private NoticeUndoAct? _noticeUndo;
-
-    // The pins a CLEAR took, with the page they were on: its UNDO puts that page back, and they come back with it.
-    private (DeskPage Page, IReadOnlyList<DeskPin> Pins)? _deskPinsCleared;
 
     /// <summary>The notice went, or another took its place, or a reading came: its UNDO with it.</summary>
     private void DropNoticeUndo()
@@ -440,51 +430,10 @@ public sealed partial class MainWindow
         ViewModel.NoticeOffersUndo = false;
     }
 
-    /// <summary>
-    /// CLEAR in the desk's head clicked (or the developer script's "desk clear"; docs/DESIGN.md §4, *The stash desk*,
-    /// *Clearing the page*): the page in hand for the mode emptied at once, its pins and the card pointed at with it, and the
-    /// notice "Desk cleared." with UNDO; no question (principle 7). The session clears its page; a developer run's made-up
-    /// desk is emptied here. What was done, or why not.
-    /// </summary>
-    private async Task<string> ClearDeskAsync(string how)
-    {
-        if (!_deskChosen || _deskShown is not { } shown || !DeskClearing.Offered(shown))
-            return "desk: nothing to clear";
-        Study.Ui("desk.clear", ("how", how));
-        // The card pointed at closes with the page; the pins come back with it on UNDO.
-        _deskPinsCleared = (shown.Sheet.Page, _deskPins);
-        _deskPointed = null;
-        // The empty page stands from its head, as a first reading's does.
-        StashDesk.ScrollToTop();
-        if (_deskExample is { } example)
-        {
-            _deskExample = DeskClearing.Emptied(example, DateTimeOffset.Now);
-            if (Volatile.Read(ref _snapshot) is { } s)
-                UpdateDesk(s);
-            ShowNotice(SessionTexts.DeskCleared, TimeSpan.FromSeconds(GameSession.DeskUndoSeconds),
-                undo: new NoticeUndoAct(example.Reading, () => Task.FromResult(PutDeskExampleBack(example))));
-            AppLog.Info("Example desk cleared");
-            return "desk: cleared the made-up desk";
-        }
-        return await _session.ClearDeskAsync() ? "desk: cleared" : "desk: nothing to clear";
-    }
-
-    // The made-up desk's UNDO: the view as it was, while it is still the emptied one (no reading came since).
-    private bool PutDeskExampleBack(DeskView example)
-    {
-        if (_deskExample is not { } now || now.Reading != example.Reading || now.Sheet.Page.Regions.Count > 0)
-            return false;
-        _deskExample = example;
-        if (Volatile.Read(ref _snapshot) is { } s)
-            UpdateDesk(s);
-        AppLog.Info("Example desk put back");
-        return true;
-    }
-
     private async void OnNoticeUndoClick(object sender, RoutedEventArgs e) => await UndoNoticeAsync("click");
 
-    /// <summary>The notice's UNDO clicked (or the developer script's "desk undo"): the page it took away back, standing at
-    /// once; the notice goes. What was done, or why not.</summary>
+    /// <summary>The notice's UNDO clicked: the page it took away back, standing at once; the notice goes. What was done, or
+    /// why not.</summary>
     private async Task<string> UndoNoticeAsync(string how)
     {
         if (_noticeUndo is not { } undo || !ViewModel.NoticeOpen)
@@ -528,7 +477,10 @@ public sealed partial class MainWindow
             if (!SnapshotMode && new Windows.UI.ViewManagement.UISettings().AnimationsEnabled && cell.FigureBlock is { } block && cell.FigureNumber is { } number)
                 Decode(block, number, TimeSpan.FromMilliseconds(600));
         }
-        ShowNotice(DeskCards.Notice(copy, _deskRule, context?.TraderName ?? (id => id)), TimeSpan.FromSeconds(4));
+        // A copy says how old the copied price is, from tarkov.dev's scan of the item as the card counts it, amber past 30
+        // minutes (owner, 2026-10-27, from the decision page: D2 C).
+        var age = copy.Copies && context is not null ? DeskCards.CopiedAge(cell.Sheet.Cell, context) : null;
+        ShowNotice(DeskCards.Notice(copy, _deskRule, context?.TraderName ?? (id => id)), TimeSpan.FromSeconds(4), tail: age);
         Study.Ui("desk.copy", ("state", copy.State.ToString()), ("how", how), ("rule", _deskRule.Format()));
         AppLog.Info($"Desk click on {cell.Key}: {copy.State}" + (copy.Copies ? $" {DeskCards.Clipboard(copy)}" + (clipboard ? "" : " (clipboard left alone)") : ""));
         return copy;
@@ -613,7 +565,7 @@ public sealed partial class MainWindow
     {
         if (_deskExample is not { } shown)
             return;
-        _deskExample = MadeUpDesk(s, shown.Reading) with { Changed = shown.Changed, First = shown.First, PricesAt = shown.PricesAt };
+        _deskExample = MadeUpDesk(s, shown.Reading) with { Changed = shown.Changed, First = shown.First, PricesAt = shown.PricesAt, PricesScannedAt = shown.PricesScannedAt };
         UpdateDesk(s);
     }
 

@@ -80,7 +80,9 @@ public class DeskCardTests
         Assert.Equal($"The high, 9,999,999{Nb}₽, is past the bar: one offer, likely an outlier.", ledx.Outlier);
         Assert.Equal(["Therapist", "Fence"], ledx.Traders.Select(t => t.Name));
         Assert.Equal($"650,000{Nb}₽", ledx.Traders[0].Price);
-        Assert.Equal("Prices 4 min old · tarkov.dev", ledx.Age);
+        // The made-up LEDX was scanned 52 minutes before the page was made, four before now (owner, 2026-10-27: the copy
+        // notice's age in amber on the made-up desk).
+        Assert.Equal("Prices 56 min old · tarkov.dev", ledx.Age);
         Assert.Empty(ledx.Candidates);
     }
 
@@ -161,6 +163,26 @@ public class DeskCardTests
         Assert.Equal("Nothing copied: it can't be listed on the flea", Notice("rig", 5, 1, DeskCopyRule.Default));
         Assert.Equal("One of 3 items: pick it on the card first", Notice("stash", 4, 1, DeskCopyRule.Default));
         Assert.Equal("Nothing copied: no price for this cell", Notice("backpack", 3, 3, DeskCopyRule.Default));
+    }
+
+    // The copy notice's age (owner, 2026-10-27, D2 C: "611,100 ₽ copied · 3% under the last low · price 2 min old", amber past
+    // 30 minutes): the copied item's own scan, counted as the card counts it; in hours from two on; the file's confirmation
+    // where the item says no scan; none while no prices are in.
+    [Fact]
+    public void A_copy_says_how_old_its_price_is()
+    {
+        var (_, ledx) = At("stash", 8, 0);
+        var (_, gpu) = At("stash", 4, 0);
+        Assert.Equal(("price 8 min old", false), DeskCards.CopiedAge(gpu.Cell, Context()));
+        Assert.Equal((RuleTexts.DeskCopiedAge(minutes: 56), true), DeskCards.CopiedAge(ledx.Cell, Context()));
+        Assert.Equal(DeskCards.Age(DeskCards.ScannedAt(ledx.Cell, Context()), Now), Card("stash", 8, 0).Age);
+        var later = Context() with { Now = Now.AddMinutes(22) };
+        Assert.Equal(("price 30 min old", false), DeskCards.CopiedAge(gpu.Cell, later));
+        Assert.Equal(("price 31 min old", true), DeskCards.CopiedAge(gpu.Cell, later with { Now = Now.AddMinutes(23) }));
+        Assert.Equal(("price 2 h old", true), DeskCards.CopiedAge(gpu.Cell, later with { Now = Now.AddMinutes(120) }));
+        var unscanned = Context() with { Facts = id => View.FactsOf(id) is { } f ? f with { Updated = null } : null };
+        Assert.Equal(("price 4 min old", false), DeskCards.CopiedAge(gpu.Cell, unscanned));
+        Assert.Null(DeskCards.CopiedAge(gpu.Cell, unscanned with { PricesAt = null }));
     }
 
     // The clipboard gets the digits alone, as the flea's price field takes a paste (owner, 2026-10-19: "Copy and paste

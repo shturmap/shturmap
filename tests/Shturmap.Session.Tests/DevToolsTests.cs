@@ -395,7 +395,7 @@ public sealed class DevToolsTests : IDisposable
         var (steps, errors) = DevScript.Parse(string.Join('\n', "desk", "desk 2", "desk point backpack", "desk point stash 4 1", "desk plan",
             "desk show", "desk 4", "DESK open Stash", "desk open", "desk point stash 4", "desk fold"));
         const string said = "'desk' takes a reading (1 to 3), 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
-                            + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan', 'show [<n>]', 'prices', 'probe <n>', 'clear' or 'undo'";
+                            + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan', 'show [<n>]', 'prices' or 'probe <n>'";
         Assert.Equal([$"line 7: {said}", $"line 8: {said}", $"line 9: {said}", $"line 10: {said}", $"line 11: {said}"], errors);
         Assert.Equal(
             [
@@ -420,16 +420,14 @@ public sealed class DevToolsTests : IDisposable
             steps.Select(s => DevScript.DeskOf(s)!));
     }
 
-    // 2026-10-26 (owner: "Button + fresh after raid"): "clear" CLEAR in the desk's head clicked, "undo" the notice's UNDO
-    // clicked; neither takes more.
+    // 2026-10-27 (owner, D1 B: CLEAR and its UNDO gone): "desk clear" and "desk undo", CLEAR in the desk's head and the
+    // notice's UNDO clicked from 2026-10-26, are no steps any more.
     [Fact]
-    public void The_desk_step_clears_the_page_and_undoes_it()
+    public void The_desk_step_no_longer_clears_the_page()
     {
-        var (steps, errors) = DevScript.Parse(string.Join('\n', "desk clear", "desk undo", "DESK Clear", "desk clear all", "desk undo 2"));
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "desk clear", "desk undo"));
         Assert.Equal(2, errors.Count);
-        Assert.Equal(
-            [new DevScript.DeskStep(DevScript.DeskAct.Clear), new DevScript.DeskStep(DevScript.DeskAct.Undo), new DevScript.DeskStep(DevScript.DeskAct.Clear)],
-            steps.Select(s => DevScript.DeskOf(s)!));
+        Assert.Empty(steps);
     }
 
     // Step C (2026-10-19): "pin" a cell right-clicked, "copy" a cell clicked (the clipboard left alone), "unpin" a pin or

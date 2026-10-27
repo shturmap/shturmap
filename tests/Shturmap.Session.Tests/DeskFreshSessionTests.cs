@@ -6,13 +6,13 @@ using Shturmap.Game.Screenshots;
 
 namespace Shturmap.Session.Tests;
 
-// Clearing the desk (owner, 2026-10-26: "We need an option to clear the desk because it quickly gets messy"; from the
-// coordinator's options, "Button + fresh after raid"; docs/DESIGN.md §4, *The stash desk*, *Clearing the page*): CLEAR
-// empties the mode's page at once and keeps it so in desk.json, its notice's UNDO puts it back exactly while no reading came;
-// the first reading after a raid (the game's logs: one started and ended since the page's last reading) starts a new page,
-// with the same UNDO; a reading without a raid between keeps the page as before; each mode its own. The reader is the
+// A new desk page after a raid (owner, 2026-10-26: from the coordinator's options, "Button + fresh after raid";
+// docs/DESIGN.md §4, *The stash desk*, *A new page after a raid*): the first reading after a raid (the game's logs: one
+// started and ended since the page's last reading) starts a new page, its notice's UNDO puts back the page before the raid
+// with the reading taken into it while no reading came; a reading without a raid between keeps the page as before; each
+// mode its own. CLEAR, its tests here until then, went on 2026-10-27 (D1 B, the newest look in front). The reader is the
 // test's own, with the screenshot's time it says.
-public class DeskClearSessionTests
+public class DeskFreshSessionTests
 {
     private const string Water = DeskSessionTests.Water, Wallet = DeskSessionTests.Wallet;
 
@@ -84,64 +84,6 @@ public class DeskClearSessionTests
     private static DeskUndoOffer Offered(SessionRig rig, string text) => rig.Said.Last(n => n.Text == text).Undo!;
 
     [Fact]
-    public async Task Clear_empties_the_page_keeps_it_so_and_undo_puts_it_back_exactly()
-    {
-        var shows = Shows(DateTimeOffset.Now.AddMinutes(-3), backpack: true, WaterAt(0, 2));
-        await using var rig = await Started(() => shows);
-        var before = (await Reading(rig, 1)).Desk!;
-        var page = before.Sheet.Page;
-
-        Assert.True(await rig.Session.ClearDeskAsync());
-        var cleared = (await rig.Until(s => s.Desk is { Sheet.Page.Regions.Count: 0 }, "the page cleared")).Desk!;
-        // Not a reading: nothing comes in, nothing opens the desk anew.
-        Assert.Equal(before.Reading, cleared.Reading);
-        Assert.Empty(cleared.Changed);
-        Assert.Equal((0d, 0d), (cleared.Sheet.Totals.OnYou, cleared.Sheet.Totals.Stash));
-        Assert.Empty(DeskLedger.Load(DeskFile(rig)).Page(GameMode.Pve)!.Regions);
-        var offer = Offered(rig, SessionTexts.DeskCleared);
-        Assert.Equal(before.Reading, offer.Reading);
-        // A page of no region has nothing to clear: no notice.
-        Assert.False(await rig.Session.ClearDeskAsync());
-        Assert.Single(rig.Said, n => n.Text == SessionTexts.DeskCleared);
-
-        // UNDO: the page exactly as it was, its regions' reading times with it, and kept so.
-        Assert.True(await rig.Session.UndoDeskAsync(offer.Id));
-        var back = (await rig.Until(s => s.Desk is { Sheet.Page.Regions.Count: > 0 }, "the page put back")).Desk!;
-        Assert.Same(page, back.Sheet.Page);
-        Assert.Equal(before.Reading, back.Reading);
-        Assert.Equal(before.Sheet.Totals.Stash, back.Sheet.Totals.Stash);
-        var file = DeskLedger.Load(DeskFile(rig)).Page(GameMode.Pve)!;
-        Assert.Equal(page.ReadAt, file.ReadAt);
-        Assert.Equal(["backpack", "stash"], file.Regions.Select(r => r.Key).Order());
-        Assert.Equal(2, file.Region("stash")!.Cells.Single().Count);
-        // Once used, it's gone.
-        Assert.False(await rig.Session.UndoDeskAsync(offer.Id));
-
-        // The page cleared stays cleared at the next start.
-        Assert.True(await rig.Session.ClearDeskAsync());
-        await rig.Until(s => s.Desk is { Sheet.Page.Regions.Count: 0 }, "the page cleared again");
-        await rig.RestartAsync();
-        await rig.StartAsync();
-        await rig.Until(s => s.Desk is { Sheet.Page.Regions.Count: 0 } && s.Sources is not null, "the cleared page after the restart");
-    }
-
-    [Fact]
-    public async Task Undo_is_gone_once_a_new_reading_came_and_the_next_reading_is_the_modes_first()
-    {
-        var shows = Shows(DateTimeOffset.Now.AddMinutes(-3), backpack: true, WaterAt(0));
-        await using var rig = await Started(() => shows);
-        await Reading(rig, 1);
-        Assert.True(await rig.Session.ClearDeskAsync());
-        var offer = Offered(rig, SessionTexts.DeskCleared);
-        shows = Shows(DateTimeOffset.Now, backpack: false, WaterAt(3));
-        var next = (await Reading(rig, 2)).Desk!;
-        Assert.True(next.First);
-        Assert.Equal(["stash"], next.Sheet.Page.Regions.Select(r => r.Key));
-        Assert.False(await rig.Session.UndoDeskAsync(offer.Id));
-        Assert.Equal(["stash"], rig.Snapshot.Desk!.Sheet.Page.Regions.Select(r => r.Key));
-    }
-
-    [Fact]
     public async Task The_first_reading_after_a_raid_starts_a_new_page_and_the_next_keeps_it()
     {
         var shows = Shows(DateTimeOffset.Now.AddMinutes(-40), backpack: true, WaterAt(0));
@@ -185,7 +127,7 @@ public class DeskClearSessionTests
         var back = (await rig.Until(s => s.Desk?.Sheet.Page.Region("backpack") is not null, "the page before the raid")).Desk!;
         Assert.Equal(2, back.Reading);
         Assert.Equal(4, back.Sheet.Page.Region("stash")!.Cells.Single().I);
-        // The backpack the reading didn't show, as a reading without a raid would have kept it: a step dimmer and dated.
+        // The backpack the reading didn't show, as a reading without a raid would have kept it: stepped back and dated.
         Assert.True(back.Sheet.Page.Region("backpack")!.ReadAt < back.Sheet.Page.ReadAt);
         Assert.Equal(["backpack", "stash"], DeskLedger.Load(DeskFile(rig)).Page(GameMode.Pve)!.Regions.Select(r => r.Key).Order());
     }

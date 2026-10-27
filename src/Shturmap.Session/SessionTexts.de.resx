@@ -860,10 +860,6 @@
     <value>{count, plural, one {Daily oder Weekly gelesen: #.} other {Dailies und Weeklies gelesen: #.}}</value>
     <comment>en: {count, plural, one {Operational task read: #.} other {Operational tasks read: #.}}</comment>
   </data>
-  <data name="DeskCleared" xml:space="preserve">
-    <value>Desk geleert.</value>
-    <comment>en: Desk cleared.</comment>
-  </data>
   <data name="DeskFreshAfterRaid" xml:space="preserve">
     <value>Neue Desk-Seite nach dem Raid.</value>
     <comment>en: A new desk page after the raid.</comment>

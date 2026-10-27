@@ -732,12 +732,4 @@
     <value>Screenshot your stash in the game's menus.</value>
     <comment>The stash desk with nothing read yet: one muted line where the page would be.</comment>
   </data>
-  <data name="DeskClear" xml:space="preserve">
-    <value>CLEAR</value>
-    <comment>The stash desk's head, at the right of its head line ("ON YOU 1.01 M ₽ · STASH 6.84 M ₽ · KEEP 3 · 2 · 4"): a small amber link that empties the desk's page for this game mode at once, with no question (owner, 2026-10-26); a notice "Desk cleared." with UNDO follows. Capitals, as the app's other text links (FORGET ALL MARKS); about 40 DIP at 11 px.</comment>
-  </data>
-  <data name="DeskClearTip" xml:space="preserve">
-    <value>Empties the desk's page for this mode: the next screenshot starts a new one. The notice that follows can undo it.</value>
-    <comment>Tooltip of CLEAR in the stash desk's head (DeskClear). "Mode": the game mode, PvE or PvP, which keep a desk page each; "page": what the desk shows, the regions read so far; "the notice that follows": "Desk cleared." with its UNDO link.</comment>
-  </data>
 </root>

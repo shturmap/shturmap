@@ -25,6 +25,55 @@ public sealed class ItemSources
     /// <summary>When the item file, and with it every price, was last confirmed current with tarkov.dev.</summary>
     public DateTimeOffset PricesAt { get; init; }
 
+    /// <summary>The item file's Last-Modified as tarkov.dev sent it: when the file in hand was made (about 3 minutes after
+    /// a scan, measured 2026-10-27); null where none was sent. The stash desk asks for the file again when the next is due
+    /// by it (docs/DESIGN.md §3, "The stash desk's prices come per reading").</summary>
+    public DateTimeOffset? ModifiedAt { get; init; }
+
+    /// <summary>tarkov.dev wasn't reached for the item file: this is the saved copy (the stash desk's head line says so,
+    /// owner, 2026-10-27).</summary>
+    public bool Stale { get; init; }
+
+    private DateTimeOffset? _scannedAt;
+    private bool _scannedKnown;
+
+    /// <summary>The newest of the items' scans (their <see cref="ApiItem.Updated"/>): how old the prices in the file in hand
+    /// are at best, the stash desk's head line's "PRICES 3 MIN OLD" (owner, 2026-10-27); null where no item says.</summary>
+    public DateTimeOffset? ScannedAt
+    {
+        get
+        {
+            if (!_scannedKnown)
+            {
+                DateTimeOffset? newest = null;
+                foreach (var item in Items.Values)
+                {
+                    if (item.Updated is { Length: > 0 } text && DateTimeOffset.TryParse(text, System.Globalization.CultureInfo.InvariantCulture,
+                            System.Globalization.DateTimeStyles.AssumeUniversal, out var at) && (newest is null || at > newest))
+                        newest = at;
+                }
+                (_scannedAt, _scannedKnown) = (newest, true);
+            }
+            return _scannedAt;
+        }
+    }
+
+    /// <summary>The same file had again at <paramref name="at"/>: confirmed current (tarkov.dev answered "not modified"), or
+    /// the saved copy given back where tarkov.dev wasn't reached (<paramref name="stale"/>); the same items, barters, crafts
+    /// and stations.</summary>
+    public ItemSources Confirmed(DateTimeOffset at, bool stale = false) => new()
+    {
+        Items = Items,
+        Barters = Barters,
+        Crafts = Crafts,
+        Stations = Stations,
+        HideoutNeeds = HideoutNeeds,
+        FleaMarket = FleaMarket,
+        PricesAt = at,
+        ModifiedAt = ModifiedAt,
+        Stale = stale,
+    };
+
     private ILookup<string, string>? _members;
 
     /// <summary>
