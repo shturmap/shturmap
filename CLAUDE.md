@@ -135,7 +135,8 @@ Essentials:
   `TranslationTests` hold the files to it. Before a release, and after a layout change, run the layout check in each
   language and the pseudo-language (`docs/LANGUAGES.md`, "Layout check"). A new language follows the checklist there.
 - **Keep the tour current** (owner, 2026-10-09; DESIGN.md §4, *The tour*): a change to something a chapter shows
-  changes that chapter in `docs/tour.md` in the same commit, and a release that changed a chapter adds a `tour:N` line
-  to its What's New section. Before a release, look at each chapter: `tools\fake-raid.ps1 -Exe
+  changes that chapter in `docs/tour.md` in the same commit, and a release that changed a chapter says so in its
+  release notes (What's New opens no tour since 2026-10-27, owner's D4 B: a new feature gets a What's New line of its
+  own, with its picture and preview). Before a release, look at each chapter: `tools\fake-raid.ps1 -Exe
   artifacts\Shturmap\Shturmap.exe -Out <folder> -PlanOnly -Tour <n>` for n = 1 to 7. `TourTests` catch a part that's
   gone from the window; whether the words are still true is yours to check.

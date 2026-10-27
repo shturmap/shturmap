@@ -10,8 +10,8 @@ stage is what the chapter draws (`safe`, `follows`, `next`, `pick`, `key`, `raid
 the first isn't shown. Words as the design system's "Words": short, fragments are fine. A change to something a chapter
 shows changes its chapter here, in the same commit, and a release that changed a chapter says so in its release notes:
 What's New opens no tour since 2026-10-27 (owner, D4 B; docs/DESIGN.md §4, *What's New*), so it has no `tour:N` line
-any more, and the feature has its own (CLAUDE.md's "Keep the tour current" still names the `tour:N` line: the owner's
-to amend). The tour stays in help. `TourTests` check the stages, the anchors and the lengths.
+any more, and the feature has its own (CLAUDE.md's "Keep the tour current" says so since the same day). The tour stays
+in help. `TourTests` check the stages, the anchors and the lengths.
 
 A translation is `docs/tour.<code>.md` beside this file (`tour.de.md`), built in the same way and shown in that
 language (docs/DESIGN.md §8, "Texts"): the same chapters in the same order, each with this file's stage and anchors
