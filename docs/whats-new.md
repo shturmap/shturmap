@@ -27,6 +27,12 @@ that language (docs/DESIGN.md §8, "Texts"): a section per version this file has
 with on, each with this section's lines in the same order and their previews as they are, the names and words
 translated. A version the translation lacks, or whose lines aren't this section's, shows from this file.
 
+## 0.7.1 · Kaomoji
+
+- desk · Your newest screenshot in front · The desk shows what you just screenshotted; earlier parts step back; point at one to see it whole.
+- desk · Prices with their age · The desk's head says how old its prices are; a copied price says its own.
+- grid · The grid under the pointer · Point at the map: its square and ninth light up; under YOU, top left, its reference (D5-8).
+
 ## 0.7.0 · Kaomoji
 
 - desk · The stash desk · Screenshot your stash or gear: each item's price, flea or trader, and what to keep. DESK, top left.

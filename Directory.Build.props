@@ -12,7 +12,7 @@
     <Product>Shturmap</Product>
     <!-- Shturmap's own texts are written in English; each other language is a satellite (docs/DESIGN.md §8, "Texts"). -->
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>0.7.0</Version>
+    <Version>0.7.1</Version>
     <Copyright>Copyright (c) 2026 the Shturmap contributors</Copyright>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <!-- Windows APIs (OCR, file system, registry) need a Windows TFM; keep one value for every Windows-specific project. -->

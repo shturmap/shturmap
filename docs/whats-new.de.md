@@ -4,6 +4,12 @@ The German lines of the What's New card, a translation of docs/whats-new.md, whi
 written and read. Each section is a version of that file, with its lines in the same order and their previews as they
 are; the release's name stays as it is. Words: docs/glossary-de.md.
 
+## 0.7.1 · Kaomoji
+
+- desk · Dein neuester Screenshot vorn · Der Desk zeigt, was du gerade gescreenshottet hast; ältere Bereiche treten zurück. Zeig auf einen, um ihn ganz zu sehen.
+- desk · Preise mit ihrem Alter · Der Kopf des Desks sagt, wie alt seine Preise sind; ein kopierter Preis nennt sein eigenes.
+- grid · Raster unter der Maus · Zeig auf die Map: Planquadrat und Neuntel leuchten; die Angabe (D5-8) steht oben links unter DU.
+
 ## 0.7.0 · Kaomoji
 
 - desk · Der Desk · Stash- oder Gear-Screenshot: Preis je Item, Flea oder Trader, und was du behältst. DESK, oben links.
