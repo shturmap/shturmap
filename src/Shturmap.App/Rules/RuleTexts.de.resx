@@ -613,11 +613,11 @@
     <comment>en: CRAFTS AND BARTERS</comment>
   </data>
   <data name="DeskCardAge" xml:space="preserve">
-    <value>{minutes, plural, =0 {Preise gerade geholt · tarkov.dev} one {Preise # min alt · tarkov.dev} other {Preise # min alt · tarkov.dev}}</value>
+    <value>{minutes, plural, =0 {Preis gerade geholt · tarkov.dev} one {Preis # min alt · tarkov.dev} other {Preis # min alt · tarkov.dev}}</value>
     <comment>en: {minutes, plural, =0 {Price just in · tarkov.dev} one {Price # min old · tarkov.dev} other {Price # min old · tarkov.dev}}</comment>
   </data>
   <data name="DeskCardAgeHours" xml:space="preserve">
-    <value>{hours, plural, one {Preise # h alt · tarkov.dev} other {Preise # h alt · tarkov.dev}}</value>
+    <value>{hours, plural, one {Preis # h alt · tarkov.dev} other {Preis # h alt · tarkov.dev}}</value>
     <comment>en: {hours, plural, one {Price # h old · tarkov.dev} other {Price # h old · tarkov.dev}}</comment>
   </data>
   <data name="DeskCardOneOf" xml:space="preserve">
