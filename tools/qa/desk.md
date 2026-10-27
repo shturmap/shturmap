@@ -17,8 +17,8 @@ rail's foot, always in sight, three at most, and the pointed card scrolls in the
 (owner, 2026-10-25, decision 1: A, the GEAR tab mirrored and fixed) gives the page the game's GEAR tab's shape at one
 cell size for the desk: LOADOUT as the game's slot grid, each box under its slot's name; TACTICAL RIG, POCKETS beside
 SPECIAL SLOTS, BACKPACK and POUCH, a container's slot box beside its grid; STASH; the windows right of the stash or under
-it; a region never read a dashed frame ("NOT IN A SCREENSHOT YET"), one the last screenshot didn't show a step dimmer
-with its head dated; the fold gone. Its UI QA pass (2026-10-25) added the scroll mark, "MORE BELOW ▾" at the desk's
+it; a region never read a dashed frame ("NOT IN A SCREENSHOT YET"), one of an earlier look stepped back (since
+2026-10-27: faint, without figures, its head dated; an earlier look's window folded to a line); the fold gone. Its UI QA pass (2026-10-25) added the scroll mark, "MORE BELOW ▾" at the desk's
 foot while the page runs past it, the heads' room for their dates from the first reading, and the slot names of a row
 on one baseline.
 
@@ -26,7 +26,7 @@ on one baseline.
 (`Rules.DeskExample`, built through the model as a reading's page is: real items of the catalogue, so their art and
 cards are there, with made-up prices, counts, conditions, needs and price histories, and a cell in each of the copy's
 states; no reading shows its POUCH, so its place is the dashed frame). Reading 1 is the mode's first; reading 2, seven
-minutes later, showed and changed the backpack alone (a LEDX more), so the rest is kept from reading 1, dimmed and
+minutes later, showed and changed the backpack alone (a LEDX more), so the rest is kept from reading 1, stepped back and
 dated; reading 3 is the same screenshot again and changed nothing; reading 4 is another first, whose POCKETS, SPECIAL
 SLOTS and STASH came from their headings alone, each the dashed frame of a region never read. The made-up readings are dated 2026-01-01, so the
 dated heads show the day and month before the time, 14:02 UTC in the PC's own time zone ("· 1 JAN 14:02" in UTC). The
@@ -163,16 +163,17 @@ $app.WaitForExit()
   figure the violet's.
 - **kept** (a reading that showed and changed the backpack alone): the page in the shape and at the cell size of
   `first`, nothing moved; the backpack has the LEDX at 3,4 with its notch, its head undated and at full strength; every
-  other region read (LOADOUT, TACTICAL RIG, POCKETS, SPECIAL SLOTS, STASH, the ZHUK and WZ windows) whole but a step
-  dimmer, its head ending in its date and time, "· 1 JAN 14:02" in UTC (in German "· 1. JAN., 14:02"); SPECIAL SLOTS' head
+  other region read (LOADOUT, TACTICAL RIG, POCKETS, SPECIAL SLOTS, STASH) stepped back where it stands (the newest look in
+  front, 2026-10-27; desk-look.md): its grid, boxes and slot names faint (25 %), no figure, count or change on its
+  cells, the ZHUK and WZ windows each folded to its head in a hairline frame with "▸", its head ending in its date and time, "· 1 JAN 14:02" in UTC (in German "· 1. JAN., 14:02"); SPECIAL SLOTS' head
   wrapped before its "·", its name gone up into the line left empty in `first` and the date whole on the second line,
   where the name stood; POCKETS' head on that line, its grid level with SPECIAL SLOTS'. Nothing under a head moved
   from `first`: every grid, box and head at the same y but SPECIAL SLOTS' name, a line up, scrolled alike (UI QA pass
   of step 2, F1: at 121e0f2 everything under POCKETS and SPECIAL SLOTS stood 13 px lower than in `first`; compare the
-  rows where the brightness steps, which the dimming leaves in place, not the pixels). POUCH's frame as
-  in `first`, not dimmed. The head line's totals the new ones ("ON YOU 4.60 M+ ₽ · … · KEEP 3 · 6 · 3"). The selected
+  rows where the brightness steps, which the stepping back leaves in place, not the pixels; only the windows' tail is
+  shorter, folded). POUCH's frame as in `first`, not faint (never read). The head line's totals the new ones ("ON YOU 4.60 M+ ₽ · … · KEEP 3 · 6 · 3"). The selected
   violet keycard's pick kept.
-- **same**: as kept: a reading that changed nothing changed nothing, and dimmed nothing anew.
+- **same**: as kept: a reading that changed nothing changed nothing, and stepped nothing back anew; the backpack full.
 - **plan**: the map and Plan's rail back, PLAN's half raised with the amber bar and PLAN in amber, DESK muted; the
   map's buttons and credit back.
 - **show**: the desk as in same, the page kept.

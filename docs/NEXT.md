@@ -6,6 +6,50 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-27: 0.7.1's What's New lines, each its own key (the release UI QA pass)
+
+**Found** (the release UI QA pass of 0.7.1, 2026-10-27; repro `tools\qa\whatsnew-lines.devscript` at 900×560): F1
+(SHOULD), line 3 "The grid under the pointer" used the `grid` key, 0.7.0's squad-grid scene: no square or ninth lit, no
+strip letter or number raised, no POINTER line, and at 900×560 not even YOU's readout (the label lay over it). F2
+(SHOULD), lines 1 and 2, "Your newest screenshot in front" and "Prices with their age", both used `desk`, 0.7.0's
+made-up desk at reading 1: every region full and undated, nothing stepped back or folded, no copy notice. Two small ones
+of the same pass: the desk card's foot said "Prices 52 min old · tarkov.dev", the page's word for one item's age; and
+the head line's KEEP counts split across a wrap ("KEEP 2 · 6 ·" over "3", German and the pseudo-language). Its TOOLS
+note: `tools\qa\desk.md`'s kept/same ("whole but a step dimmer") and `desk-prices.md`'s "N of N" predated the newest look.
+
+**Built** (DESIGN.md §4, *What's New*, *The head line*, the card; `Rules.WhatsNew`, `MainWindow.WhatsNewPreviews`,
+`Shturmap.Map.FeatureGlyphs`): three keys, `desk-look`, `prices`, `grid-pointer`, 0.7.1's lines in docs/whats-new.md
+and its German taking them, the words unchanged. `desk-look`: the made-up desk on the plate, reading 1 full, then
+reading 2 arriving (the backpack's cells coming in, the rest stepped back, faint, dated from now, without figures, the
+windows folded), then a drawn pointer (the tour's) gliding onto the rig, which shows whole. `prices`: the made-up desk
+with "PRICES 3 MIN OLD" at its head line's right, the pointer onto the stash's LEDX, its click's flash and decode and a
+copy notice as the window draws one, "… · price 52 min old" in amber, at the page's foot (the head line's age stays in
+view). `grid-pointer`: Customs with the grid, YOU in D5-8, the pointer moving from E4's top right into D4-2, the map's
+own code lighting the square and ninth and raising the strips' D and 4 and writing POINTER D4-2 under YOU
+(`MapView.PreviewPointer`, the mouse's place untouched); the label stands right of the readout where centred it would
+lie over it (`MapRenderer.ReadoutReach`), so at 900×560 YOU and POINTER are drawn. Glyphs: the desk's cells with an
+earlier look's faint beside full ones; a cell's amber figure and a small clock; a lit square with the pointer's arrow.
+`DeskExample.Page`/`View` take the first reading's time (the preview dates its heads from now). The card's foot says
+"Price 4 min old · tarkov.dev" („Preis 4 min alt · tarkov.dev“), all three forms; KEEP and its counts are tied with
+no-break spaces in each head line form, English and German. `tools\qa\whatsnew-lines` says what each 0.7.1 still
+must show; `desk.md`'s kept/same and `desk-prices.md`'s counts follow the newest look.
+- Texts changed (English and German, `TranslationTests`): `RuleTexts.DeskCardAge`, `DeskCardAgeHours` ("Price",
+  „Preis“), `DeskHeadLine`, `DeskHeadLineOnYou`, `DeskHeadLineStash`, `DeskHeadLineKeep` (no-break spaces, words as
+  they were). No new text: the previews say theirs with existing ones (`WhatsNewDeskExample`, `PreviewExampleStash`,
+  `DeskCopied`, `DeskCopiedAge`, `MapGridPointer`). To be reviewed by the senior translator.
+- Tests: `WhatsNewTests` (the keys, which stage a map and which move, 0.7.1's lines' keys), `FeatureGlyphsTests` (the
+  new pictures, by its theory), `DeskCardTests` (Price), `DeskPageRulesTests` (KEEP never split).
+- Two `WhatsNewTests` failed at 0f5ad32 already, on the release documents' words: "Your newest screenshot in front"
+  (31 characters) over the card's 28 for a name, and the German line 1's 120 over its 100 for two lines. The name stands
+  on one line at 900×560 in the stills, so the limit is 31 now; the German words took three lines there, so they are
+  shorter: „Der Desk zeigt deinen neuesten Screenshot; ältere Bereiche treten zurück, bis du auf einen zeigst.“ (was
+  „Der Desk zeigt, was du gerade gescreenshottet hast; ältere Bereiche treten zurück. Zeig auf einen, um ihn ganz zu
+  sehen.“), for the senior translator's review.
+
+**Open**: the senior translator's review of the six changed texts and 0.7.1's shortened German line 1; at 900×560 the made-up page is one column, so
+`desk-look`'s folded windows are below the plate's fold (MORE BELOW), seen at 1600×900; the prices preview's notice
+stands at the page's foot where the real one stands at the map's top (it would cover the head line's age there).
+
 ## 2026-10-27: the newest look in front, the prices' age, the file when due
 
 **Decided** (owner, 2026-10-27, from the decision page on the desk and What's New; the page stays outside the repository):
@@ -67,7 +111,7 @@ pictures, is another builder's.) With them the windows decision of the same morn
 
 **Open**: the UI QA pass on the new look (once per feature, CLAUDE.md); the senior translator's review of the five texts;
 whether the card's own "Prices 4 min old · tarkov.dev", one item's age, should say "Price" now that the head line says
-the page's "PRICES" (the coordinator's suggestion, not built); a rhythm that grows shorter than the one learnt shows only
+the page's "PRICES" (the coordinator's suggestion; built after the release UI QA pass, above); a rhythm that grows shorter than the one learnt shows only
 after a restart.
 ## 2026-10-27: What's New, each feature its own picture and preview (D4 B)
 

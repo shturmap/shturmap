@@ -82,7 +82,7 @@ public class DeskCardTests
         Assert.Equal($"650,000{Nb}₽", ledx.Traders[0].Price);
         // The made-up LEDX was scanned 52 minutes before the page was made, four before now (owner, 2026-10-27: the copy
         // notice's age in amber on the made-up desk).
-        Assert.Equal("Prices 56 min old · tarkov.dev", ledx.Age);
+        Assert.Equal("Price 56 min old · tarkov.dev", ledx.Age);
         Assert.Empty(ledx.Candidates);
     }
 
@@ -219,9 +219,9 @@ public class DeskCardTests
         var (region, ledx) = At("stash", 8, 0);
         DeskItemFacts? Scanned(string id) => View.FactsOf(id) is { } f ? f with { Updated = Now.AddMinutes(-50) } : null;
         var context = Context() with { Facts = Scanned };
-        Assert.Equal("Prices 50 min old · tarkov.dev", DeskCards.Of(region, ledx, context).Age);
+        Assert.Equal("Price 50 min old · tarkov.dev", DeskCards.Of(region, ledx, context).Age);
         DeskItemFacts? Old(string id) => View.FactsOf(id) is { } f ? f with { Updated = Now.AddHours(-3) } : null;
-        Assert.Equal("Prices 3 h old · tarkov.dev", DeskCards.Of(region, ledx, context with { Facts = Old }).Age);
+        Assert.Equal("Price 3 h old · tarkov.dev", DeskCards.Of(region, ledx, context with { Facts = Old }).Age);
     }
 
     [Fact]
@@ -230,10 +230,10 @@ public class DeskCardTests
         Assert.Equal($"↑{Nb}+1.7%", DeskCards.Change(1.66));
         Assert.Equal($"↓{Nb}−10.3%", DeskCards.Change(-10.33));
         Assert.Equal("0%", DeskCards.Change(0.04));
-        Assert.Equal("Prices just in · tarkov.dev", DeskCards.Age(Now, Now));
-        Assert.Equal("Prices 1 min old · tarkov.dev", DeskCards.Age(Now.AddSeconds(-90), Now));
-        Assert.Equal("Prices 119 min old · tarkov.dev", DeskCards.Age(Now.AddMinutes(-119), Now));
-        Assert.Equal("Prices 2 h old · tarkov.dev", DeskCards.Age(Now.AddMinutes(-150), Now));
+        Assert.Equal("Price just in · tarkov.dev", DeskCards.Age(Now, Now));
+        Assert.Equal("Price 1 min old · tarkov.dev", DeskCards.Age(Now.AddSeconds(-90), Now));
+        Assert.Equal("Price 119 min old · tarkov.dev", DeskCards.Age(Now.AddMinutes(-119), Now));
+        Assert.Equal("Price 2 h old · tarkov.dev", DeskCards.Age(Now.AddMinutes(-150), Now));
         Assert.Null(DeskCards.Age(null, Now));
     }
 }

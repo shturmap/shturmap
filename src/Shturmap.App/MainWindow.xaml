@@ -1740,6 +1740,9 @@
             <TextBlock x:Name="WhatsNewPlateNote" Style="{StaticResource EyebrowText}" Margin="0" HorizontalAlignment="Center" />
           </StackPanel>
         </Grid>
+        <!-- The drawn pointer of What's New's 0.7.1 previews, over the map or the plate: the grid under the pointer, a
+             stepped-back region pointed at (MainWindow.WhatsNewPreviews, WhatsNewPointerAt). -->
+        <Canvas x:Name="WhatsNewPointer" IsHitTestVisible="False" Visibility="Collapsed" />
 
         <!-- One-line notices, top centre; they go by themselves. -->
         <StackPanel x:Name="MapNotes" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16" Spacing="8">

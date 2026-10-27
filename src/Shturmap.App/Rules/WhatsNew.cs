@@ -31,26 +31,31 @@ public static class WhatsNew
     /// a held quest card with two made-up notes ("notes"); and for 0.7.0's features (owner, 2026-10-27, D4 B: "each feature
     /// should have a icon and a appropriate picture or even animation"), a made-up desk page coming in ("desk"), the cue
     /// of made-up dailies and weeklies read ("tasks"), the same lines at NORMAL and LARGEST ("textsize"), the in-raid
-    /// glance's plate with made-up loot ("glance") and the squad grid on Customs as YOU moves ("grid").
+    /// glance's plate with made-up loot ("glance") and the squad grid on Customs as YOU moves ("grid"); and for 0.7.1's (the
+    /// release UI QA pass of 0.7.1, 2026-10-27: its lines had taken 0.7.0's desk and grid, which show none of what they
+    /// name), the made-up desk's second reading stepping its first back ("desk-look"), the desk's prices' age and a copy's
+    /// ("prices"), and a made-up pointer over Customs' grid, its square lit and POINTER under YOU ("grid-pointer").
     /// </summary>
     public static readonly IReadOnlySet<string> Previews = new HashSet<string>(StringComparer.Ordinal)
-        { "replay", "extracts", "clock", "joined", "leaders", "stash", "stash-card", "stash-given", "notes", "desk", "tasks", "textsize", "glance", "grid" };
+        { "replay", "extracts", "clock", "joined", "leaders", "stash", "stash-card", "stash-given", "notes", "desk", "tasks", "textsize", "glance", "grid",
+          "desk-look", "prices", "grid-pointer" };
 
     /// <summary>
     /// Whether a line's preview stages a map of its own (the replay, the extract list, the objectives on one spot, the
-    /// crowded spot, the grid on Customs). The others lay only a plate or a cue over the player's map, which comes back
-    /// first, made anew, where the line pointed at before staged one (UI QA re-check of the grid's fixes, 2026-10-26, R3:
-    /// the clock stood over the extract list's Customs until the pointer left the card).
+    /// crowded spot, the grid on Customs, the pointer over it). The others lay only a plate or a cue over the player's
+    /// map, which comes back first, made anew, where the line pointed at before staged one (UI QA re-check of the grid's
+    /// fixes, 2026-10-26, R3: the clock stood over the extract list's Customs until the pointer left the card).
     /// </summary>
-    public static bool StagesMap(string preview) => preview is "replay" or "extracts" or "joined" or "leaders" or "grid";
+    public static bool StagesMap(string preview) => preview is "replay" or "extracts" or "joined" or "leaders" or "grid" or "grid-pointer";
 
     /// <summary>
     /// Whether a line's preview is a short sequence (owner, 2026-10-27, D4 B): the features that move, the desk (a reading
-    /// arriving, its cells coming in, its totals counting, a copy), the glance (its plate rising) and the grid (YOU
-    /// moving into the next square). It plays once in <see cref="Plays"/> and holds its end; with Windows' animation
+    /// arriving, its cells coming in, its totals counting, a copy), the glance (its plate rising), the grid (YOU moving
+    /// into the next square), the newest look (a second reading stepping the first back, a region pointed at), the prices'
+    /// age (a copy and its notice) and the grid under the pointer (a pointer moving over it). It plays once in <see cref="Plays"/> and holds its end; with Windows' animation
     /// effects off, and in a snapshot, its end shows at once. The others are stills, or the cue's own entrance.
     /// </summary>
-    public static bool Moves(string preview) => preview is "desk" or "glance" or "grid";
+    public static bool Moves(string preview) => preview is "desk" or "glance" or "grid" or "desk-look" or "prices" or "grid-pointer";
 
     /// <summary>How long a moving preview plays before it holds its end (<see cref="Moves"/>): 4 to 6 s.</summary>
     public static readonly TimeSpan Plays = TimeSpan.FromSeconds(4.5);

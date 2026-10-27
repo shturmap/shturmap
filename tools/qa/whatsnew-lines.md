@@ -84,6 +84,24 @@ preview, name and words.
     D5's top middle, the tag beside the marker and the readout at the map's top left YOU D5-8 (DU D5-8); hint AN
     EXAMPLE, NOT YOUR RAID. In `line-n-early` the marker still in C5 or crossing, the readout YOU C5-9 or D5-7. The map
     lights no square: the reference says where YOU is.
+  - `desk-look` (0.7.1's line 1, "Your newest screenshot in front"): the made-up desk on the plate as for `desk`, the
+    page scrolled to the rig; the BACKPACK full, its LEDX at 3,4, its head undated; TACTICAL RIG shown whole, its
+    figures back, the drawn pointer (white arrow on a dark rim) on its first cell; every other region read stepped back:
+    its head whole and dated with the time 7 minutes before the still ("POCKETS · 22:25"), its grid, boxes and slot
+    names faint, no figure, count or change on its cells; the ZHUK and WZ windows (below, MORE BELOW at 900×560) folded
+    to a framed line with "▸". The head line's totals reading 2's (ON YOU 4.60 M+ ₽ … KEEP 3 · 6 · 3), "PRICES 3 MIN
+    OLD" at its right. In `line-n-early` reading 1: every region full, undated, no pointer.
+  - `prices` (line 2, "Prices with their age"): the made-up desk (reading 1, every region full) scrolled to the stash's
+    top, "PRICES 3 MIN OLD" (PREISE 3 MIN ALT) at the head line's right; the stash's LEDX with the pointer on it, its
+    figure whole; at the page's foot the copy notice in the window's notice look, the amber square, "970,000 ₽ copied ·
+    3% under the last low · price 52 min old" ("970.000 ₽ kopiert · … · Preis 52 min alt"), the age in amber, whole
+    (wrapped, never cut). In `line-n-early` no notice yet, the pointer on its way or not yet shown.
+  - `grid-pointer` (line 3, "The grid under the pointer"): Customs with the grid as for `grid`, the player's marker in
+    D5's top middle, the drawn pointer just above it in D4's bottom middle; in `map.png` the square D4 lit faintly and
+    its bottom middle ninth a little more, the strips' D (top and bottom) and 4 (left and right) bold in full ink on a
+    lighter band; at the map's top left the readout's two lines, YOU D5-8 and under it POINTER D4-2 (DU D5-8, MAUS
+    D4-2), whole, at 900×560 too; the preview label right of the readout there (centred where the map is wide), never
+    over it. In `line-n-early` the pointer at E4's top right or crossing, the readout's line POINTER E4-9 or on its way.
   - an older line (`replay`, `extracts`, `stash`, …): its example as before; a `tour:N` line: nothing staged, no label.
   The line tinted as the one pointed at.
 - **line-n-held** (clicked, the pointer off the card): the same as **line-n**, the preview held at its end (not played

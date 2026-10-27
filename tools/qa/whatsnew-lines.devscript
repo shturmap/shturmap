@@ -5,7 +5,9 @@
 # --dev-script; how to run it, and what each still must show: whatsnew-lines.md beside this file. Times are in seconds.
 #
 # No version is named: the steps take the newest card, the build's own release. A card has up to five lines; on one with
-# fewer, the steps past its last say "What's New <version> has <n> lines" in the app log and change nothing.
+# fewer, the steps past its last say "What's New <version> has <n> lines" in the app log and change nothing. 0.7.1's card
+# has three, desk-look, prices and grid-pointer (the release UI QA pass of 0.7.1, 2026-10-27: they had taken 0.7.0's desk,
+# desk and grid); what each still must show is in whatsnew-lines.md.
 
 # A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
 # once the data was there. It ends first.

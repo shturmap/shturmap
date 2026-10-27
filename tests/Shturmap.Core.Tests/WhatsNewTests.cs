@@ -6,6 +6,9 @@ namespace Shturmap.Core.Tests;
 // anatomy"). Its lines come from docs/whats-new.md, built into the app.
 public class WhatsNewTests
 {
+    // The longest name a line of the card holds on one line (the test of the app's list, below).
+    private const int NameLength = 31;
+
     private const string Two = """
         # What's New in the app
 
@@ -111,7 +114,9 @@ public class WhatsNewTests
             Assert.All(section.Items, item =>
             {
                 Assert.True(WhatsNew.Known(item.Preview), $"{section.Label}: '{item.Preview}' isn't a preview the app knows");
-                Assert.True(item.Name.Length <= 28, $"{section.Label}: '{item.Name}' is longer than a line of the card");
+                // A name stands on one line of the card: 31 characters, 0.7.1's "Your newest screenshot in front", do at the
+                // narrowest rail, 900×560 (the release UI QA pass's stills, 2026-10-27; 28 until then, which that line broke).
+                Assert.True(item.Name.Length <= NameLength, $"{section.Label}: '{item.Name}' is longer than a line of the card");
                 Assert.True(item.Text.Length <= 100, $"{section.Label}: '{item.Text}' is longer than two lines of the card");
             });
         });
@@ -134,6 +139,9 @@ public class WhatsNewTests
     [InlineData("textsize", true)]
     [InlineData("glance", true)]
     [InlineData("grid", true)]
+    [InlineData("desk-look", true)]
+    [InlineData("prices", true)]
+    [InlineData("grid-pointer", true)]
     [InlineData("tour", false)]
     [InlineData("tour:1", false)]
     [InlineData("tour:5", false)]
@@ -154,14 +162,15 @@ public class WhatsNewTests
     // stood over the extract list's Customs): only these stage a map of their own; the others lay a plate or a cue over it.
     [Fact]
     public void Only_the_map_previews_stage_a_map_of_their_own() =>
-        Assert.Equal(["extracts", "grid", "joined", "leaders", "replay"], WhatsNew.Previews.Where(WhatsNew.StagesMap).Order(StringComparer.Ordinal));
+        Assert.Equal(["extracts", "grid", "grid-pointer", "joined", "leaders", "replay"], WhatsNew.Previews.Where(WhatsNew.StagesMap).Order(StringComparer.Ordinal));
 
     // The features that move play a short sequence and hold its end (owner, 2026-10-27, D4 B): the desk, the glance and
-    // the grid, in 4 to 6 s; text size and the dailies are stills.
+    // the grid, and 0.7.1's newest look, prices' age and grid under the pointer, in 4 to 6 s; text size and the dailies are
+    // stills.
     [Fact]
     public void Only_the_features_that_move_play_a_sequence_of_four_to_six_seconds()
     {
-        Assert.Equal(["desk", "glance", "grid"], WhatsNew.Previews.Where(WhatsNew.Moves).Order(StringComparer.Ordinal));
+        Assert.Equal(["desk", "desk-look", "glance", "grid", "grid-pointer", "prices"], WhatsNew.Previews.Where(WhatsNew.Moves).Order(StringComparer.Ordinal));
         Assert.InRange(WhatsNew.Plays.TotalSeconds, 4, 6);
     }
 
@@ -186,6 +195,9 @@ public class WhatsNewTests
         var sections = WhatsNew.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "docs", "whats-new.md")));
         var kaomoji = sections.Single(s => s.Label == "0.7.0");
         Assert.Equal(["desk", "tasks", "textsize", "glance", "grid"], kaomoji.Items.Select(i => i.Preview));
+        // 0.7.1's three lines each their own key (the release UI QA pass of 0.7.1, 2026-10-27: they had taken 0.7.0's desk,
+        // desk and grid, whose previews show none of the newest look, the prices' age or the grid under the pointer).
+        Assert.Equal(["desk-look", "prices", "grid-pointer"], sections.Single(s => s.Label == "0.7.1").Items.Select(i => i.Preview));
         Assert.All(sections.Where(s => s.Version >= new Version(0, 7, 0)).SelectMany(s => s.Items), item =>
         {
             Assert.True(WhatsNew.Previews.Contains(item.Preview), $"'{item.Preview}' ({item.Name}) isn't a preview of its own");
@@ -272,7 +284,7 @@ public class WhatsNewTests
                     $"{name}, {section.Label}: the lines' previews aren't the English section's ({string.Join(", ", source.Items.Select(i => i.Preview))})");
                 Assert.All(section.Items, item =>
                 {
-                    Assert.True(item.Name.Length <= 28, $"{name}, {section.Label}: '{item.Name}' is longer than a line of the card");
+                    Assert.True(item.Name.Length <= NameLength, $"{name}, {section.Label}: '{item.Name}' is longer than a line of the card");
                     Assert.True(item.Text.Length <= 100, $"{name}, {section.Label}: '{item.Text}' is longer than two lines of the card");
                 });
             }

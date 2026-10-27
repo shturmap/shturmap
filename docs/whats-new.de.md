@@ -6,9 +6,9 @@ are; the release's name stays as it is. Words: docs/glossary-de.md.
 
 ## 0.7.1 · Kaomoji
 
-- desk · Dein neuester Screenshot vorn · Der Desk zeigt, was du gerade gescreenshottet hast; ältere Bereiche treten zurück. Zeig auf einen, um ihn ganz zu sehen.
-- desk · Preise mit ihrem Alter · Der Kopf des Desks sagt, wie alt seine Preise sind; ein kopierter Preis nennt sein eigenes.
-- grid · Raster unter der Maus · Zeig auf die Map: Planquadrat und Neuntel leuchten; die Angabe (D5-8) steht oben links unter DU.
+- desk-look · Dein neuester Screenshot vorn · Der Desk zeigt deinen neuesten Screenshot; ältere Bereiche treten zurück, bis du auf einen zeigst.
+- prices · Preise mit ihrem Alter · Der Kopf des Desks sagt, wie alt seine Preise sind; ein kopierter Preis nennt sein eigenes.
+- grid-pointer · Raster unter der Maus · Zeig auf die Map: Planquadrat und Neuntel leuchten; die Angabe (D5-8) steht oben links unter DU.
 
 ## 0.7.0 · Kaomoji
 

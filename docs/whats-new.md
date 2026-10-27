@@ -11,7 +11,10 @@ notes), and from 0.7.0 on, a feature's own key, its picture drawn by the app bes
 "each feature should have a icon and a appropriate picture or even animation"): `desk` (a made-up desk page coming in
 on a plate, its prices counting up, a copy), `tasks` (the cue of three made-up dailies and weeklies read, each on its
 map), `textsize` (the same lines at NORMAL and LARGEST on a plate), `glance` (the in-raid glance's plate rising in with
-made-up loot) or `grid` (Customs with the grid, YOU moving into D5-8). A click on a line holds its preview; What's New
+made-up loot) or `grid` (Customs with the grid, YOU moving into D5-8), and from 0.7.1 `desk-look` (the made-up desk's
+second screenshot stepping its first back, faint, dated and folded, and the pointer showing a region whole), `prices`
+(the made-up desk with PRICES 3 MIN OLD in its head, then a copy and its notice with the price's age in amber) or
+`grid-pointer` (Customs with the grid, a pointer moving over it, its square and ninth lit, POINTER D4-2 under YOU). A click on a line holds its preview; What's New
 opens no tour. A new feature gets a key of its own with its picture and preview (`Rules.WhatsNew.Previews`, the
 app's `MainWindow.WhatsNewPreviews`), never the tour. An older version's line about the tour (`tour`, `tour:5`)
 previews nothing and stays as it was written (until 0.7.0 a click on one opened the tour at that chapter). Only what is new for the player has a
@@ -29,9 +32,9 @@ translated. A version the translation lacks, or whose lines aren't this section'
 
 ## 0.7.1 · Kaomoji
 
-- desk · Your newest screenshot in front · The desk shows what you just screenshotted; earlier parts step back; point at one to see it whole.
-- desk · Prices with their age · The desk's head says how old its prices are; a copied price says its own.
-- grid · The grid under the pointer · Point at the map: its square and ninth light up; under YOU, top left, its reference (D5-8).
+- desk-look · Your newest screenshot in front · The desk shows what you just screenshotted; earlier parts step back; point at one to see it whole.
+- prices · Prices with their age · The desk's head says how old its prices are; a copied price says its own.
+- grid-pointer · The grid under the pointer · Point at the map: its square and ninth light up; under YOU, top left, its reference (D5-8).
 
 ## 0.7.0 · Kaomoji
 

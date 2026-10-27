@@ -623,13 +623,25 @@ public class DeskPageRulesTests
     public void The_head_line_says_both_totals_and_the_keeps()
     {
         var totals = new DeskTotals(1_010_000, true, 6_840_000, false, 3, 2, 4);
-        Assert.Equal("ON YOU 1.01 M+ ₽ · STASH 6.84 M ₽ · KEEP 3 · 2 · 4", DeskPageRules.HeadLine(totals, totals.OnYou, totals.Stash, OwnersPage()));
+        Assert.Equal("ON YOU 1.01 M+ ₽ · STASH 6.84 M ₽ · KEEP 3 · 2 · 4", DeskPageRules.HeadLine(totals, totals.OnYou, totals.Stash, OwnersPage()));
         // Counting up: the totals given apart, the "+" and the keeps as they end.
-        Assert.Equal("ON YOU 505k+ ₽ · STASH 3.42 M ₽ · KEEP 3 · 2 · 4", DeskPageRules.HeadLine(totals, 505_000, 3_420_000, OwnersPage()));
+        Assert.Equal("ON YOU 505k+ ₽ · STASH 3.42 M ₽ · KEEP 3 · 2 · 4", DeskPageRules.HeadLine(totals, 505_000, 3_420_000, OwnersPage()));
+    }
+
+    // KEEP and its three counts never split where the head line wraps (the release UI QA pass of 0.7.1, 2026-10-27: in
+    // German and the pseudo-language "KEEP 2 · 6 ·" stood over a lone "3"): no-break spaces between them, in each form.
+    [Fact]
+    public void The_keeps_never_split_across_a_wrap()
+    {
+        var totals = new DeskTotals(1_010_000, true, 6_840_000, false, 2, 6, 3);
+        var keep = "KEEP 2 · 6 · 3";
+        var owners = OwnersPage();
+        foreach (var page in new List<IReadOnlyList<DeskRegion>> { owners, owners.Where(r => r.Kind != DeskRegionKind.Stash).ToList(), owners.Where(r => r.Kind == DeskRegionKind.Stash).ToList(), new List<DeskRegion>() })
+            Assert.EndsWith(keep, DeskPageRules.HeadLine(totals, totals.OnYou, totals.Stash, page), StringComparison.Ordinal);
     }
 
     // A part never read is left out of the head line (owner, 2026-10-26, decision 5: the made-up desk's reading 4 said "ON
-    // YOU 3.20 M+ ₽ · STASH 0 ₽ · KEEP 0 · 2 · 1" under a STASH that said it was never read): STASH until the page holds a
+    // YOU 3.20 M+ ₽ · STASH 0 ₽ · KEEP 0 · 2 · 1" under a STASH that said it was never read): STASH until the page holds a
     // stash read, ON YOU until it holds a gear page read; KEEP stays. Read is what the page doesn't draw as never read, the
     // dashed frame's rule: a region of its heading alone is not read, a container's slot seen empty and a LOADOUT of no
     // slot are.
@@ -638,7 +650,7 @@ public class DeskPageRulesTests
     {
         const char nb = (char)0xA0;
         var made =DeskExample.View(4, GameMode.Pve, 4, null, DateTimeOffset.UnixEpoch);
-        Assert.Equal($"ON YOU 3.20{nb}M+{nb}₽ · KEEP 0 · 2 · 1",
+        Assert.Equal($"ON YOU 3.20{nb}M+{nb}₽ · KEEP 0 · 2 · 1",
             DeskPageRules.HeadLine(made.Sheet.Totals, made.Sheet.Totals.OnYou, made.Sheet.Totals.Stash, made.Sheet.Page.Regions));
 
         var totals = new DeskTotals(1_010_000, true, 6_840_000, false, 3, 2, 4);
@@ -651,16 +663,16 @@ public class DeskPageRulesTests
         var keys = Of(DeskRegionKind.ContainerWindow);
 
         // Both read; the stash never read, none on the page or one of its heading alone; the gear never read; neither.
-        var both = $"ON YOU 1.01{nb}M+{nb}₽ · STASH 6.84{nb}M{nb}₽ · KEEP 3 · 2 · 4";
-        var onYou = $"ON YOU 1.01{nb}M+{nb}₽ · KEEP 3 · 2 · 4";
-        var inStash = $"STASH 6.84{nb}M{nb}₽ · KEEP 3 · 2 · 4";
+        var both = $"ON YOU 1.01{nb}M+{nb}₽ · STASH 6.84{nb}M{nb}₽ · KEEP 3 · 2 · 4";
+        var onYou = $"ON YOU 1.01{nb}M+{nb}₽ · KEEP 3 · 2 · 4";
+        var inStash = $"STASH 6.84{nb}M{nb}₽ · KEEP 3 · 2 · 4";
         Assert.Equal(both, Line(owners));
         Assert.Equal(onYou, Line(owners.Where(Gear).ToList()));
         Assert.Equal(onYou, Line([.. owners.Where(Gear), Bare(stash)]));
         Assert.Equal(inStash, Line([stash, keys]));
         Assert.Equal(inStash, Line([stash, Bare(Of(DeskRegionKind.Pockets)), Bare(Of(DeskRegionKind.SpecialSlots))]));
-        Assert.Equal("KEEP 3 · 2 · 4", Line([]));
-        Assert.Equal("KEEP 3 · 2 · 4", Line([Bare(stash), Bare(Of(DeskRegionKind.Pockets)), keys with { AttachedTo = null }]));
+        Assert.Equal("KEEP 3 · 2 · 4", Line([]));
+        Assert.Equal("KEEP 3 · 2 · 4", Line([Bare(stash), Bare(Of(DeskRegionKind.Pockets)), keys with { AttachedTo = null }]));
 
         // Any one gear region read is a gear page read: a LOADOUT of no slot read, a backpack whose slot was seen empty (its
         // grid gone with it), the pockets read empty.
@@ -696,10 +708,10 @@ public class DeskPageRulesInGermanTests
             var totals = new DeskTotals(3_200_000, true, 6_840_000, false, 0, 2, 1);
             var page = DeskExample.Page(1).Regions;
             string Line(IEnumerable<DeskRegion> regions) => DeskPageRules.HeadLine(totals, totals.OnYou, totals.Stash, regions.ToList());
-            Assert.Equal("AN DIR 3,20 M+ ₽ · STASH 6,84 M ₽ · BEHALTEN 0 · 2 · 1", Line(page));
-            Assert.Equal("AN DIR 3,20 M+ ₽ · BEHALTEN 0 · 2 · 1", Line(DeskExample.Page(4).Regions));
-            Assert.Equal("STASH 6,84 M ₽ · BEHALTEN 0 · 2 · 1", Line(page.Where(r => r.Kind == DeskRegionKind.Stash)));
-            Assert.Equal("BEHALTEN 0 · 2 · 1", Line([]));
+            Assert.Equal("AN DIR 3,20 M+ ₽ · STASH 6,84 M ₽ · BEHALTEN 0 · 2 · 1", Line(page));
+            Assert.Equal("AN DIR 3,20 M+ ₽ · BEHALTEN 0 · 2 · 1", Line(DeskExample.Page(4).Regions));
+            Assert.Equal("STASH 6,84 M ₽ · BEHALTEN 0 · 2 · 1", Line(page.Where(r => r.Kind == DeskRegionKind.Stash)));
+            Assert.Equal("BEHALTEN 0 · 2 · 1", Line([]));
             // A kept region's date as German writes it, in capitals.
             var at = new DateTime(2025, 12, 31, 23, 8, 0, DateTimeKind.Unspecified);
             var readAt = new DateTimeOffset(at, TimeZoneInfo.Local.GetUtcOffset(at));

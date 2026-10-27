@@ -357,20 +357,20 @@
     <comment>en: {count, plural, one {Not attached: {name} ×# on the page, on you and in the stash; counted in neither} other {Not attached: {name} ×# on the page, on you and in the stash; counted in neither}}</comment>
   </data>
   <data name="DeskHeadLine" xml:space="preserve">
-    <value>AN DIR {onYou} · STASH {stash} · BEHALTEN {now} · {next} · {later}</value>
-    <comment>en: ON YOU {onYou} · STASH {stash} · KEEP {now} · {next} · {later}</comment>
+    <value>AN DIR {onYou} · STASH {stash} · BEHALTEN {now} · {next} · {later}</value>
+    <comment>en: ON YOU {onYou} · STASH {stash} · KEEP {now} · {next} · {later}</comment>
   </data>
   <data name="DeskHeadLineOnYou" xml:space="preserve">
-    <value>AN DIR {onYou} · BEHALTEN {now} · {next} · {later}</value>
-    <comment>en: ON YOU {onYou} · KEEP {now} · {next} · {later}</comment>
+    <value>AN DIR {onYou} · BEHALTEN {now} · {next} · {later}</value>
+    <comment>en: ON YOU {onYou} · KEEP {now} · {next} · {later}</comment>
   </data>
   <data name="DeskHeadLineStash" xml:space="preserve">
-    <value>STASH {stash} · BEHALTEN {now} · {next} · {later}</value>
-    <comment>en: STASH {stash} · KEEP {now} · {next} · {later}</comment>
+    <value>STASH {stash} · BEHALTEN {now} · {next} · {later}</value>
+    <comment>en: STASH {stash} · KEEP {now} · {next} · {later}</comment>
   </data>
   <data name="DeskHeadLineKeep" xml:space="preserve">
-    <value>BEHALTEN {now} · {next} · {later}</value>
-    <comment>en: KEEP {now} · {next} · {later}</comment>
+    <value>BEHALTEN {now} · {next} · {later}</value>
+    <comment>en: KEEP {now} · {next} · {later}</comment>
   </data>
   <data name="DeskNotRead" xml:space="preserve">
     <value>NOCH IN KEINEM SCREENSHOT</value>
@@ -614,11 +614,11 @@
   </data>
   <data name="DeskCardAge" xml:space="preserve">
     <value>{minutes, plural, =0 {Preise gerade geholt · tarkov.dev} one {Preise # min alt · tarkov.dev} other {Preise # min alt · tarkov.dev}}</value>
-    <comment>en: {minutes, plural, =0 {Prices just in · tarkov.dev} one {Prices # min old · tarkov.dev} other {Prices # min old · tarkov.dev}}</comment>
+    <comment>en: {minutes, plural, =0 {Price just in · tarkov.dev} one {Price # min old · tarkov.dev} other {Price # min old · tarkov.dev}}</comment>
   </data>
   <data name="DeskCardAgeHours" xml:space="preserve">
     <value>{hours, plural, one {Preise # h alt · tarkov.dev} other {Preise # h alt · tarkov.dev}}</value>
-    <comment>en: {hours, plural, one {Prices # h old · tarkov.dev} other {Prices # h old · tarkov.dev}}</comment>
+    <comment>en: {hours, plural, one {Price # h old · tarkov.dev} other {Price # h old · tarkov.dev}}</comment>
   </data>
   <data name="DeskCardOneOf" xml:space="preserve">
     <value>{count, plural, one {Eins von # Item} other {Eins von # Items}}</value>

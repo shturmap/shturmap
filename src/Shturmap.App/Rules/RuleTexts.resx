@@ -357,19 +357,19 @@
     <comment>The stash desk, muted under the head of a container's open window that can't be tied to one cell, when the containers of its name are some on the player and some in the stash: its items count in neither total of the head line (ON YOU, STASH). {count}: how many containers; {name}: the window's title, a game name ("WZ").</comment>
   </data>
   <data name="DeskHeadLine" xml:space="preserve">
-    <value>ON YOU {onYou} · STASH {stash} · KEEP {now} · {next} · {later}</value>
-    <comment>The stash desk's head line, in muted capitals over the page: what the items on the player are worth, what the stash's are worth ("1.01 M ₽", "6.84 M+ ₽"), then how many cells are kept for an active quest (now), a quest the active ones unlock (next) and one further down (later), as the cells' notches say. Capitals.</comment>
+    <value>ON YOU {onYou} · STASH {stash} · KEEP {now} · {next} · {later}</value>
+    <comment>The stash desk's head line, in muted capitals over the page: what the items on the player are worth, what the stash's are worth ("1.01 M ₽", "6.84 M+ ₽"), then how many cells are kept for an active quest (now), a quest the active ones unlock (next) and one further down (later), as the cells' notches say. No-break spaces in KEEP's part (the release UI QA pass of 0.7.1: "KEEP 2 · 6 ·" stood over a lone "3"), so where the line wraps, KEEP and its three counts go together. Capitals.</comment>
   </data>
   <data name="DeskHeadLineOnYou" xml:space="preserve">
-    <value>ON YOU {onYou} · KEEP {now} · {next} · {later}</value>
+    <value>ON YOU {onYou} · KEEP {now} · {next} · {later}</value>
     <comment>The stash desk's head line (DeskHeadLine) while no screenshot has shown the stash yet: its STASH part left out, so it never says a stash worth nothing. {onYou}: what the items on the player are worth ("3.20 M+ ₽"); {now}, {next}, {later}: the cells kept for an active quest, a quest the active ones unlock, one further down. Capitals.</comment>
   </data>
   <data name="DeskHeadLineStash" xml:space="preserve">
-    <value>STASH {stash} · KEEP {now} · {next} · {later}</value>
+    <value>STASH {stash} · KEEP {now} · {next} · {later}</value>
     <comment>The stash desk's head line (DeskHeadLine) while no screenshot has shown the player's gear yet (LOADOUT, rig, pockets, backpack…): its ON YOU part left out. {stash}: what the stash's items are worth ("6.84 M ₽"); {now}, {next}, {later}: the cells kept for an active quest, a quest the active ones unlock, one further down. Capitals.</comment>
   </data>
   <data name="DeskHeadLineKeep" xml:space="preserve">
-    <value>KEEP {now} · {next} · {later}</value>
+    <value>KEEP {now} · {next} · {later}</value>
     <comment>The stash desk's head line (DeskHeadLine) while no screenshot has shown the gear or the stash yet (a page of a container's window alone): ON YOU and STASH left out. {now}, {next}, {later}: the cells kept for an active quest, a quest the active ones unlock, one further down. Capitals.</comment>
   </data>
   <data name="DeskNotRead" xml:space="preserve">
@@ -613,11 +613,11 @@
     <comment>The stash desk's card: the heading over the hideout crafts and the traders' barters that give the item. Capitals.</comment>
   </data>
   <data name="DeskCardAge" xml:space="preserve">
-    <value>{minutes, plural, =0 {Prices just in · tarkov.dev} one {Prices # min old · tarkov.dev} other {Prices # min old · tarkov.dev}}</value>
-    <comment>The stash desk's card, its last line, muted: how old the prices are, from tarkov.dev's last scan of the item (its `updated` time), and where they come from. {minutes}: whole minutes.</comment>
+    <value>{minutes, plural, =0 {Price just in · tarkov.dev} one {Price # min old · tarkov.dev} other {Price # min old · tarkov.dev}}</value>
+    <comment>The stash desk's card, its last line, muted: how old the item's price is, from tarkov.dev's last scan of the item (its `updated` time), and where it comes from. Singular "Price", one item's, as the copy notice's DeskCopiedAge, kept apart from the head line's "PRICES … OLD" (DeskHeadPrices), the page's (the release UI QA pass of 0.7.1). {minutes}: whole minutes.</comment>
   </data>
   <data name="DeskCardAgeHours" xml:space="preserve">
-    <value>{hours, plural, one {Prices # h old · tarkov.dev} other {Prices # h old · tarkov.dev}}</value>
+    <value>{hours, plural, one {Price # h old · tarkov.dev} other {Price # h old · tarkov.dev}}</value>
     <comment>The stash desk's card, its last line, as DeskCardAge, from two hours on. {hours}: whole hours.</comment>
   </data>
   <data name="DeskCardOneOf" xml:space="preserve">

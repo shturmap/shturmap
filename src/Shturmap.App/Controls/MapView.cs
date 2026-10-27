@@ -803,6 +803,30 @@ public sealed partial class MapView : Grid
     /// map (the window no longer the active one: back in the game, the mouse may rest over the map).</summary>
     public void ClearHover() => PointerLeft(default);
 
+    /// <summary>
+    /// What's New's preview of the grid under the pointer (0.7.1): a made-up pointer at a world place on the scene shown, its
+    /// square and ninth lit, the strips' letter and number raised and its line under YOU's, as the mouse's would be, the
+    /// mouse's own place left alone (a scene shown next has the real pointer's, none while it is on the card); with no
+    /// place, the real pointer's back. Where the place stands on this control now (DIP), for the drawn pointer over it.
+    /// </summary>
+    public Windows.Foundation.Point? PreviewPointer((double X, double Z)? world)
+    {
+        if (_scene is not { } scene)
+            return null;
+        if (world is not { } w)
+        {
+            scene.Pointer = _pointer;
+            Invalidate();
+            return null;
+        }
+        var camera = Sized();
+        var at = camera.ToScreen(scene.Projection.ToMap(w.X, w.Z));
+        scene.Pointer = at;
+        if (_fitPending || MapRenderer.PointerMoved(camera, scene, UiScale))
+            Invalidate();
+        return new Windows.Foundation.Point(at.X / PixelScale, at.Y / PixelScale);
+    }
+
     // The edge arrow of an out-of-view player is a button: it shows them.
     private bool OverEdge(Windows.Foundation.Point at) =>
         _scene is not null && MapRenderer.EdgeOf(_camera, _scene, UiScale) is { } edge

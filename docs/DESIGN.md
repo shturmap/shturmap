@@ -757,7 +757,7 @@ quoting it anywhere new.
     (those items, never the catalogue; the exception below took its place), and an item's price history
     (json.tarkov.dev's `/{mode}/prices/{id}`) when its card first shows it, each with its ETag, so an unchanged answer
     costs a few hundred bytes. Never on a timer then (a page left open wasn't refreshed until 2026-10-26, the exception
-    below), and the card says its prices' age ("Prices 4 min old · tarkov.dev"), counted from tarkov.dev's scan of the item, the item file's `updated` (owner,
+    below), and the card says its price's age ("Price 4 min old · tarkov.dev", one item's: "Prices" until the release UI QA pass of 0.7.1, 2026-10-27, which the head line's PRICES, the page's, now keeps apart), counted from tarkov.dev's scan of the item, the item file's `updated` (owner,
     2026-10-19: the Dorm 104 key scanned 17:38, the file had at 18:14, the card said "8 min old" at 18:22; until then
     from when the file was had). Everything else keeps the ages above. Its requests and bytes per player are
     counted and said to the owner before it is built (the rule at the end of this list). **The exception: the item
@@ -1827,7 +1827,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     Segoe's QuickNote) for quest notes (`notes`), a picture of the feature drawn by the map's code for 0.7.0's lines
     (`Shturmap.Map.FeatureGlyphs`, owner, 2026-10-27, D4 B below: the desk's cells with the keep notch and their figures,
     a stopwatch in a frame for the dailies, a small and a large "A" for the text size, the glance's plate between its
-    amber hairlines, the grid's lines with the player's dot), or, on an older version's line about the tour (`tour`,
+    amber hairlines, the grid's lines with the player's dot; for 0.7.1's, the desk's cells with an earlier look's faint
+    beside the newest's full ones, a cell's amber price figure beside a small clock, the grid's lines with a square lit,
+    its ninth more, and the pointer's arrow on it), or, on an older version's line about the tour (`tour`,
     `tour:5`), the tour's drawn pointer as the tour draws it, white on a dark rim at 1.2 times, in the middle of the
     picture's place (owner, 2026-10-15: until then a tour line had none, the one gap in the column;
     `MainWindow.TourPointerShape`). **Each feature its own picture and preview, never the tour** (owner, 2026-10-27, from
@@ -1850,7 +1852,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     German; YOUR EXTRACTS THIS RAID keeps clear of the label too, principle 11), and leaving puts the map back as it
     was: a preview that staged a map of its own gives the player's back made anew, at the view it had; one that showed only a
     cue or a plate over it (`stash`, `stash-card`, `stash-given`, `clock`, `notes`, `desk`, `tasks`, `textsize`,
-    `glance`; `grid` stages Customs) leaves the map's scene alone, so
+    `glance`, `desk-look`, `prices`; `grid` and `grid-pointer` stage Customs) leaves the map's scene alone, so
     the last position doesn't ping again nor, with Follow my position on, glide (found 2026-10-15, looking into the owner's report
     on the `tour:5` line below; `SceneGate.MakeAnew`). Each preview starts from the map put back: pointing from a line
     that staged a map of its own straight to one that shows only a cue or a plate gives the player's map back first, made
@@ -1887,8 +1889,23 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     Customs with the grid (also where settings have it off; put back as the preview ends) and a made-up position that
     walks over 3 s from C5's top right into D5's top middle, its tag and YOU at the map's top left going from C5-9 to
     D5-8, the line's own example, the position never pinging (the map lights no square: the reference says it; at
-    900×560 YOU steps aside for the two-line label, as under any note, and the marker's tag says it). The desk, the
-    glance and the grid move: each plays once in about 4.5 s and holds its end (`Rules.WhatsNew.Moves`, the app's own
+    900×560 YOU steps aside for the two-line label, as under any note, and the marker's tag says it); and for 0.7.1's
+    (the release UI QA pass of 0.7.1, 2026-10-27, F1 and F2: its lines had taken `desk`, `desk` and `grid`, whose previews
+    show none of the newest look, the prices' age or the grid under the pointer; a new feature gets a key of its own)
+    `desk-look`, the made-up desk on the plate as `desk` stands, its first reading full, then 1.8 s on its second, the
+    backpack alone, arriving: the backpack's cells come in, everything else steps back where it stands, faint, dated
+    (from now: the first reading 7 minutes ago) and without figures, the Zhuk's and the wallets' windows folded to a
+    line; then a drawn pointer (the tour's, white on a dark rim) glides from the backpack onto the rig, which shows
+    whole; `prices`, the made-up desk standing at once with "PRICES 3 MIN OLD" at its head line's right, then the pointer
+    onto the stash's LEDX and its click, the frame's gold flash and the figure's decode, and the copy's notice as the
+    window draws one (the amber square, "970,000 ₽ copied · 3% under the last low · price 52 min old", the age in amber)
+    over the page's foot, clear of the head line's age (the app's default copy rule, not the player's; the clipboard
+    untouched); `grid-pointer`, Customs with the grid as `grid` stages it, YOU standing in D5-8, and the drawn pointer
+    moving over 3 s from E4's top right into D4's bottom middle, the map's own code lighting the square and its ninth
+    under it, raising the strips' letter and number and writing "POINTER D4-2" under YOU's line (`MapView.PreviewPointer`,
+    the mouse's own place left alone); the preview's label stands right of the readout where, centred, it would lie over
+    it (`MapRenderer.ReadoutReach`), so at 900×560 YOU and POINTER are drawn as the feature draws them. The desk, the
+    glance, the grid and 0.7.1's three move: each plays once in about 4.5 s and holds its end (`Rules.WhatsNew.Moves`, the app's own
     motion, *Motion*: "slow enough to read, never for show"); with Windows' animation effects off, in a snapshot, and for
     the line held coming back, each shows its end at once. Nothing of
     the player's is shown or changed, and nothing is bundled: every picture and preview is drawn when it shows, from the
@@ -2578,7 +2595,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     rule that draws a region as never read (*A region never read*: none of its kind on the page, or one made from its
     heading alone): "ON YOU 3.20 M+ ₽ · KEEP 0 · 2 · 1" after a first GEAR screenshot, "STASH 6.84 M ₽ · KEEP 3 · 2 · 4"
     after a stash's alone, "KEEP 0 · 2 · 1" alone where neither was (a page of a window alone); KEEP stays. Each is a whole sentence of the texts
-    file (`DeskHeadLine`, `DeskHeadLineOnYou`, `DeskHeadLineStash`, `DeskHeadLineKeep`). Until then the line said "STASH
+    file (`DeskHeadLine`, `DeskHeadLineOnYou`, `DeskHeadLineStash`, `DeskHeadLineKeep`). **KEEP and its three counts go
+    together** where the line wraps (the release UI QA pass of 0.7.1, 2026-10-27: in German and the pseudo-language
+    "KEEP 2 · 6 ·" stood over a lone "3"): no-break spaces between KEEP, its counts and their dots, in each form and
+    language, so "KEEP 2 · 6 · 3" wraps whole to the next line. Until then the line said "STASH
     0 ₽" over a stash never read, a stash worth nothing beside a frame that said "not seen" (UI QA pass of 5410c4d, F1).
     Not taken: "STASH —" (B), "STASH 0 ₽" as it was (C). **The prices' age at its right** (owner, 2026-10-27, from the
     decision page on the desk: D2 C, "Both", no notes: "Also, it should be clear when the prices were fetched the last
@@ -2709,7 +2729,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     every 2 h, with a mark 7 days back and the high and the low in words ("HIGH 1.05 M · LOW 0.82 M (DAY 17)"); 24 H,
     the day's range bar with the average and the last low, a high far past it said in a line, not drawn ("The high,
     9 999 999, is past the bar: one offer, likely an outlier."); TRADERS, each with portrait and price; CRAFTS AND
-    BARTERS; "Prices 4 min old · tarkov.dev" (from tarkov.dev's scan of the item). About 640 DIP: the first 200 (the
+    BARTERS; "Price 4 min old · tarkov.dev" (from tarkov.dev's scan of the item; singular, one item's, as the copy notice's "price 4 min old", kept apart from the head line's PRICES, the page's: the release UI QA pass of 0.7.1, 2026-10-27; „Preis 4 min alt · tarkov.dev“; just in, minutes, from two hours in hours). About 640 DIP: the first 200 (the
     figure, the click, the keep) fit the smallest rail in English and German, no line of them wider than the rail's
     351 DIP (at 125 % text they wrap, between their parts), the rest scrolls. EVE Online's min-max channel became the min-to-average band: the history has no
     maximum. A figure with a "+" says "Contents unseen: open it in the game, then a screenshot", a scaled one "Scaled to
@@ -2822,7 +2842,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       AGO"), a note on what it shows; 24 H: "LAST LOW … · AVG …" over a 4 DIP track from the day's low to its high, the
       last low's tick in amber, the average's in ink, the ends' figures under it ("›" after the end where an outlier high
       is past it, and the line saying so); TRADERS, every one with a price, the best first, per item; CRAFTS AND BARTERS,
-      as the item card has them (those that give the item); "Prices 4 min old · tarkov.dev" (from two hours, in hours),
+      as the item card has them (those that give the item); "Price 4 min old · tarkov.dev" (one item's; from two hours, in hours),
       from the item's scan (`updated`; of a "?" card its candidates' newest), the item file's fetch where none says.
       Figures in full with the language's thousands separator ("970,000 ₽", "970.000 ₽"). A "?" cell's card: its slot's
       name, "One of 3 items", "Pick the one it is: …", and a row a candidate (its icon, name and figure), the best first.

@@ -15,6 +15,9 @@ public sealed partial class MainWindow
 {
     private bool _gridLoaded;
 
+    // How far from the map's left edge the notes keep clear (DIP): 0 but for What's New's grid-pointer preview.
+    private double _notesClearOf;
+
     // It comes back as the player left it: on at first.
     private void LoadGridOnce()
     {
@@ -57,7 +60,9 @@ public sealed partial class MainWindow
     private void PlaceInsideGrid()
     {
         var strips = GridStrips;
-        MapNotes.Margin = new Thickness(16 + strips.Left, 16 + strips.Top, 16 + strips.Right, 16);
+        // While What's New previews the grid under the pointer, the notes stand right of the readout at the top left, so
+        // YOU and POINTER are drawn as the feature draws them (MainWindow.WhatsNewPreviews, NotesClearOfReadout).
+        MapNotes.Margin = new Thickness(Math.Max(16 + strips.Left, _notesClearOf), 16 + strips.Top, 16 + strips.Right, 16);
         MapControls.Margin = new Thickness(16, 16, 16 + strips.Right, 16 + strips.Bottom);
         MapFoot.Margin = new Thickness(16 + strips.Left, 0, 64 + strips.Right, 10 + strips.Bottom);
         ReplayBand.Margin = new Thickness(strips.Left, 0, 68 + strips.Right, 46 + strips.Bottom);

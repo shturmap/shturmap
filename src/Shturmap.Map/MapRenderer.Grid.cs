@@ -640,6 +640,29 @@ public static partial class MapRenderer
         return SKRect.Create(grid.Inner.Left + YouInset * ui, top, width, PointerHigh * ui);
     }
 
+    /// <summary>
+    /// How far from the view's left edge the readout at the map's top left reaches with both its lines, YOU's for the
+    /// scene's position and the pointer's, and how far down from its top, at the text size <paramref name="ui"/> (pixels
+    /// per DIP times the text size; DIP with the text size alone); none without the grid. What's New's preview of the grid
+    /// under the pointer keeps its label clear of it, so the readout is drawn as the feature draws it (the release UI QA
+    /// pass of 0.7.1, 2026-10-27: at 900×560 the label lay over YOU).
+    /// </summary>
+    public static SKSize ReadoutReach(MapScene scene, float ui)
+    {
+        if (!scene.ShowGrid)
+            return SKSize.Empty;
+        using var small = new SKFont(TypefaceBold, YouSmall * ui);
+        using var large = new SKFont(TypefaceBold, YouLarge * ui);
+        using var pointerLarge = new SKFont(TypefaceBold, PointerLarge * ui);
+        var reference = scene.Player is { } player && scene.Grid.At(player.Position) is { } at ? at.ToString() : "";
+        var you = YouPad * ui + small.MeasureText(MapTexts.MapGridYou) + YouGap * ui + large.MeasureText(reference) + YouPad * ui;
+        var widest = "W" + new string('8', scene.Grid.Rows.ToString(System.Globalization.CultureInfo.InvariantCulture).Length) + "-8";
+        var pointer = YouPad * ui + small.MeasureText(MapTexts.MapGridPointer) + YouGap * ui + pointerLarge.MeasureText(widest) + YouPad * ui;
+        var left = GridStripWide * ui + YouInset * ui;
+        var top = GridStripHigh * ui + YouInset * ui;
+        return new SKSize(left + Math.Max(you, pointer), top + YouHigh * ui - PointerTuck * ui + PointerHigh * ui);
+    }
+
     // POINTER small and muted, the reference a step under YOU's, in ink.
     private static void DrawPointerLine(SKCanvas canvas, GridPointer pointer, float ui)
     {

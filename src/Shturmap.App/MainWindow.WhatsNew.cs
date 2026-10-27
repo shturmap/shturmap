@@ -132,6 +132,9 @@ public sealed partial class MainWindow
             "textsize" => FeatureGlyph.TextSize,
             "glance" => FeatureGlyph.Glance,
             "grid" => FeatureGlyph.Grid,
+            "desk-look" => FeatureGlyph.DeskLook,
+            "prices" => FeatureGlyph.Prices,
+            "grid-pointer" => FeatureGlyph.GridPointer,
             _ => null,
         };
         if (feature is { } f)
@@ -290,7 +293,7 @@ public sealed partial class MainWindow
         ViewModel.PreviewHint = item.Preview switch
         {
             "notes" => AppTexts.PreviewExampleNotes,
-            "desk" => AppTexts.PreviewExampleStash,
+            "desk" or "desk-look" or "prices" => AppTexts.PreviewExampleStash,
             "tasks" => AppTexts.PreviewExampleTasks,
             "textsize" => AppTexts.PreviewExampleSetting,
             _ when item.Preview.StartsWith("stash", StringComparison.Ordinal) => AppTexts.PreviewExampleStash,
@@ -323,6 +326,15 @@ public sealed partial class MainWindow
                 break;
             case "grid":
                 await PreviewGridAsync(wanted, data, motion);
+                break;
+            case "desk-look":
+                PreviewDeskLook(wanted, data, motion);
+                break;
+            case "prices":
+                PreviewPrices(wanted, data, motion);
+                break;
+            case "grid-pointer":
+                await PreviewGridPointerAsync(wanted, data, motion);
                 break;
             case "clock":
                 // Not on the map: the raid card's own clock, with example times, on a plate over the dimmed map.
@@ -570,6 +582,7 @@ public sealed partial class MainWindow
         // A moving preview's steps stop where they are, and the grid shown for its preview goes where the player has it off.
         StopWhatsNewSteps();
         PutGridBack();
+        EndWhatsNewPointer();
         WhatsNewPlate.Visibility = Visibility.Collapsed;
         WhatsNewPlateBox.Child = null;
         WhatsNewPlateBox.Width = PlateWidth;

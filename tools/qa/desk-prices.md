@@ -30,9 +30,12 @@ Get-ChildItem "$qa\data\logs" | Select-String -Pattern 'INFO Developer view: des
 
 ## What the lines must say
 
-- `desk probe 3` and each `desk prices`: "in the first frame after: N of N", every picture judged drawn, as many as
-  in the frame before (52 at the work area's size on 2026-10-26; one more after reading 3 than reading 1, its LEDX).
-  Before the bitmaps were kept (2026-10-26) the first frame after new prices drew 3 of 52.
+- `desk probe 3` and each `desk prices`: in the first frame after as many pictures drawn as in the frame before, none
+  blinking. Since the newest look in front (2026-10-27) reading 3 steps every region but the backpack back, its art at
+  25 %, and a few of those faint pictures judge as the flat ground: "42 of 45" before and after each `desk prices` at
+  the work area's size on 2026-10-27 (reading 1's page "49 of 49" in the frame before `desk probe 3`). A count after
+  lower than the one before is the fault. Before the bitmaps were kept (2026-10-26) the first frame after new prices
+  drew 3 of 52.
 - `desk prices`: the totals rise ("totals a/b -> c/d", the flea's prices up a tenth), the reading the same: nothing on
   the page comes in, its head line's totals don't count up.
 - `desk probe 2`: the backpack's cells "coming in" (their entry, as before), every other picture drawn.

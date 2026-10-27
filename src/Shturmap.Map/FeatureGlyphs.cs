@@ -19,10 +19,20 @@ public enum FeatureGlyph
 
     /// <summary>The squad grid: its lines and the player's dot in a square.</summary>
     Grid,
+
+    /// <summary>The desk's newest look in front (0.7.1): one region's cells full, with their figures, an earlier one's
+    /// beside it faint and without them.</summary>
+    DeskLook,
+
+    /// <summary>The prices with their age (0.7.1): a cell's amber price figure and a small clock.</summary>
+    Prices,
+
+    /// <summary>The grid under the pointer (0.7.1): a square of the grid lit, its ninth more, the pointer's arrow on it.</summary>
+    GridPointer,
 }
 
 /// <summary>
-/// What's New's pictures for 0.7.0's features (owner, 2026-10-27, D4 B: "each feature should have a icon and a appropriate
+/// What's New's pictures for 0.7.0's and 0.7.1's features (owner, 2026-10-27, D4 B: "each feature should have a icon and a appropriate
 /// picture or even animation"; docs/DESIGN.md §4, *What's New*): drawn by the app in the design system's colours, at the
 /// card's 56×34 picture place, never a bundled image (§3). And the text size preview's plate: the same lines drawn at each
 /// step's size, side by side, so the window's own text size never changes under the pointer.
@@ -162,6 +172,97 @@ public static partial class MapRenderer
                 using var body = FillOf(Player);
                 canvas.DrawCircle(33.5f, 22.5f, 3.6f, rim);
                 canvas.DrawCircle(33.5f, 22.5f, 2.4f, body);
+                break;
+            }
+            case FeatureGlyph.DeskLook:
+            {
+                // Two regions under their heads: the newest look's at the left, its cells full with the keep notch and the
+                // figures' amber bands; an earlier look's at the right, a step back as the desk draws it (its grid at 25 %,
+                // no figure), its head whole.
+                using var head = StrokeOf(Muted, 1.6f);
+                canvas.DrawLine(6, 4.5f, 18, 4.5f, head);
+                canvas.DrawLine(30, 4.5f, 46, 4.5f, head);
+                using var fill = FillOf(cell);
+                using var edge = StrokeOf(lineStrong, 1);
+                using var faintFill = FillOf(cell.WithAlpha(64));
+                using var faintEdge = StrokeOf(lineStrong.WithAlpha(64), 1);
+                foreach (var (x, y) in new[] { (6.5f, 8.5f), (16.5f, 8.5f), (6.5f, 18.5f), (16.5f, 18.5f) })
+                {
+                    var r = SKRect.Create(x, y, 10, 10);
+                    canvas.DrawRect(r, fill);
+                    canvas.DrawRect(r, edge);
+                }
+                foreach (var r in new[] { SKRect.Create(30.5f, 8.5f, 10, 10), SKRect.Create(40.5f, 8.5f, 10, 10), SKRect.Create(30.5f, 18.5f, 20, 10) })
+                {
+                    canvas.DrawRect(r, faintFill);
+                    canvas.DrawRect(r, faintEdge);
+                }
+                using var notchBuilder = new SKPathBuilder();
+                notchBuilder.MoveTo(7, 9);
+                notchBuilder.LineTo(11.5f, 9);
+                notchBuilder.LineTo(7, 13.5f);
+                notchBuilder.Close();
+                using var notch = notchBuilder.Detach();
+                using var amber = FillOf(Amber);
+                canvas.DrawPath(notch, amber);
+                using var figure = StrokeOf(Amber, 1.6f);
+                canvas.DrawLine(19, 11, 24, 11, figure);
+                canvas.DrawLine(9, 21, 14, 21, figure);
+                canvas.DrawLine(19, 21, 24, 21, figure);
+                break;
+            }
+            case FeatureGlyph.Prices:
+            {
+                // A cell with its price figure in amber, as the desk draws it, and beside it a small clock: how old it is.
+                using var fill = FillOf(cell);
+                using var edge = StrokeOf(lineStrong, 1);
+                var r = SKRect.Create(7.5f, 6.5f, 24, 21);
+                canvas.DrawRect(r, fill);
+                canvas.DrawRect(r, edge);
+                using var figure = StrokeOf(Amber, 2);
+                canvas.DrawLine(10.5f, 10.5f, 22, 10.5f, figure);
+                using var count = StrokeOf(Muted, 1.4f);
+                canvas.DrawLine(10.5f, 23.5f, 15.5f, 23.5f, count);
+                using var face = StrokeOf(Muted, 1.4f);
+                canvas.DrawCircle(42, 17, 7.5f, face);
+                using var hand = StrokeOf(Amber, 1.6f, SKStrokeCap.Round);
+                canvas.DrawLine(42, 17, 42, 11.5f, hand);
+                canvas.DrawLine(42, 17, 46, 19, hand);
+                break;
+            }
+            case FeatureGlyph.GridPointer:
+            {
+                // The grid's lines, one square lit faintly and its ninth more, as the map lights them under the pointer, and
+                // the pointer's arrow on the ninth, white on a dark rim as the tour draws it.
+                using var square = FillOf(Ink.WithAlpha(46));
+                canvas.DrawRect(new SKRect(29, 8, 38, 17), square);
+                using var ninth = FillOf(Ink.WithAlpha(96));
+                canvas.DrawRect(new SKRect(31.8f, 14, 35.2f, 17), ninth);
+                using var line = StrokeOf(lineStrong, 1);
+                foreach (var x in new[] { 8.5f, 18.5f, 28.5f, 38.5f, 48.5f })
+                    canvas.DrawLine(x, 2, x, 32, line);
+                foreach (var y in new[] { 7.5f, 17.5f, 27.5f })
+                    canvas.DrawLine(6, y, 51, y, line);
+                // The tour's drawn pointer's outline (MainWindow.TourPointerShape).
+                using var arrowBuilder = new SKPathBuilder();
+                arrowBuilder.MoveTo(0, 0);
+                arrowBuilder.LineTo(0, 19);
+                arrowBuilder.LineTo(4.6f, 14.6f);
+                arrowBuilder.LineTo(7.9f, 21.6f);
+                arrowBuilder.LineTo(10.6f, 20.4f);
+                arrowBuilder.LineTo(7.4f, 13.5f);
+                arrowBuilder.LineTo(13.6f, 13.5f);
+                arrowBuilder.Close();
+                using var arrow = arrowBuilder.Detach();
+                canvas.Save();
+                canvas.Translate(33.5f, 15.5f);
+                canvas.Scale(0.72f);
+                using var rim = StrokeOf(Palette.Sk(Palette.Ground), 1.6f);
+                rim.StrokeJoin = SKStrokeJoin.Round;
+                using var white = FillOf(SKColors.White);
+                canvas.DrawPath(arrow, white);
+                canvas.DrawPath(arrow, rim);
+                canvas.Restore();
                 break;
             }
         }
