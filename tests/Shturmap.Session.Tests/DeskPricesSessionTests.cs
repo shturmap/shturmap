@@ -161,6 +161,9 @@ public class DeskPricesSessionTests
         await rig.Until(() => loader.Asked == 1, "the prices asked for as the desk came on screen");
         await rig.Until(s => s.Desk!.PricesAt == clock.At(Minutes(12)), "the page priced again");
         rig.Session.SetDeskOnScreen(false);
+        // The watch settles first: the first answer's wake can have it looking (on screen still) as the desk leaves, and a
+        // clock moved 18 minutes in that instant would make a look due (CI's runner, 2026-10-27); the clock never jumps so.
+        await Quiet();
         clock.Set(Minutes(30));
         await Quiet();
         Assert.Equal(1, loader.Asked);
