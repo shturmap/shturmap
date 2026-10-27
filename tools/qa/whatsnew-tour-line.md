@@ -1,5 +1,9 @@
 # QA replay: What's New's tour line
 
+**Since 2026-10-27 the click it replays opens nothing** (owner, D4 B: What's New opens no tour; docs/DESIGN.md §4,
+*What's New*): the tour no longer opens, and the stills below show the card and the player's map as before the click.
+Kept for the fault it pinned down, which the tour from help can still meet; `whatsnew-lines.devscript` checks the card.
+
 The owner's report of 2026-10-15, on 0.5.0's What's New line "Your extracts, clearer" (`tour:5`): "the highlight does
 weird movements and highlights the wrong things sometimes". A click on the line opens the tour at chapter 5, YOUR
 SCREENSHOT KEY, which stages an example on Customs. The tour's layer then covered the line, the pointer's next move

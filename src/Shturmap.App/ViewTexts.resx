@@ -349,16 +349,8 @@
     <comment>What's New card: the unit beside the example raid clock's figure ("13 MIN"): minutes. Upper case, very small; figure and unit share 56 px.</comment>
   </data>
   <data name="WhatsNewPointAt" xml:space="preserve">
-    <value>Point at one: the map shows it.</value>
-    <comment>What's New card: note at its foot when every line on it previews on the map: pointing at one of its lines previews it there. One line in the card.</comment>
-  </data>
-  <data name="WhatsNewClickOne" xml:space="preserve">
-    <value>Click one: the tour shows it.</value>
-    <comment>What's New card: note at its foot when every line on it is about the tour (its picture the tour's pointer): clicking one opens the tour at the chapter that shows it; pointing at one shows nothing. Said as "Point at one: the map shows it." is. One line in the card.</comment>
-  </data>
-  <data name="WhatsNewPointOrClick" xml:space="preserve">
-    <value>Point or click: the map or the tour shows it.</value>
-    <comment>What's New card: note at its foot when some of its lines preview on the map when pointed at, and others, about the tour (their picture the tour's pointer), open the tour when clicked. Pointing goes with the map, clicking with the tour, in that order. One line in the card.</comment>
+    <value>Point at one: the map shows it. Click: it stays.</value>
+    <comment>What's New card: note at its foot. Pointing at one of its lines previews that feature on the map (an example); a click on a line keeps its preview up after the pointer leaves the card, a second click lets it go. One line in the card.</comment>
   </data>
   <data name="WhatsNewCloseTip" xml:space="preserve">
     <value>Close. Help brings it back.</value>

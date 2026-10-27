@@ -62,6 +62,9 @@ public sealed partial class MainWindow
 
     private bool TasksShowing => _tasksCue.Count > 0;
 
+    // What's New's example (its "tasks" line, MainWindow.WhatsNewPreviews): it ends with the preview, not by itself.
+    private bool _tasksExample;
+
     /// <summary>
     /// The cue of the tasks read arrived. True when ShowCue has nothing more to do: a later reading of the same run joined
     /// the cue on screen (or, the cue gone, calls none: the rail's rows glow), or the notice said it because a replay
@@ -419,7 +422,7 @@ public sealed partial class MainWindow
     // keeps it up.
     private void HideTasksAfter()
     {
-        if (KeepsCues)
+        if (KeepsCues || _tasksExample)
             return;
         if (_tasksHide is null)
         {

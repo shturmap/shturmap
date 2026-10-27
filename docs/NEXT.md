@@ -6,6 +6,35 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-27: What's New, each feature its own picture and preview (D4 B)
+
+**Asked** (owner): "we have features listed with our new releases, but when I click on them the standard tour of the app
+starts. This should not be the case, each feature should have a icon and a appropriate picture or even animation."
+**Decided** (owner, 2026-10-27, on the decision page of the desk and What's New): "D4 B", no notes: a glyph per feature
+and a short animated preview on point for the features that move; a click holds the preview; What's New opens no tour.
+
+**Built** (DESIGN.md §4, *What's New*; `Rules.WhatsNew`, `MainWindow.WhatsNewPreviews`, `Shturmap.Map.FeatureGlyphs`):
+0.7.0's five lines have keys of their own in docs/whats-new.md and its German, `desk`, `tasks`, `textsize`, `glance`,
+`grid`, each with a picture the map's code draws in the 56×34 place; older versions' lines keep theirs. Pointing
+previews the feature from made-up data under the preview label: the desk as a page on a plate (cells coming in, totals
+counting up, a copy's flash and decode), the cue of three made-up dailies and weeklies, NORMAL beside LARGEST as a
+still plate, the glance's plate rising in with made-up loot, Customs with the grid and YOU walking from C5-9 into D5-8.
+The moving ones play once in about 4.5 s and hold their end; with the animation effects off, their end at once. A click
+holds a line's preview with the pointer away (a second click, ×, a raid, the desk or the tour let it go); the foot says
+"Point at one: the map shows it. Click: it stays." `WhatsNewTests`, `FeatureGlyphsTests`;
+`tools\qa\whatsnew-lines.devscript` with what each still must show.
+- One change in the desk's code: `DeskBoard.Show(null)` sets the shown totals to nothing, so the preview's page counts
+  up from nothing each time (as a first showing does).
+- The grid's preview: the map lights no square, so the reference changing says it (the decision page drew a lit square;
+  the glyph doesn't either). At 900×560 YOU at the map's top left steps aside for the two-line preview label, as under
+  any note; the marker's tag says D5-8.
+- Open: older versions' `tour:N` lines (0.6.2's "Plan by trader", 0.6.0's "Your list, in the tour", 0.5.0's two,
+  0.4.0's "The tour") now preview and open nothing; only a player updating from before them sees them. Two could take
+  an existing preview (0.5.0's "Your extracts, clearer" and 0.6.0's line `extracts`), the rest keys of their own: the
+  owner's call. CLAUDE.md's "Keep the tour current" still asks for a `tour:N` line when
+  a release changes a chapter: the owner's to amend (DESIGN.md, *The tour*, and docs/tour.md now say release notes).
+  The UI QA pass of the new flow (once per feature) and the senior translator's review of the new texts are owed.
+
 ## 2026-10-26: clearing the desk
 
 **Decided after the build** (owner, 2026-10-27, in the chat, on the windows that shrink the desk, measured below): **windows never shrink the page; it scrolls for them.** A container window no longer counts in the height the cells must fit (`DeskPageRules.Arrangement.Held`); the cell size stays the desk's own and the page scrolls further; nothing seen is lost, and CLEAR and the fresh page after a raid tidy up. Not taken: a closed case's window leaving the page (its contents would leave the totals), both, or no change. Not built yet.

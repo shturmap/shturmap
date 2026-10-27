@@ -103,6 +103,11 @@ public sealed partial class MainWindow
 
     private void RenderWhatsNew(IReadOnlyList<WhatsNew.Section> sections)
     {
+        // The rows are made anew: a line held lets go (its row is gone), and its preview goes as leaving a line makes it go.
+        var held = _whatsNewHeld is not null;
+        LetGoWhatsNew();
+        if (held)
+            Preview(null, PreviewEndAfter);
         _whatsNewShown = sections;
         ViewModel.WhatsNewBlocks = sections
             .Select(section => new WhatsNewBlock(WhatsNew.Heading(section),
@@ -110,19 +115,30 @@ public sealed partial class MainWindow
                     item.Preview.StartsWith("stash", StringComparison.Ordinal), AboutTour: !WhatsNew.ShowsPreview(item.Preview), Notes: item.Preview == "notes"))
                     .ToList()))
             .ToList();
-        // The note at its foot says what its lines do (Rules.WhatsNew.FootOf).
-        ViewModel.WhatsNewFoot = WhatsNew.FootOf(sections) switch
-        {
-            WhatsNew.Foot.Click => ViewTexts.WhatsNewClickOne,
-            WhatsNew.Foot.PointOrClick => ViewTexts.WhatsNewPointOrClick,
-            _ => ViewTexts.WhatsNewPointAt,
-        };
+        // The note at its foot says what its lines do (Rules.WhatsNew.FootOf): none where no line previews anything.
+        ViewModel.WhatsNewFoot = WhatsNew.FootOf(sections) == WhatsNew.Foot.PointAt ? ViewTexts.WhatsNewPointAt : "";
         ViewModel.WhatsNewShown = sections.Count > 0;
     }
 
-    // A line's picture: the map's own symbol, drawn by its renderer as help's legend rows are; the clock's is drawn in XAML.
+    // A line's picture: the map's own symbol, drawn by its renderer as help's legend rows are; for 0.7.0's features a picture
+    // of the feature drawn by the map's code (Shturmap.Map.FeatureGlyphs; owner, 2026-10-27, D4 B); the clock's is drawn in
+    // XAML.
     private static ImageSource? Swatch(string preview)
     {
+        FeatureGlyph? feature = preview switch
+        {
+            "desk" => FeatureGlyph.Desk,
+            "tasks" => FeatureGlyph.Tasks,
+            "textsize" => FeatureGlyph.TextSize,
+            "glance" => FeatureGlyph.Glance,
+            "grid" => FeatureGlyph.Grid,
+            _ => null,
+        };
+        if (feature is { } f)
+        {
+            using var picture = FeatureGlyphs.Draw(f, 2);
+            return picture.ToWriteableBitmap();
+        }
         LegendSymbol? symbol = preview switch
         {
             "replay" => LegendSymbol.Replay,
@@ -171,20 +187,31 @@ public sealed partial class MainWindow
     }
 
     // The pointer onto a line (and a developer script's "whatsnew click"): the line takes the linked tint, and its
-    // preview shows once the pointer rests there.
+    // preview shows once the pointer rests there; on an older version's line about the tour, which shows nothing, the
+    // line held stays (Preview).
     private void WhatsNewPointerEntered(Grid row)
     {
         if (row.Tag is not string key)
             return;
         row.Background = Resource("LinkBrush");
-        if (WhatsNewPreviewOf(key) is { } wanted)
-            Preview(wanted, PreviewAfter);
+        Preview(WhatsNewPreviewOf(key), PreviewAfter);
     }
 
-    // What resting on a line asks for: its preview, or nothing for a line about the tour, whose click opens it
-    // (OnWhatsNewTapped; Rules.WhatsNew.ShowsPreview). A developer script's "whatsnew <n>" asks the same.
+    // What resting on a line asks for: its preview, or nothing for an older version's line about the tour
+    // (Rules.WhatsNew.ShowsPreview). A developer script's "whatsnew <n>" asks the same.
     private string? WhatsNewPreviewOf(string key) =>
         WhatsNewItem(key) is { } item && !WhatsNew.ShowsPreview(item.Preview) ? null : WhatsNewPreviewPrefix + key;
+
+    // The preview of the line a click holds, while the card is up: what the map comes back to when nothing else is
+    // asked for (Preview).
+    private string? WhatsNewHeldPreview => _whatsNewHeld is { } key && ViewModel.WhatsNewShown ? WhatsNewPreviewPrefix + key : null;
+
+    // The line a click holds (Rules.WhatsNew.Click), and its row, which keeps the linked tint while the pointer is away.
+    private string? _whatsNewHeld;
+    private Grid? _whatsNewHeldRow;
+
+    // The line held has shown its preview once: coming back, it shows its end at once.
+    private bool _whatsNewHeldPlayed;
 
     private void OnWhatsNewTapped(object sender, TappedRoutedEventArgs e)
     {
@@ -192,18 +219,37 @@ public sealed partial class MainWindow
             WhatsNewTapped(row);
     }
 
-    // A click on a line about the tour opens it, at the chapter the line names (owner, 2026-10-09: a release that
-    // changes a chapter says so here; docs/tour.md). The tour takes the map then (OpenTour), and its layer covers the
-    // line: the line lets go of its tint, and its leaving, under the layer, asks for nothing (owner, 2026-10-15: it
-    // ended the chapter's staging, "the highlight does weird movements and highlights the wrong things sometimes").
+    // A click on a line holds its preview, in place of any held before; on the line held, it lets go (owner, 2026-10-27,
+    // D4 B; Rules.WhatsNew.Click). What's New no longer opens the tour: "when I click on them the standard tour of the app
+    // starts. This should not be the case" (the tour stays in help). Held, the preview shows at once if the pointer's rest
+    // hasn't shown it yet, and stays when the pointer leaves the card; let go, it goes as the pointer leaves the line.
     private void WhatsNewTapped(Grid row)
     {
-        if (row.Tag is not string key || WhatsNewItem(key) is not { } item || Tour.ChapterOf(item.Preview) is not { } chapter)
+        if (row.Tag is not string key || WhatsNewItem(key) is not { } item)
             return;
-        Study.Ui("whatsnew.tour", ("chapter", chapter + 1));
-        OpenTour(chapter, "whatsnew");
-        if (TourOpen)
+        var held = WhatsNew.Click(_whatsNewHeld, key, item.Preview);
+        if (held == _whatsNewHeld)
+            return;
+        if (_whatsNewHeldRow is { } before && !ReferenceEquals(before, row))
+            before.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        _whatsNewHeld = held;
+        _whatsNewHeldRow = held is null ? null : row;
+        // Held while it shows: it has played (or is playing), and comes back at its end.
+        _whatsNewHeldPlayed = held is not null && _previewing == WhatsNewPreviewPrefix + held;
+        Study.Ui("whatsnew.hold", ("item", item.Preview), ("held", held is not null));
+        AppLog.Info(held is null ? $"What's New: {key} let go" : $"What's New: {key} held");
+        if (held is not null)
+            Preview(WhatsNewPreviewPrefix + held, TimeSpan.FromMilliseconds(1));
+    }
+
+    // The line held lets go, its row its tint: the preview ended by something else (EndPreview), the card made anew.
+    private void LetGoWhatsNew()
+    {
+        _whatsNewHeld = null;
+        _whatsNewHeldPlayed = false;
+        if (_whatsNewHeldRow is { } row)
             row.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        _whatsNewHeldRow = null;
     }
 
     // The line a row's key ("0.4.0:2") stands for.
@@ -217,10 +263,11 @@ public sealed partial class MainWindow
 
     private void OnWhatsNewPointerExited(object sender, PointerRoutedEventArgs e) => WhatsNewPointerExited(sender as Grid);
 
-    // The pointer off a line (and a developer script's "whatsnew leave"): its tint goes, and its preview a moment later.
+    // The pointer off a line (and a developer script's "whatsnew leave"): its tint goes, but on the line held, and its
+    // preview a moment later, the held one coming back in its place (Preview).
     private void WhatsNewPointerExited(Grid? row)
     {
-        if (row is not null)
+        if (row is not null && !ReferenceEquals(row, _whatsNewHeldRow))
             row.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
         Preview(null, PreviewEndAfter);
     }
@@ -240,13 +287,43 @@ public sealed partial class MainWindow
             _restoreView = Map.HasView ? Map.View : null;
         _previewing = wanted;
         ViewModel.PreviewText = AppTexts.PreviewWhatsNew(name: Caps.Of(item.Name), version: section.Label);
-        ViewModel.PreviewHint = item.Preview == "notes" ? AppTexts.PreviewExampleNotes
-            : item.Preview.StartsWith("stash", StringComparison.Ordinal) ? AppTexts.PreviewExampleStash : AppTexts.PreviewExample;
+        ViewModel.PreviewHint = item.Preview switch
+        {
+            "notes" => AppTexts.PreviewExampleNotes,
+            "desk" => AppTexts.PreviewExampleStash,
+            "tasks" => AppTexts.PreviewExampleTasks,
+            "textsize" => AppTexts.PreviewExampleSetting,
+            _ when item.Preview.StartsWith("stash", StringComparison.Ordinal) => AppTexts.PreviewExampleStash,
+            _ => AppTexts.PreviewExample,
+        };
         Study.Ui("whatsnew.point", ("version", section.Label), ("item", item.Preview));
         if (!WhatsNew.StagesMap(item.Preview))
             PlayersMapUnder(wanted);
+        // A moving preview plays once and holds its end; its end at once with Windows' animation effects off, in a
+        // snapshot, and for the line held coming back after another was pointed at: it has played (Rules.WhatsNew.Moves).
+        var held = wanted == WhatsNewHeldPreview;
+        var motion = !SnapshotMode && new Windows.UI.ViewManagement.UISettings().AnimationsEnabled && !(held && _whatsNewHeldPlayed);
+        _whatsNewHeldPlayed |= held;
         switch (item.Preview)
         {
+            case "desk":
+                PreviewDesk(wanted, data, motion);
+                break;
+            case "tasks":
+                // The cue of the tasks read, with three made-up dailies and weeklies, each on its map, as a reading of the
+                // Tasks screen calls it; it stays while the line is pointed at or held (MainWindow.TasksCue).
+                _tasksExample = true;
+                ShowCue(new ViewCue(CueKind.TasksRead, "", Tasks: TasksExample(data, DateTimeOffset.Now)), example: true);
+                break;
+            case "textsize":
+                PreviewTextSize(data);
+                break;
+            case "glance":
+                PreviewGlance(wanted, data, motion);
+                break;
+            case "grid":
+                await PreviewGridAsync(wanted, data, motion);
+                break;
             case "clock":
                 // Not on the map: the raid card's own clock, with example times, on a plate over the dimmed map.
                 WhatsNewPlateBox.Child = new Controls.RaidClock { Reading = RaidTime.Of(true, false, DateTime.Now.AddMinutes(-27), 40, DateTime.Now) };
@@ -490,12 +567,28 @@ public sealed partial class MainWindow
 
     private void EndWhatsNewPreview()
     {
+        // A moving preview's steps stop where they are, and the grid shown for its preview goes where the player has it off.
+        StopWhatsNewSteps();
+        PutGridBack();
         WhatsNewPlate.Visibility = Visibility.Collapsed;
         WhatsNewPlateBox.Child = null;
+        WhatsNewPlateBox.Width = PlateWidth;
         WhatsNewPlateBox.Padding = new Thickness(20, 18, 20, 18);
         WhatsNewPlateBox.BorderThickness = new Thickness(1);
         WhatsNewPlateBox.Background = Resource("RailBrush");
+        WhatsNewPlateBox.Opacity = 1;
+        WhatsNewPlateRise.Y = 0;
         ViewModel.PreviewHint = AppTexts.PreviewClickToPlan;
+        // The cue of the made-up tasks ends with its preview, as the stash cue's example does.
+        if (_tasksExample)
+        {
+            _tasksExample = false;
+            EndTasksRead();
+            ClearTasksRows();
+            _cueStory?.Stop();
+            _cueTimer?.Stop();
+            CuePanel.Visibility = Visibility.Collapsed;
+        }
         // The stash cue shown as an example ends with its preview, and so does the example list's roll call.
         if (_stashExample || (_rollRows.Count > 0 && _rollOwner == RollOwner.WhatsNew))
         {

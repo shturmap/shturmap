@@ -1019,7 +1019,8 @@
             <!-- PLAN -->
             <StackPanel Visibility="{x:Bind ShownIfTrue(ViewModel.PlanUp), Mode=OneWay}">
               <!-- What's New (owner, 2026-10-07; docs/DESIGN.md §4, "Screen anatomy"): after an update, until closed or the
-                   first raid is over. Pointing at a line previews it on the map, as pointing at a map's row does. -->
+                   first raid is over. Pointing at a line previews it on the map, as pointing at a map's row does; a
+                   click holds it (owner, 2026-10-27, D4 B). -->
               <Grid Margin="0,18,0,0" Visibility="{x:Bind ShownIfTrue(ViewModel.WhatsNewShown), Mode=OneWay}">
               <Border Padding="14" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1">
                 <StackPanel Spacing="10">
@@ -1082,8 +1083,9 @@
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
-                  <!-- What its lines do: preview on the map, open the tour, or both (Rules.WhatsNew.FootOf). -->
-                  <TextBlock Text="{x:Bind ViewModel.WhatsNewFoot, Mode=OneWay}" Style="{StaticResource NoteText}" Margin="0,-14,0,0" />
+                  <!-- What its lines do: point to preview on the map, click to hold it (Rules.WhatsNew.FootOf). -->
+                  <TextBlock Text="{x:Bind ViewModel.WhatsNewFoot, Mode=OneWay}" Style="{StaticResource NoteText}" Margin="0,-14,0,0"
+                             Visibility="{x:Bind ShownIf(ViewModel.WhatsNewFoot), Mode=OneWay}" />
                 </StackPanel>
               </Border>
               <!-- The card's close, in its corner as on a notice. -->
@@ -1728,7 +1730,12 @@
         <Grid x:Name="WhatsNewPlate" Visibility="Collapsed" IsHitTestVisible="False" Background="#960B0C0B">
           <StackPanel x:Name="WhatsNewPlateStack" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
             <Viewbox x:Name="WhatsNewPlateFit" HorizontalAlignment="Center" Stretch="Uniform" StretchDirection="DownOnly">
-              <Border x:Name="WhatsNewPlateBox" Width="360" Padding="20,18" Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" />
+              <Border x:Name="WhatsNewPlateBox" Width="360" Padding="20,18" Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1">
+                <!-- The in-raid glance's preview rises in on it (MainWindow.WhatsNewPreviews). -->
+                <Border.RenderTransform>
+                  <TranslateTransform x:Name="WhatsNewPlateRise" />
+                </Border.RenderTransform>
+              </Border>
             </Viewbox>
             <TextBlock x:Name="WhatsNewPlateNote" Style="{StaticResource EyebrowText}" Margin="0" HorizontalAlignment="Center" />
           </StackPanel>
