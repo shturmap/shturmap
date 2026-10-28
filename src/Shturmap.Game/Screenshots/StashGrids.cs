@@ -477,9 +477,11 @@ internal static class StashGrids
     /// to bright art stood out as faintly (the top of a junk box under a case: two items are never one shape), and the
     /// cells stay as the lines that show join them. A rectangle made so carries those pieces (<see cref="StashRect.Pieces"/>):
     /// two items of one width, one over the other, make a rectangle too (a keys case over a vest, 2026-10-19, 20:22), and a
-    /// reader whose label names nothing of the rectangle's size reads the pieces instead.
+    /// reader whose label names nothing of the rectangle's size reads the pieces instead. The item under the pointer, its
+    /// ground lit by the game's hover (<paramref name="lit"/>, <see cref="Lit"/>), is one rectangle of its lit cells, and
+    /// never one with a cell that isn't lit: its frame, as light as its ground, shows no line on its side.
     /// </summary>
-    public static List<StashRect> Items(StashGrid grid, StashLines lines, bool[] hidden, bool[] empty, int pitch)
+    public static List<StashRect> Items(StashGrid grid, StashLines lines, bool[] hidden, bool[] empty, int pitch, bool[]? lit = null)
     {
         int cols = grid.Cols, area = grid.Area;
         // Each line between two cells not hidden: right of k, and below k.
@@ -504,15 +506,18 @@ internal static class StashGrids
         static int Find(int[] parent, int i) => parent[i] == i ? i : parent[i] = Find(parent, parent[i]);
         static void Join(int[] parent, int a, int b) => parent[Find(parent, a)] = Find(parent, b);
         bool Weak((double Share, double Height)? line) => line is { } l && l.Height < faint;
+        // A lit cell and one that isn't are two items, two lit cells one (layout round, 2026-10-28).
+        bool Apart(int a, int b) => lit is not null && lit[a] != lit[b];
+        bool BothLit(int a, int b) => lit is not null && lit[a] && lit[b];
         for (var k = 0; k < area; k++)
         {
             if (hidden[k] || empty[k])
                 continue;
             foreach (var (other, line) in new[] { (k + 1, right[k]), (k + cols, below[k]) })
             {
-                if (line is not { } l || empty[other])
+                if (line is not { } l || empty[other] || Apart(k, other))
                     continue;
-                if (l.Share < 0.4)
+                if (l.Share < 0.4 || BothLit(k, other))
                 {
                     Join(shown, k, other);
                     Join(whole, k, other);
@@ -538,7 +543,7 @@ internal static class StashGrids
                     var owners = new HashSet<int>();
                     void Meet(int other, (double Share, double Height)? line)
                     {
-                        if ((!empty[other] || taken[other]) && Weak(line))
+                        if ((!empty[other] || taken[other]) && Weak(line) && !Apart(k, other))
                             owners.Add(Find(whole, other));
                     }
                     if (i > 0)
@@ -587,6 +592,72 @@ internal static class StashGrids
                 items.AddRange(pieces);
         }
         return items.OrderBy(r => r.J0).ThenBy(r => r.I0).ToList();
+    }
+
+    /// <summary>
+    /// Which cells lie under the game's hover: the item under the pointer has its whole ground lit a neutral grey (about 95,
+    /// against the field's 15 to 40), its frame as light, so no line shows round it (the owner's pictures of 2026-10-25 to
+    /// 2026-10-27: a shotgun five by two, a rifle four by two, a stimulant; joined with their neighbours, they split a
+    /// stash and named rifles over their neighbours' cells). A cell may be lit where a quarter of its border band, 4 to 11 px
+    /// in at 1440p (art rarely reaches it), is that grey (82 to 104, its channels within 8): the most of any cell not lit on
+    /// the owner's pictures 16 %, the least of a lit one 29 %. The pointer is over one item: the lit cells are the one group
+    /// of such cells, side by side, whose band is that grey on half of it or more over the group (a lit item 65 to 75 %;
+    /// two magazine cases' grey lids in a row, their lower halves dark, 40 %).
+    /// </summary>
+    public static bool[] Lit(StashGrid grid, ReadOnlySpan<byte> bgra, int width, int height, int pitch)
+    {
+        var lit = new bool[grid.Area];
+        var share = new double[grid.Area];
+        int m0 = Math.Max(2, (int)Math.Round(pitch * 4 / 84.0)), m1 = Math.Max(m0 + 2, (int)Math.Round(pitch * 11 / 84.0));
+        for (var k = 0; k < grid.Area; k++)
+        {
+            int cx = grid.X0 + k % grid.Cols * pitch, cy = grid.Y0 + k / grid.Cols * pitch;
+            int n = 0, hit = 0;
+            for (var y = Math.Max(0, cy + m0); y < Math.Min(height, cy + pitch - m0); y++)
+            {
+                for (var x = Math.Max(0, cx + m0); x < Math.Min(width, cx + pitch - m0); x++)
+                {
+                    if (x >= cx + m1 && x < cx + pitch - m1 && y >= cy + m1 && y < cy + pitch - m1)
+                        continue;
+                    var at = (y * width + x) * 4;
+                    int b = bgra[at], g = bgra[at + 1], r = bgra[at + 2];
+                    var grey = 0.299 * r + 0.587 * g + 0.114 * b;
+                    n++;
+                    if (grey is >= 82 and <= 104 && Math.Max(r, Math.Max(g, b)) - Math.Min(r, Math.Min(g, b)) <= 8)
+                        hit++;
+                }
+            }
+            share[k] = n > 0 ? hit / (double)n : 0;
+        }
+        var best = (Mean: 0.0, Cells: new List<int>());
+        var seen = new bool[grid.Area];
+        for (var k = 0; k < grid.Area; k++)
+        {
+            if (seen[k] || share[k] < 0.25)
+                continue;
+            var group = new List<int>();
+            var stack = new Stack<int>([k]);
+            seen[k] = true;
+            while (stack.Count > 0)
+            {
+                var c = stack.Pop();
+                group.Add(c);
+                int i = c % grid.Cols, j = c / grid.Cols;
+                foreach (var (ni, nj) in new[] { (i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1) })
+                {
+                    if (ni < 0 || nj < 0 || ni >= grid.Cols || nj >= grid.Rows || seen[nj * grid.Cols + ni] || share[nj * grid.Cols + ni] < 0.25)
+                        continue;
+                    seen[nj * grid.Cols + ni] = true;
+                    stack.Push(nj * grid.Cols + ni);
+                }
+            }
+            var mean = group.Average(c => share[c]);
+            if (mean >= 0.5 && mean > best.Mean)
+                best = (mean, group);
+        }
+        foreach (var c in best.Cells)
+            lit[c] = true;
+        return lit;
     }
 
     // A line between two cells that stands out by less than this share of the grid's frames is the grid's own line seen

@@ -179,6 +179,47 @@ public class StashGridsTests
         Assert.InRange(y, 406, 407);
     }
 
+    // The layout round of 2026-10-28 (the owner's pictures of 2026-10-25 to 2026-10-27: a shotgun, a rifle and a stimulant
+    // under the pointer): the game's hover lights an item's whole ground a neutral grey as light as its frame, so no line
+    // shows round it, and its cells were joined with their neighbours' (a rifle named over a stimulant and an armour, a
+    // shotgun's cells the pieces of two). The lit cells are one item, apart from every other; grey art over part of a row
+    // (two magazine cases' lids) is no hover.
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void The_item_under_the_pointer_is_its_lit_cells_and_apart_from_its_neighbours(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        var p = page.Pitch;
+        int x0 = (int)(200 * page.K), y0 = (int)(200 * page.K);
+        page.Grid(x0, y0, 6, 4, 1);
+        page.Item(x0, y0, 1, 0, 0, 3, 1, "Rifle");
+        page.Item(x0, y0, 1, 3, 0, 3, 1, "Rifle");
+        page.Item(x0, y0, 1, 4, 1, 2, 1, "Case");
+        page.Item(x0, y0, 1, 0, 2, 6, 1, "Rifle");
+        page.Item(x0, y0, 1, 0, 3, 1, 1, "Med");
+        using (var canvas = new SKCanvas(page.Bitmap))
+        {
+            // The hovered item, four by one: its ground and frame lit, a dark gun drawn across it.
+            using var ground = new SKPaint { Color = new SKColor(94, 96, 99) };
+            canvas.DrawRect(x0 - 1, y0 + p - 1, 4 * p + 3, p + 3, ground);
+            using var gun = new SKPaint { Color = new SKColor(30, 32, 34) };
+            canvas.DrawRect(x0 + 0.3f * p, y0 + 1.35f * p, 3.4f * p, 0.3f * p, gun);
+            canvas.DrawRect(x0 + 1.2f * p, y0 + 1.5f * p, 0.25f * p, 0.4f * p, gun);
+        }
+        var grid = new StashGrid(x0, y0, 6, 4, StashGridPlace.Stash);
+        var lit = StashGrids.Lit(grid, page.Bitmap.GetPixelSpan(), width, height, p);
+        Assert.Equal(Enumerable.Range(0, 24).Select(k => k is >= 6 and <= 9).ToArray(), lit);
+        var gray = StashGray.Of(page.Bitmap);
+        var empty = StashGrids.Empty(grid, gray.HighPass(5), p);
+        for (var k = 0; k < grid.Area; k++)
+            empty[k] &= !lit[k];
+        var rects = StashGrids.Items(grid, new StashLines(gray), new bool[grid.Area], empty, p, lit);
+        Assert.Contains(rects, r => r is { I0: 0, J0: 1, W: 4, H: 1, Odd: false });
+        Assert.Contains(rects, r => r is { I0: 0, J0: 0, W: 3, H: 1 });
+        Assert.Contains(rects, r => r is { I0: 0, J0: 2, W: 6, H: 1 });
+    }
+
     // The layout round of 2026-10-28 (the owner's picture of 2026-10-27 at the stash's top): the stash's first whole row
     // under its pane's head held two rifles' lower halves, five by two each, their tops and labels under the head, so no
     // line ran along its top and no cell of it was framed; and a shotgun under the pointer, its ground lit as light as its

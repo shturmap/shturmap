@@ -493,7 +493,15 @@ public sealed class DeskReader
             read.Fit >= DeskMatch.Enough && read.Best is not null ? read.Best : [];
         IReadOnlyList<(int I, int J)> CellsOf(StashRect r) => r.Cells.Count > 0 ? r.Cells
             : Enumerable.Range(r.J0, r.H).SelectMany(j => Enumerable.Range(r.I0, r.W).Select(i => (i, j))).ToList();
-        var itemRects = StashGrids.Items(grid, lines, hidden, empty, pitch);
+        // The item under the pointer: its lit ground reads as an empty cell's flat field, and is one item (layout round,
+        // 2026-10-28).
+        var lit = StashGrids.Lit(grid, bitmap.GetPixelSpan(), bitmap.Width, bitmap.Height, pitch);
+        for (var k = 0; k < grid.Area; k++)
+        {
+            if (lit[k] && !hidden[k])
+                empty[k] = false;
+        }
+        var itemRects = StashGrids.Items(grid, lines, hidden, empty, pitch, lit);
         // The cells read as empty that no rectangle took: dark art an item's footprint may take (as Claims does).
         var occupied = itemRects.SelectMany(CellsOf).ToHashSet();
         bool Free(int i, int j) => empty[j * grid.Cols + i] && !occupied.Contains((i, j));
@@ -868,6 +876,13 @@ public sealed class DeskReader
     // one in the wider band (a slot's "147/147" past the one-cell band's reach; QA pass of 2026-10-19, F4).
     private async Task<(string? Text, DeskPrint? Print)> CountAsync(SKBitmap bitmap, SKRectI pixels, int pitch, CancellationToken ct)
     {
+        // The band starts right of a magazine's loaded mark (layout round, 2026-10-28: the AVS rig's three MPX magazines,
+        // "0/41" read "10/41", the mark's glyph a "1").
+        if (MagazineMark(bitmap, pixels, pitch) is { } mark)
+            pixels = new SKRectI(Math.Min(mark, pixels.Right - pitch / 2), pixels.Top, pixels.Right, pixels.Bottom);
+        // Only a two-pixel line (a window's grid) is read as a "1" after the number: else that "1" is the maximum's own
+        // (the same magazines' "4/41", taken for "4/4").
+        var lineRead = TwoPixelLine(bitmap, pixels, pitch);
         var text = await _labels.ReadCountAsync(bitmap, pixels, pitch, ct)
                    ?? await _labels.ReadCountAsync(bitmap, pixels, pitch, ct, lit: true);
         if (text is null && pixels.Width > pitch)
@@ -875,11 +890,11 @@ public sealed class DeskReader
                    ?? await _labels.ReadCountAsync(bitmap, pixels, pitch, ct, cells: 1.5, lit: true);
         if (text is null || !text.Contains('/'))
             return (text, null);
-        var print = PrintOf(text);
+        var print = PrintOf(text, lineRead);
         if (pixels.Width > pitch)
         {
             var wide = await _labels.ReadCountAsync(bitmap, pixels, pitch, ct, cells: 1.5);
-            if (PrintOf(wide) is { } other && (print is null || other.Current.ToString().Length > print.Value.Current.ToString().Length))
+            if (PrintOf(wide, lineRead) is { } other && (print is null || other.Current.ToString().Length > print.Value.Current.ToString().Length))
                 (text, print) = (wide, other);
         }
         return (text, print);
@@ -889,7 +904,7 @@ public sealed class DeskReader
     /// (the cell's line read as "\" or "|"), and a "1" after the maximum that makes it more than the current's reach (the
     /// line of a window's grid, two pixels wide, read as a digit: "400/4001", "3/31") taken off when what is left still
     /// holds the current.</summary>
-    internal static DeskPrint? PrintOf(string? text)
+    internal static DeskPrint? PrintOf(string? text, bool lineRead = true)
     {
         if (string.IsNullOrWhiteSpace(text) || !text.Contains('/'))
             return null;
@@ -900,10 +915,57 @@ public sealed class DeskReader
         if (DeskPrint.Parse(t) is not { } print)
             return null;
         var max = print.Max.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        if (max.Length >= 2 && max[^1] == '1' && int.Parse(max[..^1], System.Globalization.CultureInfo.InvariantCulture) is var shorter && shorter >= print.Current
+        if (lineRead && max.Length >= 2 && max[^1] == '1' && int.Parse(max[..^1], System.Globalization.CultureInfo.InvariantCulture) is var shorter && shorter >= print.Current
             && max.Length > print.Current.ToString(System.Globalization.CultureInfo.InvariantCulture).Length)
             return new DeskPrint(print.Current, shorter);
         return print;
+    }
+
+    /// <summary>Where a magazine's loaded mark ends, at its cell's bottom left: the game's small green square with a light
+    /// glyph on it (its green about 145 over 100 and 85, measured at 1440p), null where there is none.</summary>
+    internal static int? MagazineMark(SKBitmap bitmap, SKRectI cell, int pitch)
+    {
+        int x0 = cell.Left + (int)Math.Round(0.04 * pitch), x1 = cell.Left + (int)Math.Round(0.36 * pitch);
+        int y0 = cell.Bottom - (int)Math.Round(0.3 * pitch), y1 = cell.Bottom - (int)Math.Round(0.03 * pitch);
+        if (x0 < 0 || y0 < 0 || x1 > bitmap.Width || y1 > bitmap.Height || x1 <= x0 || y1 <= y0)
+            return null;
+        int green = 0, right = -1;
+        for (var y = y0; y < y1; y++)
+        {
+            for (var x = x0; x < x1; x++)
+            {
+                var c = bitmap.GetPixel(x, y);
+                if (c.Green >= 100 && c.Green >= c.Red + 25 && c.Green >= c.Blue + 25)
+                {
+                    green++;
+                    right = Math.Max(right, x);
+                }
+            }
+        }
+        return green >= 0.1 * (x1 - x0) * (y1 - y0) ? right + 2 : null;
+    }
+
+    /// <summary>Whether the line along a cell's right side, at its count's height, is two pixels wide or more (a window's
+    /// grid; a stash's or a compartment's line is one): that one may be read as a "1" after the count.</summary>
+    internal static bool TwoPixelLine(SKBitmap bitmap, SKRectI cell, int pitch)
+    {
+        int y0 = cell.Bottom - (int)Math.Round(0.22 * pitch), y1 = cell.Bottom - 2;
+        if (cell.Right - 4 < 0 || cell.Right + 3 >= bitmap.Width || y0 < 0 || y1 > bitmap.Height || y1 <= y0)
+            return true;
+        var means = new double[8];
+        for (var d = -4; d <= 3; d++)
+        {
+            double sum = 0;
+            for (var y = y0; y < y1; y++)
+            {
+                var c = bitmap.GetPixel(cell.Right + d, y);
+                sum += 0.299 * c.Red + 0.587 * c.Green + 0.114 * c.Blue;
+            }
+            means[d + 4] = sum / (y1 - y0);
+        }
+        // The line's columns: within two pixels of the side, lighter than both ends by half the line's height.
+        double field = Math.Min(means[0], means[7]), peak = means.Skip(2).Take(4).Max();
+        return peak - field >= 10 && means.Skip(2).Take(4).Count(m => m > field + 0.5 * (peak - field)) >= 2;
     }
 
     // Whether the rectangle has a hidden cell beside one of its own: it may go on under the window.

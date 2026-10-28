@@ -593,6 +593,17 @@ day, for the in-raid glance: "Which pictures", below):
     one no wider than itself, away from its ends, adds no column (or row). The AVS rig, five pockets over five over two
     wide ones centred between them, read seven wide with its second pocket a column off; five by five now, its size the
     columns and rows its compartments take (the wide ones from the column of their left edge).
+  - **The item under the pointer is its lit cells, apart from its neighbours**: the game's hover lights an item's whole
+    ground a neutral grey (about 95), its frame as light, so no line shows round it, and its cells were joined with their
+    neighbours' (a shotgun five by two and a rifle four by two over the pieces of the guns beside them; a rifle named over a
+    stimulant and an armour, both wrong). A cell may be lit where a quarter of its border band, 4 to 11 px in at 1440p, is
+    that grey (82 to 104, its channels within 8): the most of a cell not lit on the owner's pictures 16 %, the least of a
+    lit one 29 %. The pointer is over one item: the lit cells are the one group of such cells side by side whose band is
+    that grey on half of it or more (a lit item 65 to 75 %; two magazine cases' grey lids in a row, 40 %). They are one
+    item, never joined with a cell that isn't lit, and never read as empty.
+  - **A magazine's count is read right of its loaded mark, and its last "1" is its own**: the mark at its cell's bottom
+    left (a small green square with a light glyph) was read as a "1" before the count ("10/41" for "0/41"), and a "1" after
+    the maximum was taken off as a window's two-pixel line ("4/4" for "4/41"); it is taken off only beside such a line.
 - **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
   the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
   cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until

@@ -187,6 +187,36 @@ public sealed class DeskReaderTests : IDisposable
     [InlineData(null)]
     public void A_count_is_no_condition(string? text) => Assert.Null(DeskReader.PrintOf(text));
 
+    // The AVS rig's MPX magazines (the owner's pictures 02 and 03 of 2026-10-26, layout round of 2026-10-28): "0/41" read
+    // "10/41", the loaded mark's glyph at the cell's bottom left a "1", and "4/41" taken for "4/4", its "1" for a window's
+    // line. The band starts right of the mark; a trailing "1" is a line's only beside a two-pixel line.
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void A_magazines_count_is_read_right_of_its_mark_and_its_last_one_is_its_own(int width, int height)
+    {
+        Assert.Equal(new DeskPrint(4, 41), DeskReader.PrintOf("4/41", lineRead: false));
+        Assert.Equal(new DeskPrint(3, 3), DeskReader.PrintOf("3/31", lineRead: true));
+        var page = new StashReaderTests.Page(width, height).Start();
+        var p = page.Pitch;
+        int x = (int)(800 * page.K), y = (int)(300 * page.K);
+        page.Grid(x, y, 1, 2, 1);
+        page.Grid(x + 3 * p, y, 1, 2, 2);
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var green = new SKPaint { Color = new SKColor(101, 144, 85) })
+        using (var glyph = new SKPaint { Color = new SKColor(225, 235, 232) })
+        {
+            canvas.DrawRect(x + 0.08f * p, y + 2 * p - 0.25f * p, 0.18f * p, 0.18f * p, green);
+            canvas.DrawRect(x + 0.12f * p, y + 2 * p - 0.22f * p, 0.08f * p, 0.11f * p, glyph);
+        }
+        var stashCell = SKRectI.Create(x, y, p, 2 * p);
+        var windowCell = SKRectI.Create(x + 3 * p, y, p, 2 * p);
+        Assert.InRange(DeskReader.MagazineMark(page.Bitmap, stashCell, p)!.Value, x + (int)(0.25 * p), x + (int)(0.3 * p));
+        Assert.Null(DeskReader.MagazineMark(page.Bitmap, windowCell, p));
+        Assert.False(DeskReader.TwoPixelLine(page.Bitmap, stashCell, p));
+        Assert.True(DeskReader.TwoPixelLine(page.Bitmap, windowCell, p));
+    }
+
     // ---- the frames ----
 
     private static readonly SKColor Field = new(26, 29, 32), Line = new(96, 100, 104);
