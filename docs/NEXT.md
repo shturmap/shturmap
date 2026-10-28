@@ -169,6 +169,9 @@ round*, and §4, *The in-raid glance*; `DeskWords`, `DeskFrames`, `StashGrids`, 
   unframed beside light items (22 items); labels misread ("ComTac II", "Axe", "AEM-\" naming the AEM textbook, a special
   slot read as its neighbour where the first slot's frame went unseen); two LOOT grids a column short (their hatched
   cells); a09's loot rig under a tooltip (not looked at); the magazines' trailing "1".
+- **The column's top** (owner, 2026-10-28: "Leave it"): the player's own regions the middle column cuts at its top stay
+  unread in a raid, as the LOOT pane's and the desk's top-cut parts do. Reading them would place compartments whose
+  heading is out of view by the column's order (16 whole items on the 16 pictures).
 
 ## 2026-10-27: 0.7.1's What's New lines, each its own key (the release UI QA pass)
 
