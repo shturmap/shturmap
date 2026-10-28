@@ -6,7 +6,7 @@ are; the release's name stays as it is. Words: docs/glossary-de.md.
 
 ## 0.7.2 · Kaomoji
 
-- glance · Loot auf einen Blick in 1080p · Jetzt auch in 1920×1080: Screenshot von Body oder Container im Raid, Preis je Item.
+- glance · Loot auf einen Blick, in 1080p · Jetzt auch in 1920×1080: Screenshot von Body oder Container im Raid, Preis je Item.
 
 ## 0.7.1 · Kaomoji
 
