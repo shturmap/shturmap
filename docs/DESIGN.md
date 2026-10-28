@@ -6038,10 +6038,24 @@ every issue goes through it, and the app's report is offered beside it.
   chain (outermost first, five at most) with each frame's module, method, file name (never its folder) and line;
   version, build kind, Windows; the last 50 app-log lines. The same exception is written once; errors the app
   survives at most three times a session, the same one once. A native crash (Skia, ANGLE) or a kill leaves no
-  exception: each running Shturmap holds `crashes\running-<session>.json` open and a clean end deletes it; at the
-  next start a marker no Shturmap holds, from a session that left no record and from after Windows last started
-  (before that it was a shutdown), becomes a "closed unexpectedly" record with that session's last log lines. The
-  next start then does what "Crash reports" says (`crashReports` in `shturmap.db`): **Ask** (default) shows the one
+  exception: each running Shturmap holds `crashes\running-<session>.json` open and a clean end deletes it. Windows
+  ending the session (a shutdown, restart or sign-out, or an installer's Restart Manager) is a clean end too
+  (2026-10-28): WM_ENDSESSION, which Shturmap follows on its own main window (a subclass of that window, no hook; WinUI
+  has no event for it), writes one log line ("Windows is ending the session (a shutdown or restart): Shturmap closes
+  with it"; "a sign-out", "an installer needs Shturmap closed" as Windows says), then does what a close does, without
+  a word or a question: the window stops and keeps its place, the marker goes, the session's own close gets 2 s at
+  most (Windows waits only a few seconds), and the process ends (`WindowsSessionEnd`). Windows' question before it,
+  WM_QUERYENDSESSION, is answered as before, so a shutdown is never held up. At the next start a marker no Shturmap
+  holds, from a session that left no record, becomes a "closed unexpectedly" record with that session's last log
+  lines, unless it is from before Windows last started or from before the user signed in to this Windows session:
+  such a session ended with Windows', and its marker is dropped with a log line. The sign-in counts since 2026-10-28:
+  Windows' Fast Startup (on by default) makes a shutdown a sign-out and a hibernation of the system, which keeps the
+  tick count, so the start Windows gives from it can lie days back, and shutdowns had come in as crash reports (five
+  from 16 to 28 October). The sign-in time is Windows' record of the session (`WindowsLogon`:
+  WTSQuerySessionInformation's WTSSessionInfo, only its two times read); where Windows doesn't give it, Windows' start
+  alone counts, as before. A native crash in an earlier sign-in, with no start of Shturmap after it in that sign-in, is
+  dropped with it, as one before a restart always was. The next start then does what "Crash reports" says
+  (`crashReports` in `shturmap.db`): **Ask** (default) shows the one
   question ("Shturmap closed unexpectedly last time. Send a crash report? It helps to fix it."; for errors it
   survived, "ran into an error"), with SEND, DON'T SEND, ALWAYS SEND (sends and switches the setting) and WHAT'S
   SENT (the records as text, exactly what goes); closing it asks again next time. **Always send** sends at the

@@ -6,6 +6,43 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-28: unexpected-exit reports after Windows' Fast Startup shutdown
+
+**Found** (the owner's crash reports of 16 to 28 October, read beside their PC's event log; nothing of either is copied
+here): five "Shturmap closed unexpectedly" reports, each a session whose log just stops with no error, often right after
+a routine update check. In at least three a shutdown or start that Windows logged as Fast Startup's (the user signed
+out and the system hibernated, then started from hibernation) lies between the session's last log line and the next
+start; a fourth is probably the same, where the event log has a gap. Shturmap did nothing as Windows ended the session,
+so Windows ended the process, the running marker stayed, and the next start took it for a crash. The rule meant to drop
+such a marker compared it with the time Windows last started, taken from the tick count, which Fast Startup doesn't
+reset: on the owner's PC that time lay at the last full restart, days back. The fifth (16 October, a start again later
+the same evening, no shutdown between) may be a real unexpected end and stays a report.
+
+**Built** (DESIGN.md §8, "Reports"; `WindowsSessionEnd`, `WindowsLogon`, `App.WindowsEnd.cs`,
+`CrashRecords.CollectUnexpectedExits`):
+- **Windows ending the session closes Shturmap as a close does.** WM_ENDSESSION on the main window (a subclass of its
+  own window; WinUI's Application has no SessionEnding) writes one log line, "Windows is ending the session (a shutdown
+  or restart): Shturmap closes with it" ("a sign-out", "an installer needs Shturmap closed" as Windows says), stops the
+  window and keeps its place, deletes the marker, gives the session's own close 2 s at most and ends the process. No
+  word, no question; WM_QUERYENDSESSION is answered as before, so a shutdown is never held up.
+- **At start, a marker from before this Windows sign-in is dropped with a log line**, beside the boot rule, which logs
+  its drops now too. The sign-in is Windows' record of the session (WTSQuerySessionInformation, WTSSessionInfo): its
+  sign-in as long before now as before the record's own time, so how Windows keeps the times doesn't count;
+  LsaGetLogonSessionData has the same time but needs the process token's logon id first. Without it the boot rule alone
+  holds, as before.
+- **Tests** (`ReportingTests`): a marker before the sign-in dropped and one after it a record; without a sign-in time
+  only one from before Windows' start dropped; the sign-in from the record's times; the ending without a shutdown (only
+  WM_ENDSESSION with TRUE ends, once, its steps in order, the marker gone and nothing to report at the next start, no
+  exception out of it, the session's close waited for only so long).
+- **Checked** on a quiet snapshot run of the dev build in a made-up game and data folder: a marker from a week before
+  dropped at start with its line; a script sent WM_QUERYENDSESSION and WM_ENDSESSION to the run's window: answered "may
+  end", ended in 29 ms, the marker gone, the process ended by itself 0.2 s later, the line in the log.
+
+**Open**: that Windows sends WM_ENDSESSION to Shturmap on a Fast Startup shutdown (it should: the user is signed out
+first) shows only on the owner's PC. After a dev build: shut down with Shturmap open, start, open Shturmap: no crash
+question, and the day's log ends with "Windows is ending the session (…)". A native crash in an earlier sign-in that
+Shturmap wasn't started again in is dropped too, as one before a restart always was.
+
 ## 2026-10-28: the readers' layout before other text engines (owner's picks)
 
 **Found** (an assessment of the desk's and the glance's reading on 2026-10-27, main `bb21cf9`; owner: "the OCR is

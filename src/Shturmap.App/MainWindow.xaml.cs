@@ -115,11 +115,7 @@ public sealed partial class MainWindow : Window
         Map.MarkerHovered += OnMarkerHovered;
         Map.MarkerClicked += OnMarkerClicked;
         ObserveActivation(this);
-        Closed += (_, _) =>
-        {
-            StopForExit();
-            SavePlace();
-        };
+        Closed += (_, _) => EndForClose();
 
         _clock = WindowTimer(OnClockTick);
         _clock.Interval = TimeSpan.FromSeconds(1);
@@ -240,6 +236,22 @@ public sealed partial class MainWindow : Window
 
     // The app is ending (StopForExit): nothing of the window's own runs again.
     private bool _stopped;
+
+    /// <summary>
+    /// The window's part of a close: it stops (StopForExit) and keeps its place for the next start, before the session
+    /// closes. As the window closes, and as Windows ends the session (App.FollowWindowsEnd), where the window never
+    /// closes. Once: a place saved again would go to a session already closed.
+    /// </summary>
+    internal void EndForClose()
+    {
+        StopForExit();
+        if (_placeKept)
+            return;
+        _placeKept = true;
+        SavePlace();
+    }
+
+    private bool _placeKept;
 
     /// <summary>
     /// A timer of the window: every one is made here, so that once the app is ending (StopForExit) its tick stops it
