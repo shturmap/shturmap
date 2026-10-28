@@ -344,14 +344,36 @@ day, for the in-raid glance: "Which pictures", below):
   Have's marks still come from the items BRING lists only). On the GEAR tab that is three regions (five screenshots of
   2026-10-19 (GEAR tab), 2560×1440, PvE), all read, for the desk alone: the loadout's slots at the left (earpiece,
   headwear, face cover, armband, body armour, eyewear, dogtag, on sling, holster, on back, sheath), each printing its
-  item's short name and, where it has one, its condition ("46/50"); a middle column, POCKETS, SPECIAL SLOTS and the
-  equipped BACKPACK, TACTICAL RIG and POUCH, each a slot's item with its grid inline; and the stash's grid at the right.
-  The middle column and the stash scroll each on its own, so a screenshot holds one page of each. In a grid a condition
-  ("147/147", "1469/1800") stands where a stack's count does, and is read as the count is; a magazine's or gun's rounds
-  stand there too ("60/60", "10/10"), read the same and no condition (§4, *The cell*). A label no reading of Windows'
-  recognition fits is read once more by PaddleOCR's once its cell's place is settled (2026-10-26; below, "Where Windows'
-  recognition reads nothing"). **Nested containers** (owner,
-  2026-10-19: "keep in mind of stackable things, like a bag stashed in a bag that contains additional items"): a
+  item's short name and, where it has one, its condition ("46/50"), and since 2026-10-28 its found-in-raid mark (below);
+  a middle column, POCKETS, SPECIAL SLOTS and the equipped BACKPACK, TACTICAL RIG and POUCH, each a slot's item with its
+  grid inline; and the stash's grid at the right. The middle column and the stash scroll each on its own, so a
+  screenshot holds one page of each. In a grid a condition ("147/147", "1469/1800") stands where a stack's count does,
+  and is read as the count is; a magazine's or gun's rounds stand there too ("60/60", "10/10"), read the same and no
+  condition (§4, *The cell*). A label no reading of Windows' recognition fits is read once more by PaddleOCR's once its
+  cell's place is settled (2026-10-26; below, "Where Windows' recognition reads nothing"). **The found-in-raid mark on a
+  slot** (owner, 2026-10-28, the play session's decision page, pick 3, A: the mark read on slot cells too, not only on
+  grids' cells; docs/NEXT.md; `StashMarks.SeenOnSlot`, `DeskReader.MarkCornerShows`): until then only a grid's cells
+  were looked at. The loadout's slots, a container's own slot (the rig, the backpack, the pouch, in the middle column
+  and in a body's LOOT pane) and a body's slots carry the game's mark as a grid's cell does, and it is read there with
+  the same drawn shape and thresholds, at the slot's own places (measured on the real set's pictures, at 2560×1440 and
+  scaled by the pitch): a gear slot's 12 px in from its box's right and 14 up, or 31 up over a printed condition; a
+  weapon's or a knife's, whose slot has a bar down its right side, 29 in and 14 up, or 59 up over its rounds. What
+  stands there counts as the mark only where it is grey (its least channel at least 0.8 of its most, against the field
+  round it; the mark 0.92 to 0.98, under the red low-health tint too): the game's insurance shield (orange, 0.10 to
+  0.13) on the player's insured gear and a secure container's lock (in a magenta glow, 0.47 to 0.68) stand at the same
+  places and correlate about as well (0.47 to 0.52; the mark 0.50 to 0.55), so a slot showing one reads as unmarked. The
+  mark is left unread, never guessed, where its corner can't be judged: a window, a toast or a tooltip over it, or the
+  slot's frame not showing along the bottom of its last cell (the pane's or the column's foot cutting the slot, the
+  hover's light, the red tint at its strongest). An item both insured and found in raid was on none of the pictures:
+  where the game puts the mark then isn't known, and the reading would say unmarked. The mark takes the grid cell's path
+  (the flea's found-in-raid rule for a figure and a click's copy, the card's plate, `desk.json`, the readings log); with
+  tarkov.dev's flea rules as they stand (found in raid not required, PvE and PvP) no figure, notch or total moves.
+  Measured with `shturmap-cli desk` on the real set's four folders (221 slot marks answered by hand): right 0 → 185,
+  wrong 0 → 0, unread 192 → 7 (three body armours' art at the mark's place, unsure; a gun's "~1/2"; a slot lit by the
+  hover, one cut at the LOOT pane's foot, the pouch in the red tint), no cell 29 (the LOOT pane at 1920×1080, the
+  holster's "PM" unread at that size, the AVS rig, a scrolled or tinted part); the grids' marks as before. The 41 slots
+  the older sets' pictures read as marked, checked by eye: all marked. **Nested containers** (owner, 2026-10-19: "keep
+  in mind of stackable things, like a bag stashed in a bag that contains additional items"): a
   container in a grid (a Zhuk rig in the backpack) hides its contents, which the game shows only in a floating window
   titled with its name (with search, sort and close buttons) that the player places anywhere, over what lies under it.
   Such a window is read as that container's grid (the stash reader already tells a container's window apart); the cells

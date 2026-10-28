@@ -368,7 +368,7 @@ public sealed class DeskReaderTests : IDisposable
     // The GEAR tab at 2560×1440 as the game lays it out (the screenshots of 2026-10-19): the loadout's slots under their
     // headings at the left, POCKETS and BACKPACK in the middle column, the stash at the right under SEARCH and SORT TABLE.
     // Without the backpack's grid (scrolled out of view), and with its slot empty, for the region read in part.
-    private static StashReaderTests.Page Gear(bool backpackGrid = true, string? backpackItem = "Pindrake")
+    private static StashReaderTests.Page Gear(bool backpackGrid = true, string? backpackItem = "Pindrake", bool earpieceMark = false)
     {
         var page = new StashReaderTests.Page(2560, 1440).Start();
         var p = page.Pitch;
@@ -379,7 +379,7 @@ public sealed class DeskReaderTests : IDisposable
         Text(page, "BODY ARMOR", 338, 420);
         Text(page, "EYEWEAR", 583, 420);
         page.Grid(87, 220, 2, 2, 1);
-        page.Item(87, 220, 1, 0, 0, 2, 2, "Zorblat");
+        page.Item(87, 220, 1, 0, 0, 2, 2, "Zorblat", mark: earpieceMark);
         page.Grid(333, 442, 2, 2, 1);
         page.Item(333, 442, 1, 0, 0, 2, 2, "Krellnot", "46/50");
         // The middle column: two pockets eight pixels apart, the backpack's slot and its grid inline.
@@ -1434,6 +1434,193 @@ public sealed class DeskReaderTests : IDisposable
         // Two names a glyph there fits: one of 2, never a guess.
         var two = new DeskMatch([Item(1, "AEM", 1, 2), Item(2, "AEM-5", 1, 2), Item(4, "AEM-7", 1, 2)]);
         Assert.Equal([Id(2), Id(4)], two.Match("AEM-?").Best.Select(c => c.ItemId).Order());
+    }
+
+    // ---- the found-in-raid mark on a slot (owner, 2026-10-28) ----
+
+    // A slot as the game draws it (the owner's screenshots of 2026-10-27 and 2026-10-28, at 2560×1440 and 1920×1080): its box
+    // under its heading, 172 px high at 1440p, a frame one pixel wide round its ground, a print at its bottom right; a
+    // weapon's slot has a bar down its right side. Returns the box the layout gives.
+    private static SKRectI SlotBox(StashReaderTests.Page page, int x, int y, int cells, string? print = null, bool barred = false, SKColor? ground = null)
+    {
+        var k = page.K;
+        var box = SKRectI.Create(x, y, cells * page.Pitch, (int)Math.Round(172 * k));
+        using var canvas = new SKCanvas(page.Bitmap);
+        using var line = new SKPaint { Color = Line };
+        using var field = new SKPaint { Color = ground ?? Field };
+        canvas.DrawRect(box.Left - 1, box.Top + 1, box.Width, box.Height - 2, line);
+        canvas.DrawRect(box.Left, box.Top + 2, box.Width - 2, box.Height - 4, field);
+        using var art = new SKPaint { Color = new SKColor(70, 64, 54), IsAntialias = true };
+        canvas.DrawRoundRect(box.Left + 20 * k, box.Top + 30 * k, box.Width - 70 * k, box.Height - 80 * k, 6 * k, 6 * k, art);
+        if (barred)
+        {
+            using var bar = new SKPaint { Color = new SKColor(120, 124, 126) };
+            canvas.DrawRect(box.Right - 14 * k, box.Top + 40 * k, 3 * k, box.Height - 52 * k, bar);
+        }
+        if (print is not null)
+        {
+            using var face = SKTypeface.FromFamilyName("Bahnschrift", SKFontStyle.Bold) ?? SKTypeface.Default;
+            using var font = new SKFont(face, 15 * k);
+            using var ink = new SKPaint { Color = new SKColor(226, 229, 231), IsAntialias = true };
+            if (!barred)
+                canvas.DrawText(print, box.Right - 5 * k, box.Bottom - 8 * k, SKTextAlign.Right, font, ink);
+            else
+            {
+                // A weapon's rounds: the loaded count large, its maximum small after it, left of the bar.
+                var slash = print.IndexOf('/');
+                using var large = new SKFont(face, 34 * k);
+                canvas.DrawText(print[slash..], box.Right - 18 * k, box.Bottom - 10 * k, SKTextAlign.Right, font, ink);
+                canvas.DrawText(print[..slash], box.Right - 18 * k - font.MeasureText(print[slash..]), box.Bottom - 10 * k, SKTextAlign.Right, large, ink);
+            }
+        }
+        return box;
+    }
+
+    // The game's found-in-raid mark (a light circle with a check), or the same shape in another colour, its middle (dx, dy)
+    // in from the box's bottom right at 1440p.
+    private static void MarkAt(StashReaderTests.Page page, SKRectI box, double dx, double dy, SKColor? colour = null)
+    {
+        var k = page.K;
+        float cx = (float)(box.Right - dx * k), cy = (float)(box.Bottom - dy * k);
+        using var canvas = new SKCanvas(page.Bitmap);
+        using var ring = new SKPaint { Color = colour ?? new SKColor(196, 200, 204), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.6f * k };
+        canvas.DrawCircle(cx, cy, 6.3f * k, ring);
+        canvas.DrawLine(cx - 3.6f * k, cy - 0.2f * k, cx - 1.2f * k, cy + 2.6f * k, ring);
+        canvas.DrawLine(cx - 1.2f * k, cy + 2.6f * k, cx + 5.4f * k, cy - 4.6f * k, ring);
+    }
+
+    // A secure container's lock at a slot's corner, as the owner's screenshots show it: a light grey padlock with a red
+    // keyhole in a dark magenta glow.
+    private static void LockAt(StashReaderTests.Page page, SKRectI box)
+    {
+        var k = page.K;
+        float cx = box.Right - 13 * k, cy = box.Bottom - 14 * k;
+        using var canvas = new SKCanvas(page.Bitmap);
+        using var glow = new SKPaint { Color = new SKColor(58, 11, 30), IsAntialias = true };
+        using var body = new SKPaint { Color = new SKColor(161, 158, 161), IsAntialias = true };
+        using var shackle = new SKPaint { Color = new SKColor(161, 158, 161), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f * k };
+        using var hole = new SKPaint { Color = new SKColor(124, 37, 68), IsAntialias = true };
+        canvas.DrawRoundRect(cx - 11 * k, cy - 13 * k, 22 * k, 24 * k, 5 * k, 5 * k, glow);
+        canvas.DrawCircle(cx, cy - 4 * k, 4.5f * k, shackle);
+        canvas.DrawRoundRect(cx - 7.5f * k, cy - 3 * k, 15 * k, 11 * k, 1.5f * k, 1.5f * k, body);
+        canvas.DrawRect(cx - 1 * k, cy, 2 * k, 4 * k, hole);
+    }
+
+    // Measured on the owner's screenshots (2026-10-27, 2026-10-28): a gear slot's mark 12 px in from its box's right and 14
+    // up, or 31 up over a printed condition; a weapon's or a knife's, beside the bar down its slot's right side, 29 in and 14
+    // up, or 59 up over its rounds. Read at those places, scaled by the pitch, at both sizes. (The game's print, in its own
+    // narrow font, correlates with the mark at 0.3 at the most on those screenshots; the test's font more, so an unmarked
+    // slot with a print is held only to "never yes".)
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void A_slots_found_in_raid_mark_is_read_at_its_corner_and_over_its_print(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        var p = page.Pitch;
+        var k = page.K;
+        int Y(int row) => (int)Math.Round((80 + row * 230) * k);
+        var plain = SlotBox(page, (int)(80 * k), Y(0), 2);
+        MarkAt(page, plain, 12, 14);
+        var printed = SlotBox(page, (int)(80 * k) + 3 * p, Y(0), 2, "28/36");
+        MarkAt(page, printed, 12, 31);
+        var none = SlotBox(page, (int)(80 * k) + 6 * p, Y(0), 2);
+        var nonePrinted = SlotBox(page, (int)(80 * k) + 9 * p, Y(0), 2, "100/100");
+        var gun = SlotBox(page, (int)(80 * k), Y(1), 5, "?/75", barred: true);
+        MarkAt(page, gun, 29, 59);
+        var bare = SlotBox(page, (int)(80 * k) + 6 * p, Y(1), 5, barred: true);
+        MarkAt(page, bare, 29, 14);
+        var unmarked = SlotBox(page, (int)(80 * k), Y(2), 5, barred: true);
+        var unmarkedPrinted = SlotBox(page, (int)(80 * k) + 6 * p, Y(2), 5, "30/30", barred: true);
+
+        Assert.True(StashMarks.SeenOnSlot(page.Bitmap, plain, p, barred: false));
+        Assert.True(StashMarks.SeenOnSlot(page.Bitmap, printed, p, barred: false));
+        Assert.False(StashMarks.SeenOnSlot(page.Bitmap, none, p, barred: false));
+        Assert.NotEqual(true, StashMarks.SeenOnSlot(page.Bitmap, nonePrinted, p, barred: false));
+        Assert.True(StashMarks.SeenOnSlot(page.Bitmap, gun, p, barred: true));
+        Assert.True(StashMarks.SeenOnSlot(page.Bitmap, bare, p, barred: true));
+        Assert.False(StashMarks.SeenOnSlot(page.Bitmap, unmarked, p, barred: true));
+        Assert.NotEqual(true, StashMarks.SeenOnSlot(page.Bitmap, unmarkedPrinted, p, barred: true));
+        // A weapon's mark is beside the bar, not in the corner a gear slot's takes.
+        Assert.NotEqual(true, StashMarks.SeenOnSlot(page.Bitmap, gun, p, barred: false));
+    }
+
+    // The game's insurance shield (orange) stands where the mark would on the player's insured gear and correlates with the
+    // mark's shape about as well (0.47 to 0.52 on the owner's screenshots, the mark 0.50 to 0.55), and so does a secure
+    // container's lock: what stands there counts only where it is grey. Drawn here as the mark's own shape in the shield's
+    // orange, the hardest case.
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void The_insurance_shield_and_a_secure_containers_lock_are_no_mark(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        var p = page.Pitch;
+        var k = page.K;
+        var orange = new SKColor(206, 138, 40);
+        var insured = SlotBox(page, (int)(80 * k), (int)(80 * k), 2);
+        MarkAt(page, insured, 12, 14, orange);
+        var insuredPrint = SlotBox(page, (int)(80 * k) + 3 * p, (int)(80 * k), 2, "32/32");
+        MarkAt(page, insuredPrint, 12, 31, orange);
+        var insuredGun = SlotBox(page, (int)(80 * k), (int)(310 * k), 5, barred: true);
+        MarkAt(page, insuredGun, 29, 14, orange);
+        var pouch = SlotBox(page, (int)(80 * k) + 6 * p, (int)(310 * k), 2, ground: new SKColor(24, 13, 20));
+        LockAt(page, pouch);
+        var marked = SlotBox(page, (int)(80 * k) + 6 * p, (int)(80 * k), 2);
+        MarkAt(page, marked, 12, 14);
+
+        Assert.False(StashMarks.SeenOnSlot(page.Bitmap, insured, p, barred: false));
+        Assert.NotEqual(true, StashMarks.SeenOnSlot(page.Bitmap, insuredPrint, p, barred: false));
+        Assert.False(StashMarks.SeenOnSlot(page.Bitmap, insuredGun, p, barred: true));
+        Assert.False(StashMarks.SeenOnSlot(page.Bitmap, pouch, p, barred: false));
+        Assert.True(StashMarks.SeenOnSlot(page.Bitmap, marked, p, barred: false));
+    }
+
+    // A slot's corner is judged only where nothing lies over it and the slot's frame shows along its bottom: the pane's or
+    // the column's foot cutting the slot, the hover's light (the ground as light as the frame) and the red low-health tint
+    // at its strongest hide that line, and the mark is left unread.
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void A_slots_corner_is_judged_only_where_its_frame_shows_and_nothing_covers_it(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        var p = page.Pitch;
+        var k = page.K;
+        var shown = SlotBox(page, (int)(80 * k), (int)(80 * k), 2);
+        MarkAt(page, shown, 12, 14);
+        var lit = SlotBox(page, (int)(80 * k) + 3 * p, (int)(80 * k), 2, ground: new SKColor(95, 96, 97));
+        MarkAt(page, lit, 12, 14);
+        var cut = SlotBox(page, (int)(80 * k) + 6 * p, (int)(80 * k), 2);
+        MarkAt(page, cut, 12, 14);
+        // The view's foot: the bar under the column, over the slot's last pixels.
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var foot = new SKPaint { Color = new SKColor(12, 13, 14) })
+            canvas.DrawRect(cut.Left - 4, cut.Bottom - 6 * k, cut.Width + 8, 40 * k, foot);
+        var lines = new StashLines(StashGray.Of(page.Bitmap));
+
+        Assert.True(DeskReader.MarkCornerShows(shown, p, lines, []));
+        Assert.False(DeskReader.MarkCornerShows(lit, p, lines, []));
+        Assert.False(DeskReader.MarkCornerShows(cut, p, lines, []));
+        // A window's edge over the corner, less than a quarter of the slot (which leaves the slot itself read).
+        var window = SKRectI.Create(shown.Right - p / 3, shown.Bottom - p / 2, 6 * p, 4 * p);
+        Assert.False(DeskReader.MarkCornerShows(shown, p, lines, [window]));
+        Assert.True(DeskReader.MarkCornerShows(shown, p, lines, [SKRectI.Create(shown.Right + p, shown.Top, 4 * p, 4 * p)]));
+    }
+
+    // Through the GEAR tab's reading: the earpiece's mark read on its slot, the armour's slot (its print, no mark) read as
+    // none; the slot's cell carries it as a grid's cell does.
+    [Fact]
+    public async Task The_gear_tabs_slots_carry_their_found_in_raid_mark()
+    {
+        var gear = Gear(earpieceMark: true);
+        Dump(gear, "gear-slot-mark.png");
+        using var picture = gear.Bitmap.Copy();
+        var reading = await Reader().ReadAsync(picture, new DeskCatalogue(Catalogue), new DateTimeOffset(2026, 1, 1, 15, 40, 0, TimeSpan.Zero), Ct);
+        var page = reading.Page!;
+        Assert.True(In(page, "loadout", c => c.Slot == "earpiece").FoundInRaid);
+        Assert.False(In(page, "loadout", c => c.Slot == "bodyarmor").FoundInRaid);
+        Assert.False(In(page, "backpack", c => c.Slot == "backpack").FoundInRaid);
     }
 
     [Fact]

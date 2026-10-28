@@ -29,6 +29,73 @@ internal static class StashMarks
             Best(bitmap, rect.Right - 11 * k, rect.Bottom - 26 * k, shape));
     }
 
+    // The colour of what the shape finds at a place, per channel (blue, green, red): the mean of the pixels on its ring and
+    // check less the mean of the field around them.
+    private static (float B, float G, float R) Ink(SKBitmap bitmap, int cx, int cy, Drawn shape)
+    {
+        var pixels = bitmap.GetPixelSpan();
+        var side = 2 * shape.Reach + 1;
+        double[] on = new double[3], off = new double[3];
+        int nOn = 0, nOff = 0;
+        for (var y = 0; y < side; y++)
+        {
+            for (var x = 0; x < side; x++)
+            {
+                var i = y * side + x;
+                int px = cx - shape.Reach + x, py = cy - shape.Reach + y;
+                if (!shape.Mask[i] || px < 0 || py < 0 || px >= bitmap.Width || py >= bitmap.Height)
+                    continue;
+                var p = 4 * (py * bitmap.Width + px);
+                var sum = shape.Values[i] > 0 ? on : off;
+                for (var c = 0; c < 3; c++)
+                    sum[c] += pixels[p + c];
+                if (shape.Values[i] > 0)
+                    nOn++;
+                else
+                    nOff++;
+            }
+        }
+        if (nOn == 0 || nOff == 0)
+            return (0, 0, 0);
+        return ((float)(on[0] / nOn - off[0] / nOff), (float)(on[1] / nOn - off[1] / nOff), (float)(on[2] / nOn - off[2] / nOff));
+    }
+
+    /// <summary>
+    /// Whether a slot's item carries the mark (owner, 2026-10-28): true or false when the correlation says so at the
+    /// slot's two places, null between. A slot draws its mark further from its box's corner than a grid's cell does: a
+    /// gear slot's 12 px in from the right and 14 up, or 31 up over a printed condition; a weapon's or a knife's, whose
+    /// slot has a bar down its right side, 29 in and 14 up, or 59 up over its rounds (2560×1440, scaled by the pitch).
+    /// What stands there counts as the mark only where it is grey: the game's insurance shield (orange) and a secure
+    /// container's lock (in a magenta glow) stand at the same place and correlate about as well, so their place reads as
+    /// no mark.
+    /// </summary>
+    public static bool? SeenOnSlot(SKBitmap bitmap, SKRectI box, int pitch, bool barred)
+    {
+        var k = pitch / 84.0;
+        var shape = Shape(k);
+        var (x, low, high) = barred ? (29, 14, 59) : (12, 14, 31);
+        var score = Math.Max(Grey(bitmap, box.Right - x * k, box.Bottom - low * k, shape),
+            Grey(bitmap, box.Right - x * k, box.Bottom - high * k, shape));
+        return score >= Enough ? true : score <= Absent ? false : null;
+    }
+
+    // The best correlation around a place where what it finds is grey; a shape in colour there (the orange shield, the
+    // lock's glow) is no mark, nothing at all.
+    private static float Grey(SKBitmap bitmap, double cx, double cy, Drawn shape)
+    {
+        var (score, x, y) = BestAt(bitmap, cx, cy, shape);
+        if (score <= Absent)
+            return score;
+        var (b, g, r) = Ink(bitmap, x, y, shape);
+        float most = Math.Max(b, Math.Max(g, r)), least = Math.Min(b, Math.Min(g, r));
+        return most > 0 && least >= GreyShare * most ? score : 0;
+    }
+
+    // The least channel of a mark's ink against its most. Measured on the owner's screenshots of 2026-10-27 and 2026-10-28
+    // (2560×1440 and 1920×1080, the slots' 47 marks and 154 without, each against its answer): the mark 0.92 to 0.98, under
+    // the red low-health tint too; the insurance shield 0.10 to 0.13; the secure container's lock 0.47 to 0.68.
+    private const float GreyShare = 0.8f;
+
     /// <summary>Whether a mark stands at either place: true or false when the correlation says so, null between
     /// (never claimed when unsure).</summary>
     public static bool? Seen(SKBitmap bitmap, SKRectI rect, int pitch)
@@ -105,13 +172,20 @@ internal static class StashMarks
     }
 
     // The best correlation of the shape with the picture around a place, over small shifts.
-    private static float Best(SKBitmap bitmap, double cx, double cy, Drawn shape)
+    private static float Best(SKBitmap bitmap, double cx, double cy, Drawn shape) => BestAt(bitmap, cx, cy, shape).Score;
+
+    private static (float Score, int X, int Y) BestAt(SKBitmap bitmap, double cx, double cy, Drawn shape)
     {
-        float best = -1;
+        (float Score, int X, int Y) best = (-1, 0, 0);
         for (var dy = -Shift; dy <= Shift; dy++)
         {
             for (var dx = -Shift; dx <= Shift; dx++)
-                best = Math.Max(best, Correlation(bitmap, (int)Math.Round(cx) + dx, (int)Math.Round(cy) + dy, shape));
+            {
+                int x = (int)Math.Round(cx) + dx, y = (int)Math.Round(cy) + dy;
+                var score = Correlation(bitmap, x, y, shape);
+                if (score > best.Score)
+                    best = (score, x, y);
+            }
         }
         return best;
     }

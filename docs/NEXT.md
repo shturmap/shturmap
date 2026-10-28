@@ -99,6 +99,26 @@ found-in-raid mark is read on slot cells too (the loadout's slots, a body's, a c
 cells: a new thing read from the picture, the owner's decision (CLAUDE.md, "Essentials"). Once fixed against, the 16
 pictures are no longer unseen: the next unseen test is the stash's pictures and the game in German.
 
+**Built** (found-in-raid marks on slot cells; pick (3); DESIGN.md §2, *The found-in-raid mark on a slot*; `StashMarks.SeenOnSlot`,
+`DeskReader.MarkCornerShows`, `DeskTruth`): the slot's mark read with the grid's shape and thresholds at the slot's own
+places, measured on the real set's pictures (a gear slot's 12 in and 14 up, 31 over a condition; a weapon's or knife's
+29 in, 14 up or 59 over its rounds; 1440p, scaled by the pitch); only a grey shape counts, since the insurance shield
+(orange) on the player's insured gear and the secure container's lock stand at the same place and correlate as well as
+the mark (the answers' "fir no" on the loadout were mostly shields); left unread where the corner can't be judged (a
+window, toast or tooltip over it; the slot's bottom frame line hidden by a cut, the hover or the red tint). Tests on
+drawn slots at 2560×1440 and 1920×1080, the GEAR tab's reading, the sheet's flea rule and desk.json for a slot's mark;
+`DeskTruth` notes each unread mark ("fir unread"). Measured (`shturmap-cli desk`, main 31c4701 → after; marks right /
+wrong / not looked for / no cell): desk's five 298/6/39/2 → 319/6/18/2; raid's three 50/0/41/21 → 78/0/13/21; raid-1440
+103/0/72/14 → 167/0/8/14; raid-1080 116/0/94/83 → 188/0/22/83. The slots alone (221 marks answered): 0 → 185 right, 0
+wrong, 192 → 7 unread, 29 no cell; items, regions and counts unchanged; the grids' 6 wrong marks (03, 04) are the
+grids'. Left: three body armours (04, 05, r3: art at the mark's place, between the thresholds), r1's "~1/2" gun, r1's
+loot ON BACK lit by the hover and a08's loot rig cut at the pane's foot (both marked, left unread by the corner rule),
+r2's pouch in the red tint; no cell for 29 (the LOOT pane at 1920×1080, the holster's "PM" unread at that size, the AVS
+rig, r1's scrolled armour and glasses, r2's tinted backpack, a09's loot rig). Open: an item both insured and found in
+raid was on no picture; where the game draws the mark then is unknown, and the reading would say unmarked. Nothing
+visible changes with tarkov.dev's flea rules as they stand (found in raid not required in PvE and PvP): the mark feeds
+only the flea's found-in-raid rule, the click's copy and the card's plate, desk.json and the readings log.
+
 ## 2026-10-27: 0.7.1's What's New lines, each its own key (the release UI QA pass)
 
 **Found** (the release UI QA pass of 0.7.1, 2026-10-27; repro `tools\qa\whatsnew-lines.devscript` at 900×560): F1

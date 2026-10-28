@@ -196,7 +196,7 @@ public sealed class DeskLedgerTests : IDisposable
         var path = Path.Combine(_root, "desk.json");
         var ledger = new DeskLedger();
         ledger.Apply(GameMode.Pve, Page(0,
-            new DeskRegion("loadout", DeskRegionKind.Loadout, 11, 1, [Cell(1, 0, 1, 1, Zhuk, ZhukOther) with { Slot = "headwear", Print = new DeskPrint(46, 50) }]),
+            new DeskRegion("loadout", DeskRegionKind.Loadout, 11, 1, [Cell(1, 0, 1, 1, Zhuk, ZhukOther) with { Slot = "headwear", Print = new DeskPrint(46, 50), FoundInRaid = true }]),
             Backpack(Cell(1, 3, 4, 3, Zhuk) with { Holds = DeskHolds.Contents, FoundInRaid = true, Count = 1 }) with { Parts = [new DeskRect(0, 0, 5, 7)] },
             Window("Zhuk", [Zhuk], Cell(0, 0, 1, 2, Water) with { Count = 3 })));
         Assert.True(ledger.Dirty);
@@ -212,6 +212,8 @@ public sealed class DeskLedgerTests : IDisposable
         var slot = page.Region("loadout")!.Cells.Single();
         Assert.Equal("headwear", slot.Slot);
         Assert.Equal(new DeskPrint(46, 50), slot.Print);
+        // A slot's found-in-raid mark (read since 2026-10-28) is kept as a grid cell's is.
+        Assert.True(slot.FoundInRaid);
         Assert.Equal([Zhuk, ZhukOther], slot.Ids);
         var zhuk = page.Region("backpack")!.Cells.Single();
         Assert.Equal((DeskHolds.Contents, true), (zhuk.Holds, zhuk.FoundInRaid));

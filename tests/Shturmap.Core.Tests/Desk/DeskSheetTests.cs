@@ -47,6 +47,33 @@ public class DeskSheetTests
         Assert.Equal(["loadout", "pouch", "stash"], sheet.Regions.Select(r => r.Region.Key));
     }
 
+    // A slot's found-in-raid mark (read since 2026-10-28, as a grid cell's) takes the path a grid cell's does: where the
+    // flea wants items found in raid, a slot's item with the mark has its flea figure, one without (or unread) its trader's,
+    // and ON YOU counts what each shows.
+    [Fact]
+    public void A_slots_found_in_raid_mark_lets_the_flea_price_it_where_the_flea_wants_the_mark()
+    {
+        var helmet = new DeskItemFacts("000000000000000000000398") { LastLow = 40_000, BasePrice = 20_000, Traders = [("trader-a", 10_000)] };
+        var fir = Flea with { FoundInRaidRequired = true };
+        DeskCellSheet Slot(bool? mark, out DeskSheet sheet)
+        {
+            var page = new DeskPage(DateTimeOffset.MinValue, [
+                new("loadout", DeskRegionKind.Loadout, 0, 0, [Cell(1, 0, helmet.Id) with { Slot = "headwear", FoundInRaid = mark }]),
+            ]);
+            sheet = DeskSheet.Of(page, id => id == helmet.Id ? helmet : null, fir);
+            return sheet.Regions.Single().Cells.Single();
+        }
+        var marked = Slot(true, out var markedSheet);
+        Assert.Equal((DeskSource.Flea, 40_000d), (marked.Figure!.Source, marked.Figure.Value));
+        Assert.Equal(40_000 - DeskValues.Fee(20_000, 40_000, 1, fir), markedSheet.Totals.OnYou);
+        foreach (var mark in new bool?[] { false, null })
+        {
+            var cell = Slot(mark, out var sheet);
+            Assert.Equal((DeskSource.Trader, 10_000d, DeskNoFlea.NotFoundInRaid), (cell.Figure!.Source, cell.Figure.Value, cell.Figure.NoFlea));
+            Assert.Equal(10_000, sheet.Totals.OnYou);
+        }
+    }
+
     // The owner's test of 2026-10-19: a drill (it doesn't stack) read "×310" put 53 M into a Junk window's total. A count
     // past what the item stacks to is a misread: one, at least. An item the file gives no stack size keeps its count.
     [Fact]

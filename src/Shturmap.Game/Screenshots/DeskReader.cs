@@ -152,7 +152,7 @@ public sealed class DeskReader
                     continue;
                 }
                 var order = DeskSlots.Order(slot.Key);
-                if (await SlotAsync(bitmap, slot.Box, pitch, catalogue, DeskSlots.KindOf(slot.Key), ct) is not { } read)
+                if (await SlotAsync(bitmap, slot.Box, pitch, catalogue, DeskSlots.KindOf(slot.Key), lines, layout.Over, ct) is not { } read)
                     continue;
                 var cell = read.Cell with { I = order, J = 0, Slot = slot.Key, Holds = DeskSlots.IsWeapon(slot.Key) ? DeskHolds.Mods : read.Cell.Holds };
                 cells.Add(cell);
@@ -174,7 +174,7 @@ public sealed class DeskReader
                 var slotKey = DeskRegion.KeyOf(place.Kind);
                 if (Under(box, layout.Over))
                     coveredSlots.Add(slotKey);
-                else if (await SlotAsync(bitmap, box, pitch, catalogue, DeskSlots.KindOf(slotKey), ct) is { } read)
+                else if (await SlotAsync(bitmap, box, pitch, catalogue, DeskSlots.KindOf(slotKey), lines, layout.Over, ct) is { } read)
                 {
                     var cell = read.Cell with { I = 0, J = 0, Slot = slotKey };
                     cells.Add(cell);
@@ -254,7 +254,7 @@ public sealed class DeskReader
                     covered.Add(slot.Key);
                     continue;
                 }
-                if (await SlotAsync(bitmap, slot.Box, pitch, catalogue, DeskSlots.KindOf(slot.Key), ct) is not { } read)
+                if (await SlotAsync(bitmap, slot.Box, pitch, catalogue, DeskSlots.KindOf(slot.Key), lines, layout.Over, ct) is not { } read)
                     continue;
                 var cell = read.Cell with { I = DeskSlots.Order(slot.Key), J = 0, Slot = slot.Key, Holds = DeskSlots.IsWeapon(slot.Key) ? DeskHolds.Mods : read.Cell.Holds };
                 cells.Add(cell);
@@ -281,7 +281,7 @@ public sealed class DeskReader
             {
                 if (Under(box, layout.Over))
                     coveredSlots.Add(slotKey);
-                else if (await SlotAsync(bitmap, box, pitch, catalogue, DeskSlots.KindOf(slotKey), ct) is { } read)
+                else if (await SlotAsync(bitmap, box, pitch, catalogue, DeskSlots.KindOf(slotKey), lines, layout.Over, ct) is { } read)
                 {
                     var cell = read.Cell with { I = 0, J = 0, Slot = slotKey };
                     cells.Add(cell);
@@ -316,8 +316,9 @@ public sealed class DeskReader
         over.Any(o => SKRectI.Intersect(o, box) is { IsEmpty: false } i && (long)i.Width * i.Height * 4 > (long)box.Width * box.Height);
 
     // A slot: its item's label at the box's top right, matched against the items the slot takes; its condition at the
-    // bottom right; no footprint. Null for an empty slot (no label read).
-    private async Task<DeskCellLook?> SlotAsync(SKBitmap bitmap, SKRectI box, int pitch, DeskCatalogue catalogue, DeskSlotKind kind, CancellationToken ct)
+    // bottom right and its found-in-raid mark beside it; no footprint. Null for an empty slot (no label read).
+    private async Task<DeskCellLook?> SlotAsync(SKBitmap bitmap, SKRectI box, int pitch, DeskCatalogue catalogue, DeskSlotKind kind, StashLines lines,
+        IReadOnlyList<SKRectI> over, CancellationToken ct)
     {
         var rect = LabelRect(bitmap, box, pitch, reach: 6);
         var cells = (int)Math.Round(box.Width / (double)pitch);
@@ -334,12 +335,35 @@ public sealed class DeskReader
         // A label several items of the slot share: the picture against their grid images (owner, 2026-10-25).
         (ids, var icons) = catalogue.Icons.Settle(bitmap, box, pitch, ids, DeskIconPlace.Fitted);
         var (countText, print) = ids.Count > 0 ? await CountAsync(bitmap, box, pitch, ct) : (null, null);
+        // The found-in-raid mark at its corner (owner, 2026-10-28; a grid cell's since 2026-10-11), where the corner can be judged.
+        var fir = ids.Count > 0 && MarkCornerShows(box, pitch, lines, over)
+            ? StashMarks.SeenOnSlot(bitmap, box, pitch, barred: kind is DeskSlotKind.Weapon or DeskSlotKind.Knife)
+            : null;
         var cell = new DeskCell(0, 0, 1, 1, ids.Select(c => c.ItemId).Distinct(StringComparer.Ordinal).ToList())
         {
             Print = print,
+            FoundInRaid = fir,
             Holds = HoldsOf(ids),
         };
         return new DeskCellLook("", box, cell, label, fit, false, countText) { Icons = icons, ByPaddle = byPaddle };
+    }
+
+    /// <summary>
+    /// Whether a slot's corner, where its found-in-raid mark stands, can be judged: nothing lies over it (a window, a toast,
+    /// a tooltip), and the slot's frame shows along the bottom of its last cell. The pane's or the column's foot cutting the
+    /// slot, the hover's light (the slot's ground lit as light as its frame) and the red low-health tint at its strongest
+    /// (the ground at the frame's level) all hide that line; the mark is then left unread, never guessed.
+    /// </summary>
+    internal static bool MarkCornerShows(SKRectI box, int pitch, StashLines lines, IReadOnlyList<SKRectI> over)
+    {
+        var corner = new SKRectI(box.Right - (int)Math.Round(0.5 * pitch), box.Bottom - (int)Math.Round(0.85 * pitch), box.Right, box.Bottom);
+        if (over.Any(o => o.IntersectsWith(corner)))
+            return false;
+        // A heading's box stands a pixel or two off the frame: the best of the rows near its bottom.
+        double line = 0;
+        for (var y = box.Bottom - 5; y <= box.Bottom; y++)
+            line = Math.Max(line, lines.Horizontal(y, box.Right - pitch, box.Right - 3));
+        return line >= 0.5;
     }
 
     /// <summary>

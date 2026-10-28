@@ -57,8 +57,8 @@ public sealed record DeskScore
     public int CountsUnread { get; init; }
     public int CountsMadeUp { get; init; }
 
-    // The found-in-raid mark: right, wrong, not looked for (a slot's: the reader doesn't look there), no cell; a mark out of
-    // view ("?") not scored.
+    // The found-in-raid mark: right, wrong, not looked for (the reader said nothing of it: unsure, its corner not judged, or
+    // a slot's until 2026-10-28), no cell; a mark out of view ("?") not scored.
     public int Marks { get; init; }
     public int MarksRight { get; init; }
     public int MarksWrong { get; init; }
@@ -100,7 +100,7 @@ public sealed record DeskScore
 /// item's count or condition as printed and its found-in-raid mark ("stash 0,5 | 45/45 | fir yes": "-" nothing printed,
 /// "?/20" or "~Full" the game's own, not scored; "fir ?" the mark's corner out of view). Lines starting with # are notes;
 /// a file not there scores nothing. Scored as the throwaway script of the assessment of 2026-10-27 did, the marks the
-/// reader doesn't look for (a slot's) said apart from wrong ones.
+/// reader said nothing of said apart from wrong ones.
 /// </summary>
 public sealed class DeskTruth
 {
@@ -259,7 +259,10 @@ public sealed class DeskTruth
             if (cell is null)
                 marksNoCell++;
             else if (cell.FoundInRaid is not { } seen)
+            {
                 marksNotLooked++;
+                notes.Add($"fir unread {place}: is {(yes ? "yes" : "no")}");
+            }
             else if (seen == yes)
                 marksRight++;
             else
