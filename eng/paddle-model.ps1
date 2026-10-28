@@ -5,8 +5,12 @@
 # The files are never in the repository: they are fetched from RapidOCR's model hub (ModelScope) at a pinned revision,
 # each checked against its SHA-256 before it is kept (the model's as RapidOCR's model list of that revision gives it,
 # python/rapidocr/default_models.yaml), in a cache outside the repository that every checkout shares
-# (%LOCALAPPDATA%\Shturmap-build\ocr\<revision>), and copied from there only when its hash is still the pinned one. A
-# build after the first needs no network. Anything that fails stops the build: no build goes out without them.
+# (%LOCALAPPDATA%\Shturmap-build\ocr\<revision>, or $env:SHTURMAP_BUILD_CACHE\ocr\<revision>), and copied from there
+# only when its hash is still the pinned one. A build after the first needs no network. CI keeps that folder between
+# runs, and the Release workflow restores CI's copy (actions/cache): a kept or restored file is checked here as a fetched
+# one is, and fetched anew when its hash isn't the pinned one. A fetch is tried six times, 5, 10, 20, 30 and 45 s apart
+# (2026-10-28: ModelScope answered GitHub's runners "502 Bad Gateway" for hours, and three tries 3 and 6 s apart stopped
+# the release). Anything that fails stops the build: no build goes out without them.
 # The model: PP-OCRv5 latin mobile recognition (PaddlePaddle's PaddleOCR, Apache-2.0), as RapidOCR exports it to ONNX
 # (Apache-2.0), unmodified. To move to another: its URL and hash here and in eng\licenses\PaddleOCR-NOTICE.txt, its line
 # in THIRD-PARTY-NOTICES.md, and the fallback measured again on the readers' fixtures (docs/UPDATES.md).
@@ -51,14 +55,20 @@ foreach ($file in $files) {
     # Fetched under a name of this run's own, checked, then moved in: the cache only ever holds checked files, and two
     # builds fetching at once don't meet.
     $part = Join-Path $cache "$($file.Name).$([Guid]::NewGuid().ToString('N')).part"
+    # The waits before the second to the sixth try. The line between tries names no exception: MSBuild's Exec, which runs
+    # this, takes an output line like "... returned an error: ..." for an error and fails the build even when a later
+    # try succeeds.
+    $waits = @(5, 10, 20, 30, 45)
     for ($try = 1; ; $try++) {
       try {
         Invoke-WebRequest -Uri $file.Url -OutFile $part -UserAgent $agent -UseBasicParsing
         break
       }
       catch {
-        if ($try -ge 3) { throw "Couldn't download $($file.Name) from $($file.Url): $($_.Exception.Message)" }
-        Start-Sleep -Seconds (3 * $try)
+        if ($try -gt $waits.Count) { throw "Couldn't download $($file.Name) from $($file.Url): $($_.Exception.Message)" }
+        $wait = $waits[$try - 1]
+        Write-Output "$($file.Name) not fetched (try $try of $($waits.Count + 1)), again in $wait s."
+        Start-Sleep -Seconds $wait
       }
     }
     $hash = Get-Sha256 $part

@@ -59,11 +59,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      # No package cache: a release restores from nuget.org, not from what another run left, and fetches PaddleOCR's model
-      # from its hub, checked against its SHA-256 (eng\paddle-model.ps1, run by the build).
+      # No package cache: a release restores its NuGet packages from nuget.org, not from what another run left.
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
+
+      # PaddleOCR's model from CI's cache, restored only (2026-10-28: ModelScope answered GitHub's runners "502 Bad
+      # Gateway" for hours and stopped the release): CI's key, or CI's latest entry when the script changed since. A run
+      # on main reads the caches CI saved on main. That is safe because the build's eng\paddle-model.ps1 checks every
+      # restored file against its pinned SHA-256 and fetches anew one that doesn't match, so a restored file is trusted
+      # exactly as one freshly fetched; without an entry the build fetches as before. The path is CI's, character for
+      # character: it is part of the entry's version.
+      - name: PaddleOCR's model from CI's cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~\AppData\Local\Shturmap-build
+          key: paddle-model-${{ runner.os }}-${{ hashFiles('eng/paddle-model.ps1') }}
+          restore-keys: paddle-model-${{ runner.os }}-
 
       - name: Vulnerable packages
         shell: pwsh

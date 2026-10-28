@@ -6,6 +6,18 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-28: the Release workflow and ModelScope's outage
+
+**What happened:** on the evening of 28 October ModelScope, the hub PaddleOCR's model comes from, answered GitHub's
+runners "502 Bad Gateway", while the same request from the owner's PC got the file. Every build fetches the model, and
+the Release workflow fetched it afresh each time, without CI's cache: two test-only Release runs stopped after three
+tries 3 and 6 s apart, and 0.7.2's release was blocked. CI passed, on its cache. **Built** (DESIGN.md §3 and §8,
+"Distribution" and "Continuous integration"): the Release workflow restores CI's cache of the model, restore only
+(`actions/cache/restore`, CI's key, or CI's latest entry when `eng\paddle-model.ps1` changed; CI takes that prefix too
+now), safe because the script checks each restored file against its pinned SHA-256 as it checks a fetched one; the
+NuGet packages still come from nuget.org. And the script tries a fetch six times, 5, 10, 20, 30 and 45 s apart, before
+the build stops.
+
 ## 2026-10-28: unexpected-exit reports after Windows' Fast Startup shutdown
 
 **Found** (the owner's crash reports of 16 to 28 October, read beside their PC's event log; nothing of either is copied

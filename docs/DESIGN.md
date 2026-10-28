@@ -846,10 +846,12 @@ quoting it anywhere new.
   general model of Latin print, no game art or data. Not in the repository: `eng\paddle-model.ps1`, run by
   `Shturmap.Game`'s build, fetches both files from RapidOCR's model hub on ModelScope at revision v3.10.0 and keeps them
   only when their SHA-256 is the pinned one (the model's as RapidOCR's own model list of that revision gives it), in a
-  cache outside the repository (`%LOCALAPPDATA%\Shturmap-build\ocr\v3.10.0`). Their licences: THIRD-PARTY-NOTICES.md,
-  `licenses\Apache-2.0.txt` and `licenses\PaddleOCR-NOTICE.txt` (where they come from, their hashes); ONNX Runtime's own
-  licence and notices come from its package (`eng\notices.ps1`). Moving to another model is a change of the script's
-  URL and hash, the notice, and the measurement again (docs/UPDATES.md).
+  cache outside the repository (`%LOCALAPPDATA%\Shturmap-build\ocr\v3.10.0`), which CI keeps between runs and the
+  Release workflow restores from CI (§8, "Distribution" and "Continuous integration"); a kept or restored file is
+  checked against its hash again. A fetch is tried six times, over about two minutes, before the build stops. Their
+  licences: THIRD-PARTY-NOTICES.md, `licenses\Apache-2.0.txt` and `licenses\PaddleOCR-NOTICE.txt` (where they come
+  from, their hashes); ONNX Runtime's own licence and notices come from its package (`eng\notices.ps1`). Moving to
+  another model is a change of the script's URL and hash, the notice, and the measurement again (docs/UPDATES.md).
 - **Game data** (quests, maps, items, extracts, bosses) comes from tarkov.dev's public JSON service
   (`json.tarkov.dev`), run by The Hideout. Its API page says it is free with no rate limit; there are no written
   terms. Requests say who they are (User-Agent `Shturmap/<version>` with the project's address, the build's own
@@ -5071,8 +5073,12 @@ self-unpacking exe, without updates; they need the Setup once.
   Settings → Apps. Measured 2026-10-03: the Setup is 106 MB, the installed app 244 MB (precompiled, like the folder
   build), a delta between two builds 1.7 MB. PaddleOCR's model and ONNX Runtime (2026-10-26; §2, §3) add 26 MB to the
   app (the folder build 249.6 → 274.4 MB; `onnxruntime.dll` 16.5 MB, the model in `ocr\` 7.9 MB), fetched and checked
-  by the build (`eng\paddle-model.ps1`; CI keeps them between runs as it keeps the packages, the Release workflow fetches
-  them afresh).
+  by the build (`eng\paddle-model.ps1`; CI keeps them between runs as it keeps the packages). The Release workflow
+  restores CI's copy, restore only, and its NuGet packages still come from nuget.org (2026-10-28: ModelScope answered
+  GitHub's runners "502 Bad Gateway" for hours and stopped the release, while the same request from the owner's PC got
+  the file). The script checks each restored file against its pinned SHA-256 as it checks a fetched one, so a restored
+  file is trusted exactly as much; without CI's copy, or with one that fails the check, the build fetches them, six
+  tries over about two minutes.
 - **The install folder is not the data folder.** Velopack installs to `%LOCALAPPDATA%\<pack id>`, and an uninstall
   deletes that folder. So the pack id is `ShturmapApp` (`Distribution.PackId`; `eng\release.ps1` packs with the
   same, a test checks), never `Shturmap`: the database, logs, cache, outbox and crash records in
@@ -5391,8 +5397,10 @@ compile too) and runs the tests, then builds it in Release and runs them again, 
 2026-10-11 (owner): a release compiles the other side of `#if DEVTOOLS`, and its tests check what only a release does;
 they had never run, and one had failed unseen. The Release build takes the Debug build's restore (the packages are the
 same) and its tests run on what it built. PaddleOCR's model (§2, §3) is fetched by the build there as on the PC, and
-kept between runs as the packages are (keyed by `eng\paddle-model.ps1`, which checks it again), so its tests run on CI
-too. Tests that need the owner's PC skip there: the tarkov.dev cache, the game's
+kept between runs as the packages are (keyed by `eng\paddle-model.ps1`, which checks it again; after a change of the
+script the latest entry is taken, so no run then depends on the model's hub), so its tests run on CI too, and the
+Release workflow restores that cache ("Distribution").
+Tests that need the owner's PC skip there: the tarkov.dev cache, the game's
 logs, real screenshots, a published build in `artifacts` (`DevToolsGuardTests` read it), the website beside the
 repository. The repository is public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A
 failed run comes as GitHub's own mail. The daily data check is designed in docs/NEXT.md, not built yet. The layout

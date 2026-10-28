@@ -38,11 +38,13 @@ jobs:
           restore-keys: nuget-${{ runner.os }}-
 
       # PaddleOCR's model, which the build fetches from its hub and checks against its SHA-256 (eng\paddle-model.ps1),
-      # kept between runs as the packages are; the script checks the kept files again.
+      # kept between runs as the packages are; the script checks the kept files again. The prefix takes the latest entry
+      # when the script changed, so neither CI nor the Release workflow (which restores this cache) needs the hub then.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~\AppData\Local\Shturmap-build
           key: paddle-model-${{ runner.os }}-${{ hashFiles('eng/paddle-model.ps1') }}
+          restore-keys: paddle-model-${{ runner.os }}-
 
       # The same wrapper as on the developer's PC (CLAUDE.md); it takes the SDK setup-dotnet put in DOTNET_ROOT.
       - name: Build
