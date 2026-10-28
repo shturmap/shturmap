@@ -21,6 +21,22 @@ internal static class DeskFrames
     // How far a side may stand off the pitch's multiple: the cell is 84.2 px at 1440p, not 84.
     private const int Slack = 3;
 
+    // The slack and the gap between compartments in pixels at a pitch: as measured at 1440p (84 px a cell), scaled with
+    // the cell (the owner's play session of 2026-10-28, the first real pictures at 1920×1080: two compartments of a rig
+    // stand 4 px apart there, where a gap of 1440p's five pixels is never found, and a frame from the next compartment's
+    // line, 4 px off, met its own bottom within 1440p's slack).
+    private static int SlackAt(int pitch) => Math.Max(2, (int)Math.Round(Slack * pitch / 84.0));
+
+    private static int GapAt(int pitch) => Math.Max(3, (int)Math.Round(GapWidth * pitch / 84.0));
+
+    // Whether a frame's top left corner turns: neither its top runs on left of it nor its left side above it, within the gap
+    // to the next compartment (a pixel short of it).
+    private static bool Turns(StashLines lines, SKRectI frame, int pitch)
+    {
+        var reach = GapAt(pitch) - 1;
+        return lines.Horizontal(frame.Top, frame.Left - reach, frame.Left) < 0.5 && lines.Vertical(frame.Left, frame.Top - reach, frame.Top) < 0.5;
+    }
+
     /// <summary>The framed compartments within <paramref name="area"/>, each the largest framed rectangle it is (one framed
     /// inside another is a part of it), top row first.</summary>
     /// <param name="over">The windows lying over the picture: lines under them aren't asked for.</param>
@@ -104,14 +120,31 @@ internal static class DeskFrames
                     }
                 }
             }
+            // A compartment framed down to the foot is cut there, and a frame of its first rows inside it (its bottom a line
+            // between its rows) is some of it, never a compartment of its own (the owner's play session of 2026-10-28, b02:
+            // the backpack's grid framed three rows high, 2 px narrower than the one framed down to the foot, was taken, and
+            // its sides ran on past its corners).
+            if (cut.Count > 0)
+                framed.RemoveAll(r => !cut.Contains(r) && cut.Any(c => Inside(r, c)));
             // A cut compartment's bottom is a line between its rows, or none: two compartments side by side break its top line
             // alone.
             SKRectI? best = framed.OrderByDescending(Area).Cast<SKRectI?>()
-                .FirstOrDefault(r => (cut.Contains(r!.Value) ? !Gap(lines, r.Value.Top, r.Value.Left, r.Value.Right, over)
-                                         : !Split(lines, true, r.Value.Top, r.Value.Bottom, r.Value.Left, r.Value.Right, over)) &&
-                                     !Split(lines, false, r.Value.Left, r.Value.Right, r.Value.Top, r.Value.Bottom, over));
+                .FirstOrDefault(r => (cut.Contains(r!.Value) ? !Gap(lines, r.Value.Top, r.Value.Left, r.Value.Right, over, pitch)
+                                         : !Split(lines, true, r.Value.Top, r.Value.Bottom, r.Value.Left, r.Value.Right, over, pitch)) &&
+                                     !Split(lines, false, r.Value.Left, r.Value.Right, r.Value.Top, r.Value.Bottom, over, pitch));
             if (under && best is { } seen && !over.Any(o => o.IntersectsWith(seen)))
                 continue;
+            // One compartment framed twice a few pixels apart, the first from a corner on its neighbour's line (at 1920×1080
+            // two compartments stand 4 px apart, within the slack; the owner's play session of 2026-10-28: a rig's pocket
+            // framed from its left neighbour's line and an item's border, the AVS rig's two-by-two pocket from the line of
+            // the pockets above it, and the rig then left out as cut): the frame whose corner turns is the compartment, the
+            // other's top or left side running on past its corner. Only two frames more than the two pixels apart a corner is
+            // found off its line (a 2560×1440 pocket's two frames on its own lines, 2 px apart, are one).
+            if (!under && best is { } again && !cut.Contains(again) && Turns(lines, again, pitch) &&
+                found.FirstOrDefault(f => cutFound?.Contains(f) != true && Inside(again, f) && Math.Max(Math.Abs(f.Left - again.Left), Math.Abs(f.Top - again.Top)) > 2 &&
+                                          Math.Abs(f.Width - again.Width) <= 2 * Slack &&
+                                          Math.Abs(f.Height - again.Height) <= 2 * Slack && !Turns(lines, f, pitch)) is { IsEmpty: false } twin)
+                found.Remove(twin);
             if (best is { } b && !found.Any(f => Inside(b, f)))
             {
                 found.RemoveAll(f => Inside(f, b));
@@ -133,12 +166,13 @@ internal static class DeskFrames
     private static SKRectI? FramedAt(StashLines lines, int x, int y, int cols, int rows, int pitch, IReadOnlyList<SKRectI> over, SKRectI area)
     {
         int right0 = x + cols * pitch, bottom0 = y + rows * pitch;
-        if (right0 > area.Right + Slack || bottom0 > area.Bottom + Slack)
+        var slack = SlackAt(pitch);
+        if (right0 > area.Right + slack || bottom0 > area.Bottom + slack)
             return null;
         // The right side, then the bottom: each the best place within the slack.
         int right = -1, bottom = -1;
         double rightShare = 0, bottomShare = 0;
-        for (var d = -Slack; d <= Slack; d++)
+        for (var d = -slack; d <= slack; d++)
         {
             var s = Share(lines, false, right0 + d, y + 2, bottom0 - 2, over);
             if (s > rightShare)
@@ -227,11 +261,12 @@ internal static class DeskFrames
 
     // Whether a line (the row `at` from `from` to `to`) shows nothing over a few pixels, away from its ends: the gap between
     // two compartments side by side.
-    private static bool Gap(StashLines lines, int at, int from, int to, IReadOnlyList<SKRectI> over)
+    private static bool Gap(StashLines lines, int at, int from, int to, IReadOnlyList<SKRectI> over, int pitch)
     {
-        for (var p = from + 8; p + GapWidth < to - 8; p++)
+        var gap = GapAt(pitch);
+        for (var p = from + 8; p + gap < to - 8; p++)
         {
-            if (Share(lines, true, at, p, p + GapWidth, over) == 0)
+            if (Share(lines, true, at, p, p + gap, over) == 0)
                 return true;
         }
         return false;
@@ -242,11 +277,12 @@ internal static class DeskFrames
 
     // Whether both sides (the top and bottom rows a and b from `from` to `to`, or the left and right columns) show no line
     // over the same few pixels, away from the corners.
-    private static bool Split(StashLines lines, bool horizontal, int a, int b, int from, int to, IReadOnlyList<SKRectI> over)
+    private static bool Split(StashLines lines, bool horizontal, int a, int b, int from, int to, IReadOnlyList<SKRectI> over, int pitch)
     {
-        for (var p = from + 8; p + GapWidth < to - 8; p++)
+        var gap = GapAt(pitch);
+        for (var p = from + 8; p + gap < to - 8; p++)
         {
-            if (Share(lines, horizontal, a, p, p + GapWidth, over) == 0 && Share(lines, horizontal, b, p, p + GapWidth, over) == 0)
+            if (Share(lines, horizontal, a, p, p + gap, over) == 0 && Share(lines, horizontal, b, p, p + gap, over) == 0)
                 return true;
         }
         return false;

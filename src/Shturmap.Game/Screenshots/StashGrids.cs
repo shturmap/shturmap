@@ -383,7 +383,8 @@ internal static class StashGrids
     // minX or above minY (a window's compartment stays inside its outline, which is brighter than its grid's line).
     internal static (int X0, int Y0) Snap(StashGray gray, int x0, int y0, int cols, int rows, int pitch, int minX = int.MinValue, int minY = int.MinValue)
     {
-        const int reach = 4, side = 3;
+        const int side = 3;
+        var reach = SnapReach(pitch);
         int y1 = Math.Min(gray.H, y0 + rows * pitch), x1 = Math.Min(gray.W, x0 + cols * pitch);
         var columns = new double[2 * (reach + side) + 1];
         for (var dx = -reach - side; dx <= reach + side; dx++)
@@ -411,6 +412,14 @@ internal static class StashGrids
         var leastY = minY == int.MinValue ? 0 : Math.Max(0, minY - (y0 - reach));
         return (x0 + Thinnest(columns, reach, side, leastX) - reach, y0 + Thinnest(rowsProfile, reach, side, leastY) - reach);
     }
+
+    /// <summary>How far <see cref="Snap"/> looks for the line, in pixels: short of the next compartment's line. Two
+    /// compartments' lines stand a twelfth of a cell apart (7 px at 1440p, 5 at 1920×1080) and a frame is found up to two
+    /// pixels off its own line toward it, so the reach is that twelfth less three: 4 px at 1440p, as before, and 2 at 1080p
+    /// (the owner's play session of 2026-10-28: at 1080p the AVS rig's two-by-two pocket, found two pixels above its line,
+    /// was moved onto the line of the pockets above it, 5 px up; its sides then ran on past its corners and the rig was
+    /// left out as cut).</summary>
+    internal static int SnapReach(int pitch) => Math.Max(2, (int)Math.Round(pitch / 12.0) - 3);
 
     // The offset within reach where the profile stands out most against both sides a few pixels off: a thin line,
     // not a row of labels (bright over ten pixels) or an item's edge (bright on one side only); from the least offset

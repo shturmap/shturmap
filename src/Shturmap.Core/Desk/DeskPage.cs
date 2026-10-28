@@ -205,11 +205,13 @@ public sealed record DeskRegion(string Key, DeskRegionKind Kind, int Cols, int R
     /// searched); <see cref="DeskSearch.Searched"/> for every other region.</summary>
     public DeskSearch Search { get; init; }
 
-    /// <summary>For a LOOT region, whether the pane's scrolling cut its grid at the pane's foot: what lies past it is unseen.</summary>
+    /// <summary>For a LOOT region, whether the pane's scrolling cut its grid at the pane's foot; in a raid's reading, for one
+    /// of the player's own middle regions, whether the column's foot cut its grid (owner, 2026-10-28): what lies past it is
+    /// unseen.</summary>
     public bool Cut { get; init; }
 
-    /// <summary>Whether contents of the region itself went unseen (a looted part not searched yet, or cut by the pane's
-    /// scrolling): its total is at least what was read, "+".</summary>
+    /// <summary>Whether contents of the region itself went unseen (a looted part not searched yet, or cut by the pane's or
+    /// the column's scrolling): its total is at least what was read, "+".</summary>
     public bool ContentsUnseen => Search != DeskSearch.Searched || Cut;
 
     /// <summary>Whether the region is the LOOT pane's (a body's or a container's, in a raid).</summary>

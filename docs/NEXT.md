@@ -119,6 +119,57 @@ raid was on no picture; where the game draws the mark then is unknown, and the r
 visible changes with tarkov.dev's flea rules as they stand (found in raid not required in PvE and PvP): the mark feeds
 only the flea's found-in-raid rule, the click's copy and the card's plate, desk.json and the readings log.
 
+**Built** (layout, 1920×1080 and cut grids) (2026-10-28, picks 1 and 2; DESIGN.md §2, *The play session's layout
+round*, and §4, *The in-raid glance*; `DeskWords`, `DeskFrames`, `StashGrids`, `DeskLayout`, `DeskReader`,
+`DeskRealSetTests`; each rule with a test on drawn pictures at 2560×1440 and 1920×1080):
+- **Faults and causes**: (a) the LOOT pane at 1080p: "LOOT" is about 8 px high there and the whole picture's reading
+  never read it; its band is read again as a label is, enlarged to the labels' size, where the whole reading has no
+  head (the kind at the right edge is left to the whole reading: read so, "BODY" under the raid timer's band came out
+  "DUUM"). (b) The AVS rig at 1080p: compartments stand 5 px apart line to line there; a frame found 2 px off its line
+  was snapped onto the next compartment's (a reach of 4 px, now a twelfth of a cell less three: 4 at 1440p, 2 at 1080p),
+  and a frame from the next compartment's line, 4 px off, was framed first (b04: to an item's light border inside its
+  own); of two such frames the one whose corner turns is the compartment. The gap and the frames' slack scale with the
+  cell too. In both the frame's sides then ran on past its corners and the rig was left out as cut. (c) The made-up
+  windows: a11's "LOOT", its container being searched ("✕" read as a close glyph), and a04's rig pocket, its lines two
+  pixels wide, at the column's top under no heading: the pane's head word is no title, and a lattice in the middle
+  column under no heading and no panel no window. (d) b02's and b04's backpack: a frame of its three rows in view, a
+  hair larger than the one framed down to the foot, was taken and its sides ran on: a frame inside one framed to the
+  foot is some of its rows.
+- **Pick (2)**: in a raid a grid the middle column's foot cuts is read as far as it shows (its whole rows in view, its
+  slot), the region `Cut`, ON YOU "+"; a region whose frame's lines run on above the foot is still left out (b07: read
+  so, its looted items' highlights a lattice of their own, seven names landed in the wrong cells). The answers of every
+  set that left such a grid out now hold it, checked on the pictures (crops, zoomed): raid-1440 a03, a08, a09, a11, a13;
+  raid-1080 b01, b02, b03, b04, b12; real-2026-10-27 r3; raid-loot's weapon box (two): 83 items with their slots and the
+  regions' sizes (the looted dogtag left out, a nickname). Their extras (counts, marks) where an extra file is.
+- **Measured** (`shturmap-cli desk --raid`; before = main aedf76e on the first answers, after = this branch on the
+  answers with the cut grids; items right/wrong/one of N/nothing said/no cell; regions right of all):
+  - raid-1440: a03 17/0/2/3/0 4/4 → 19/0/2/3/0 5/5; a04 11/1/1/0/4 3/4 (a window made up) → 11/1/1/0/4 3/4 (none);
+    a07 25/0/2/0/1 6/7 as before; a08 21/1/3/2/0 6/6 → 30/1/3/2/0 7/7; a09 25/0/1/1/4 5/8 → 29/0/2/1/4 6/9; a11
+    26/0/1/0/2 3/5 (a window "LOOT") → 30/0/2/0/2 4/6; a13 29/1/1/1/3 4/5 → 33/1/2/1/3 5/6. The seven: 154 of 189 → 177
+    of 215 right, 3 → 3 wrong; regions 31/39 → 36/44, made up 2 → 0; counts 54 → 58 right, 2 → 3 wrong (a second
+    magazine's "60/601", its pocket's frame found 2 px further right since this round); marks 103 → 124 right, 0 wrong.
+  - raid-1080: b01 11/1/1/3/13 3/6 → 34/0/3/2/1 7/7; b02 9/0/1/1/19 2/8 → 34/0/3/3/1 9/9; b03 26/2/1/4/3 3/4 →
+    31/1/1/3/3 4/5; b04 8/0/1/1/14 1/4 → 27/0/3/3/2 4/5; b05 and b11 as before (29 and 32 right); b07 12/0/2/0/23 2/4 →
+    12/0/2/1/22 2/4; b09 35/0/2/0/8 3/7 → 42/0/2/0/1 6/7; b12 12/0/3/7/2 2/4 → 24/0/3/3/5 3/5. The nine: 174 of 296 →
+    265 of 343 right (219 of 296 on the first answers), 5 → 3 wrong; regions 22/43 → 41/48, missing 17 → 1, made up 2 →
+    0; counts 42 → 78 right, 1 → 1 wrong; marks 116 → 178 right, 0 → 2 wrong (a pocket's Analgin read marked).
+  - none (4): nothing read, before and after. real-2026-10-27: the desk's five as before (350 of 387, 0 wrong, regions
+    29/29); the raid's three 86 of 127 → 88 of 131 right, 0 → 1 wrong (r3's AEM-5 read "AEM-\", the AEM textbook),
+    regions 18/22 → 19/23. raid-loot's weapon box 48 of 54 → 53 of 60, regions 10/10 → 12/12; the 22 of 2026-10-19 read
+    more where a cut grid shows (six pictures, ON YOU "+" with it). The older menu sets unchanged, picture by picture
+    (the layout round's 18: 317 of 338, regions 94/95; the GEAR truth 32/34; the Keys page 72/72; the stash truths 142/148).
+  - `DeskRealSetTests` holds raid-1440 and raid-1080 to floors under these, a name wrong and a region missing at what was
+    measured and none made up, and `none` to nothing read; the first round's raid floors take r3's backpack.
+- **Left, with causes**: the top cuts: a region whose heading the column scrolled away above (a04's and b03's rig rows,
+  the pockets and special slots of a07, b05, b07, b09, b11; 16 items whole) is under no heading and not read, as the
+  desk's and the LOOT pane's such parts; reading it would place compartments by the column's order (rig, pockets beside
+  special slots, backpack, pouch) and number a grid's rows without its top in view: the owner's call (the coordinator's
+  brief said "foot or top", the pick "as the LOOT pane's and the desk's"). The special slots' frames and their dimmed
+  fourth slot lost against the light world behind the column (seven regions of the set, a contrast rule, not a length); b07's backpack
+  unframed beside light items (22 items); labels misread ("ComTac II", "Axe", "AEM-\" naming the AEM textbook, a special
+  slot read as its neighbour where the first slot's frame went unseen); two LOOT grids a column short (their hatched
+  cells); a09's loot rig under a tooltip (not looked at); the magazines' trailing "1".
+
 ## 2026-10-27: 0.7.1's What's New lines, each its own key (the release UI QA pass)
 
 **Found** (the release UI QA pass of 0.7.1, 2026-10-27; repro `tools\qa\whatsnew-lines.devscript` at 900×560): F1

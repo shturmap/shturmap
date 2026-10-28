@@ -172,8 +172,13 @@ internal static class DeskLayout
         // The container's kind at the pane's head is the game's words, never a window's title (the owner's picture of
         // 2026-10-27 of an airdrop: "AIRDROP COMMON SUPPLY CRATE" over the crate's grid was taken for one, and the window
         // made of it covered the grid).
+        // Nor is its head's "LOOT" (the owner's play session of 2026-10-28, a11: the word with the close glyph read beside it
+        // made a window "LOOT" over the pane's grid, which then read as the window's and no LOOT region).
         if (lootHead is not null)
+        {
+            headingWords.Add(lootHead);
             headingWords.UnionWith(DeskLoot.KindWords(words, lootHead, w, pitch));
+        }
         var grids = StashGrids.Find(lines, gray, w, h, pitch, stashPane: lootHead is null);
         if (grids.Any(g => g.Place == StashGridPlace.Left))
             return new DeskLayoutFound(DeskScreen.Trading, [], [], null, [], 0, []);
@@ -226,9 +231,9 @@ internal static class DeskLayout
         // Inside the stash, frames on its own lattice are its cells, never a window's.
         var stashRect = stash is null ? SKRectI.Empty : SKRectI.Create(stash.X0, stash.Y0, stash.Cols * pitch, stash.Rows * pitch);
         bool StashCell(int x, int y) => stash is not null && stashRect.Contains(x + 2, y + 2) && OnLattice(x - stash.X0, pitch) && OnLattice(y - stash.Y0, pitch);
-        // In the menus' middle column a compartment may run past the foot (DeskFrames.OpenAt); the raid's glance keeps to
-        // whole ones.
-        SKRectI? open = screen == DeskScreen.Gear && !column.IsEmpty ? column : null;
+        // In the middle column a compartment may run past the foot (DeskFrames.OpenAt): in the menus since 2026-10-25, in a
+        // raid since the owner's pick of 2026-10-28 (until then the glance kept to whole ones).
+        SKRectI? open = screen is DeskScreen.Gear or DeskScreen.Raid && !column.IsEmpty ? column : null;
         var cutFound = new HashSet<SKRectI>();
         var frames = Snapped(DeskFrames.Find(lines, pitch, whole, over, skip: StashCell, open: open, cutFound: cutFound), gray, pitch, cutFound);
         frames.RemoveAll(f => StashCell(f.Left, f.Top));
@@ -238,14 +243,14 @@ internal static class DeskLayout
         // set, 02-gear.png and 09-gear.png: the POUCH's grid, its lines two pixels wide as a window's, read as a window of no
         // name, the POUCH left out); one inside a larger compartment is some of that one's cells. In a raid too (layout
         // round, 2026-10-28: the owner's body-loot picture of 2026-10-25, the BACKPACK's and the POUCH's grids, their
-        // lines two pixels wide, read as two windows of no name, 20 of its 55 items in neither region); there a grid the
-        // foot cuts, or whose lines run on past it, is left out with its region, as before (Column).
+        // lines two pixels wide, read as two windows of no name, 20 of its 55 items in neither region).
         var columnLattices = screen is DeskScreen.Gear or DeskScreen.Raid
             ? lattices.Where(l => InColumn(l) && HeadOf(l) is not null && !InsideCompartment(l, frames, pitch)).ToList()
             : [];
         var loadoutRows = loadout.Select(x => x.Word.MidY).ToList();
         var paneLeft = stash is not null ? stash.X0 - (int)(0.6 * pitch) : lootHead is not null ? lootHead.X - pitch : (int)(w * 0.66);
-        var windows = Windows(words, gray, lines, frames, lattices, columnLattices, headingWords, loadoutRows, paneLeft, w, h, pitch, notes, cutFound, over, stashRect);
+        var windows = Windows(words, gray, lines, frames, lattices, columnLattices, headingWords, loadoutRows, paneLeft, w, h, pitch, notes, cutFound, over, stashRect,
+            l => (screen is DeskScreen.Gear or DeskScreen.Raid) && InColumn(l));
         // The LOOT pane's grids have a window's two-pixel lines and no title, or a part's "SEARCHING ✕" over them: the
         // pane's, not windows.
         if (lootHead is not null)
@@ -295,7 +300,8 @@ internal static class DeskLayout
     /// cell of the POUCH's grid below the Keys window read as the BACKPACK's grid). A region whose grid the foot cuts
     /// (a compartment framed down to it, or one ending at it) is read as far as it shows and said cut; one whose frames run
     /// on past their corners is said cut with those frames left unread; the page keeps the rest (owner, 2026-10-25). In a
-    /// raid a cut region is left out, as before.
+    /// raid a grid the foot cuts alike, the glance's ON YOU then "+" (owner, 2026-10-28; until then a cut region was left
+    /// out there); a region whose frames run on is left out there still.
     /// </summary>
     private static List<DeskPlace> Column(StashLines lines, List<SKRectI> frames, HashSet<SKRectI> cutFound, List<SKRectI> lattices, HashSet<SKRectI> taken,
         List<SKRectI> windowAreas, List<(DeskRegionKind Kind, DeskWord Word)> heads, Func<SKRectI, bool> inColumn,
@@ -306,6 +312,7 @@ internal static class DeskLayout
         var placed = new Dictionary<DeskRegionKind, (SKRectI? Slot, List<SKRectI> Parts, bool Cut)>();
         foreach (var (kind, _) in heads)
             placed.TryAdd(kind, (null, [], false));
+        var runOn = new HashSet<DeskRegionKind>();
         foreach (var frame in compartments.OrderBy(f => f.Top).ThenBy(f => f.Left))
         {
             if (headOf(frame) is not { } found)
@@ -329,18 +336,21 @@ internal static class DeskLayout
                 continue;
             }
             var entry = placed[kind];
-            if (!cutFound.Contains(frame) && Continues(lines, frame, pitch))
+            // A region's lattice in place of a compartment the foot cuts is cut as that one is, its lines running on below
+            // its rows in view (a backpack's grid of one-pixel lines the grid finding saw too, on a drawn raid at 1920×1080).
+            var framedToFoot = cutFound.Contains(frame) || (lattices.Contains(frame) && cutFound.Any(c => SameCompartment(c, frame, pitch)));
+            if (!framedToFoot && Continues(lines, frame, pitch))
             {
                 notes.Add($"{kind}: frame {Note(frame)} cut (its lines run on)");
                 placed[kind] = entry with { Cut = true };
+                runOn.Add(kind);
                 continue;
             }
-            // At the foot, a compartment ending there may run on below it (the raid's glance keeps its rule of before:
-            // past it).
-            var atFoot = cutFound.Contains(frame) || frame.Bottom >= foot - (raid ? 0 : pitch / 4);
+            // At the foot, a compartment ending there may run on below it.
+            var atFoot = framedToFoot || frame.Bottom >= foot - pitch / 4;
             if (atFoot)
             {
-                notes.Add($"{kind}: frame {Note(frame)} at the foot{(cutFound.Contains(frame) ? ", framed down to it" : "")}");
+                notes.Add($"{kind}: frame {Note(frame)} at the foot{(framedToFoot ? ", framed down to it" : "")}");
                 entry = entry with { Cut = true };
                 placed[kind] = entry;
             }
@@ -354,8 +364,15 @@ internal static class DeskLayout
         var regions = new List<DeskPlace>();
         foreach (var (kind, (found, parts, cut)) in placed)
         {
-            if (raid && cut)
+            // In a raid a region with a frame whose lines run on past its corners above the foot is left out, as before: its
+            // compartments in view can't be placed in its grid (the owner's play session of 2026-10-28, b07: the backpack's
+            // grid unframed beside light items, its looted items' highlight read as a grid of its own, the rest placed from
+            // there, seven names in the wrong cells). Only the foot's cut is read as far as it shows.
+            if (raid && runOn.Contains(kind))
+            {
+                notes.Add($"{kind}: left out in a raid (a frame's lines run on)");
                 continue;
+            }
             var slot = found;
             var derived = false;
             // A container's slot no frame showed: its box under the heading, as the loadout's (5 px left of the word, 6
@@ -419,7 +436,7 @@ internal static class DeskLayout
     // Whether a frame is part of a grid seen only in part (the middle column scrolled, a grid running out of view): its top
     // line runs on past its right corner, or its left line past its bottom one, with no gap. A compartment's own frame
     // ends at its corners (a few pixels of nothing to the next compartment).
-    private static bool Continues(StashLines lines, SKRectI frame, int pitch)
+    internal static bool Continues(StashLines lines, SKRectI frame, int pitch)
     {
         var reach = Math.Max(4, pitch / 12);
         return lines.Horizontal(frame.Top, frame.Right + 2, frame.Right + 2 + reach) >= 0.8 ||
@@ -480,7 +497,7 @@ internal static class DeskLayout
     // window whose bar stands inside another's outline lies over it.
     private static List<DeskPlace> Windows(IReadOnlyList<DeskWord> words, StashGray gray, StashLines lines, List<SKRectI> frames, List<SKRectI> lattices,
         List<SKRectI> columnLattices, HashSet<DeskWord> headings, IReadOnlyList<int> loadoutRows, int paneLeft, int w, int h, int pitch, List<string> notes,
-        IReadOnlySet<SKRectI> cut, IReadOnlyList<SKRectI> over, SKRectI stashRect)
+        IReadOnlySet<SKRectI> cut, IReadOnlyList<SKRectI> over, SKRectI stashRect, Func<SKRectI, bool> inColumn)
     {
         var windows = new List<DeskPlace>();
         var used = new HashSet<SKRectI>();
@@ -581,16 +598,24 @@ internal static class DeskLayout
             if (!used.Any(u => u.IntersectsWith(lattice)) && !panels.Any(p => p.IntersectsWith(lattice)) && !columnLattices.Contains(lattice) &&
                 LineWidth(gray, lattice, pitch) >= 2 && !InsideCompartment(lattice, frames, pitch))
             {
-                notes.Add($"window of no name at {Note(lattice)}");
                 if (Panel(lines, gray, new SKRectI(lattice.Left - pitch / 6, lattice.Top - (int)(0.6 * pitch), lattice.Left - 2, lattice.Top - 2), pitch) is { } outline &&
                     Bar(gray, outline, pitch))
                 {
+                    notes.Add($"window of no name at {Note(lattice)}");
                     panels.Add(outline);
                     used.UnionWith(groups.Where(g => g.IntersectsWith(outline)));
                     windows.Add(new DeskPlace(DeskRegionKind.ContainerWindow, null, []) { Outline = outline, Area = outline });
                 }
+                // In the middle column a lattice under none of its headings, with no window's panel round it, is a compartment
+                // whose heading the column scrolled away above, never a window (the owner's play session of 2026-10-28, a04:
+                // the AVS rig's two-by-two pocket, its lines two pixels wide, at the column's top).
+                else if (inColumn(lattice))
+                    notes.Add($"lattice {Note(lattice)} in the middle column under no heading and no panel: no window");
                 else
+                {
+                    notes.Add($"window of no name at {Note(lattice)}");
                     windows.Add(Window(groups, used, lattice, null, lattice.Top - (int)(1.1 * pitch), null, pitch));
+                }
             }
         }
         // The panels' compartments, found anew inside each outline, under the windows lying over it (a window whose bar
