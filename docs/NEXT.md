@@ -26,6 +26,62 @@ answered first, then the faults they show. Trying other ways to read (PaddleOCR 
 of the 2026-10-27 plan, waits: it would reach about 6 % of the failures. (2) The owner's play session comes after, its
 fresh pictures the test of the fixes, with a batch at 1920×1080 and one with the game in German.
 
+**Built (2026-10-28)** (DESIGN.md §2, *The real set's layout round*; `DeskTruth`, `DeskRealSetTests`, `StashGrids`,
+`DeskLayout`, `DeskLoot`, `DeskReader`):
+- **The four pending pictures answered by hand first** (before the reader was run on them) and moved into the set:
+  `desk\04-gear-stash-top` (the Zhuk rig, the backpack cut at the foot, the stash at its top with a shotgun under the
+  pointer; 87 items), `desk\05-gear-junk-window` (the Lucky Scav Junk box's window, 14×14, 145 items, over the middle
+  column; 175 items in all), `raid\r2-airdrop-crate` (an airdrop crate, the screen red with low health; 47 items),
+  `raid\r3-body-loot` (a body, its rig and pockets unsearched; 25 items). Each with an `extra-` file: every item's count
+  or condition as printed and its found-in-raid mark (the marks checked cell by cell against a cut of the mark). Doubts
+  marked in their comments: the Zhuk's colour, the "Prayer" armband (three of that name), the STRIKE helmet's colour,
+  the flash drives and the documents case (two items each of one picture), the bandage, the PS rounds' calibre.
+- **The set a scored check**: `DeskTruth` reads a picture's three answer files and scores a reading against them (items,
+  regions, counts right / wrong / unread / made up, marks right / wrong / not looked for / no cell), as the assessment's
+  throwaway script did; `shturmap-cli desk` scores through it; `DeskRealSetTests` holds the desk's five pictures and the
+  glance's three to floors under the figures below (a name wrong and a region made up at what was measured).
+- **The layout fixed**, each rule with a test on drawn pictures (at 2560×1440 and 1920×1080 where it scales): the stash
+  one grid from its first whole row (04 read a row off); an item in its last row running on below the view; in a raid a
+  lattice under a middle heading the region's grid (a); the LOOT pane's kind its whole phrase and no title, a container's
+  frames on its rows; over the stash a window shows its panel or two-pixel grid (d); a compartment set between a
+  region's columns takes the column it stands in (c, the AVS rig 5×5: its answer of 5×5 was right by this convention);
+  the item under the pointer its lit cells (b: the hover's lit ground hid its frame and joined it with its neighbours);
+  a magazine's count right of its loaded mark, a trailing "1" a window's line only beside a two-pixel line (f).
+- **Measured** (before on main 04beff4 → after; items right / wrong / one of N, with those not among them / nothing said /
+  no cell; counts right / wrong / unread; marks right / wrong):
+  - 01: items 26/0/2/0/5 → 27/0/2/2/2, regions 6/6 → 6/6, counts 8/0/4 → 9/0/3, marks 10/0 → 10/0.
+  - 02: items 15/2/3/5/2 → 20/0/5/1/1, regions 6/7 → 7/7, counts 5/2/3 → 7/2/1, marks 8/1 → 11/0.
+  - 03: items 49/0/5/5/6 → 58/0/5/2/0, regions 6/7 → 7/7 (no window "Meds"), counts 5/3/8 → 11/2/3, marks 37/2 → 48/1.
+  - 04: items 30/41/3/9/4 → 77/0/2/8/0, regions 5/6 → 6/6, counts 10/2/15 → 15/0/12, marks 44/20 → 63/5.
+  - 05: items 167/0/6/1/1 → 168/0/6/0/1, regions 3/3 → 3/3, counts 8/1/1 → 8/1/1, marks 167/0 → 166/0.
+  - The desk's five: items 287 → 350 of 387 right, 43 → 0 wrong; regions 26 → 29 of 29, made up 1 → 0; counts 36 → 50
+    of 75 right, 8 → 5 wrong; marks 266 → 298 of 345 right, 23 → 6 wrong.
+  - r1: items 23/0/4/1/27 → 44/0/5/3/3, regions 5/9 → 8/9, counts 5/0/12 → 8/0/9, marks 9/0 → 25/0.
+  - r2: items 16/0/3/3/25 → 21/0/3/4/19, regions 3/6 → 3/6 (made up 2 → 0), counts 5/0/10 → 5/0/10, marks 7/0 → 12/0.
+  - r3: items 21/0/3/1/0 → 21/0/3/1/0, regions 7/7 → 7/7, counts 6/0/6 → 7/0/5, marks 13/0 → 13/0.
+  - The raid's three: items 60 → 86 of 127 right, 0 wrong; regions 15 → 18 of 22, made up 4 → 0; counts 16 → 20 of 44;
+    marks 29 → 50 of 112 right, 0 wrong.
+  - The trader screens (3): all right before and after (the tasks reader untouched). The older sets as before: the
+    layout round's 18 pictures 317 of 338 right, 0 wrong, regions 93 → 94 of 95; the GEAR truth 32 of 34; the Keys
+    page 72 of 72; the stash truths 142 of 148; the raid-loot truths 48 of 54, regions 10 of 10. Their pictures without a
+    truth: 1 to 8 fewer cells said nothing on most menu pictures (the hovered item named), none of the raid's but one
+    changed: its backpack's grid, cut by the column's foot, was a window of no name (19 cells) and is now left out with
+    its region, as the glance leaves a cut region.
+- **Left, with causes**: r2's backpack and special slots (16 items): the game's red low-health tint lifts the cells'
+  ground to the lines' level, so no frame stands out (a contrast rule, not the layout's); r2's crate grid faint, read
+  nine wide of ten; r1's special slot "Camera" (0,1) lit by the hover, its frame lost (one cell: the lit rule reads the
+  stash's and windows' grids, not the slots'); r1's body's armour and glasses slots, their headings scrolled away above
+  the pane; the "Beta 2" backpack read "Beta" twice (01, 02: its "2" against the item's orange frame, a label's reading);
+  01's AK-74M two wide and upright under the grid's end (a gun's footprint unknown); 05's Dogtags, its label's band
+  partly under the window's edge; 04's "Apple" read "PP" and the MPX's label unread on its five-by-two cell; the rig's
+  magazines "0/41" and "4/41" read "0/4" and "4/4" (its compartments' lines two pixels wide, so the trailing "1" still
+  goes as a line's); a "?/20" or a mark under the hover's light; the slots' found-in-raid marks not looked for (39 desk,
+  41 raid: reading them is the owner's decision, below).
+- **For the owner**: (1) the slots' found-in-raid mark (the loadout's, a container's slot): the reader doesn't look
+  there (DESIGN.md §2 lists the grids' marks); reading it is new, so the owner's call. (2) In a raid a grid the column's
+  foot cuts is left out with its region (r3's backpack, a raid-loot picture's), where the desk reads it as far as it shows
+  since 2026-10-25: read it so in the glance too?
+
 ## 2026-10-27: 0.7.1's What's New lines, each its own key (the release UI QA pass)
 
 **Found** (the release UI QA pass of 0.7.1, 2026-10-27; repro `tools\qa\whatsnew-lines.devscript` at 900×560): F1

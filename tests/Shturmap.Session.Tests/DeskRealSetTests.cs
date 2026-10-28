@@ -49,33 +49,36 @@ public class DeskRealSetTests
     // of 04 read a row off: its first row, two AUGs' lower half, shows no line along its top), 17 one of N (2 not among
     // them), 20 nothing said, 18 no cell; regions 26 of 29 (the AVS rig 7x5 twice, the stash of 04 10x12), one made up
     // (a stash item's "Meds" taken for a window's title); counts 36 of 75 right, 8 wrong, 31 unread, 3 made up; marks 266
-    // of 345 right, 23 wrong, 42 not looked for (slots, cells said nothing of), 14 no cell.
+    // of 345 right, 23 wrong, 42 not looked for (slots, cells said nothing of), 14 no cell. After the round: 350 right, 0
+    // wrong, 19 one of N and 1 not among them, 13 nothing said, 4 no cell; regions 29 of 29, none made up; counts 50 right, 5
+    // wrong, 20 unread, none made up; marks 298 right, 6 wrong, 39 not looked for, 2 no cell.
     [Fact]
     public async Task The_desk_reads_the_real_sets_gear_pictures_to_their_answers()
     {
         var s = await ScoreAsync("desk", raid: false);
-        Assert.True(s.ScreensWrong == 0 && s.RegionsMadeUp <= 1 && s.RegionsMissing == 0, Said(s));
-        Assert.True(s.Wrong <= 43, Said(s));
-        Assert.True(s.Right >= 280, Said(s));
-        Assert.True(s.RegionsRight >= 26, Said(s));
-        Assert.True(s.CountsRight >= 34 && s.CountsWrong <= 8, Said(s));
-        Assert.True(s.MarksRight >= 260 && s.MarksWrong <= 23, Said(s));
+        Assert.True(s.ScreensWrong == 0 && s.RegionsMadeUp == 0 && s.RegionsMissing == 0 && s.RegionsRight == 29, Said(s));
+        Assert.True(s.Wrong == 0, Said(s));
+        Assert.True(s.Right >= 343, Said(s));
+        Assert.True(s.CountsRight >= 47 && s.CountsWrong <= 5, Said(s));
+        Assert.True(s.MarksRight >= 292 && s.MarksWrong <= 6, Said(s));
     }
 
     // Measured on main 04beff4 (2026-10-28), before the round: the three pictures' 127 items 60 right, none wrong, 10 one
     // of N, 5 nothing said, 52 no cell (the backpack's and the pouch's grids of r1 as two windows of no name; r2's backpack
     // and its LOOT crate's grid, the crate's name at the pane's head taken for a window's title); regions 15 of 22, 2
     // missing, 5 of another size, 4 made up; counts 16 of 44 right, 28 unread; marks 29 of 112 right, 39 not looked for
-    // (slots), 44 no cell.
+    // (slots), 44 no cell. After the round: 86 right, none wrong, 11 one of N, 8 nothing said, 22 no cell (r2's backpack
+    // and special slots, their frames lost in the game's red low-health tint; its crate's faint grid read nine wide);
+    // regions 18 of 22, 1 missing, 3 of another size, none made up; counts 20 right, 24 unread; marks 50 right, 41 not
+    // looked for, 21 no cell.
     [Fact]
     public async Task The_glance_reads_the_real_sets_raid_pictures_to_their_answers()
     {
         var s = await ScoreAsync("raid", raid: true);
-        Assert.True(s.ScreensWrong == 0 && s.RegionsMadeUp <= 4 && s.RegionsMissing <= 2, Said(s));
+        Assert.True(s.ScreensWrong == 0 && s.RegionsMadeUp == 0 && s.RegionsMissing <= 1 && s.RegionsRight >= 18, Said(s));
         Assert.True(s.Wrong == 0, Said(s));
-        Assert.True(s.Right >= 58, Said(s));
-        Assert.True(s.RegionsRight >= 15, Said(s));
-        Assert.True(s.CountsRight >= 15 && s.CountsWrong == 0, Said(s));
-        Assert.True(s.MarksRight >= 28 && s.MarksWrong == 0, Said(s));
+        Assert.True(s.Right >= 83, Said(s));
+        Assert.True(s.CountsRight >= 18 && s.CountsWrong == 0, Said(s));
+        Assert.True(s.MarksRight >= 48 && s.MarksWrong == 0, Said(s));
     }
 }
