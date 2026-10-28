@@ -167,7 +167,7 @@ public class ReportingTests : IDisposable
         File.WriteAllText(Path.Combine(folder, "running-gone.json"),
             JsonSerializer.Serialize(new { Session = "gone", Started = started, Version = "0.0.9", Build = "folder build", Windows = "Windows 11" }));
         var records = new CrashRecords(folder, Profile);
-        var found = records.CollectUnexpectedExits(DateTime.Now, DateTime.Now.AddDays(-1), (from, to) => [@"last line C:\Users\tester\x"]);
+        var found = records.CollectUnexpectedExits(DateTime.Now, DateTime.Now.AddDays(-1), null, (from, to) => [@"last line C:\Users\tester\x"]);
         var exit = Assert.Single(found);
         Assert.True(exit.UnexpectedExit);
         Assert.Equal("0.0.9", exit.Version);
@@ -192,10 +192,137 @@ public class ReportingTests : IDisposable
             JsonSerializer.Serialize(new { Session = "crashed", Started = DateTime.Now.AddMinutes(-5), Version = "v", Build = "b", Windows = "w" }));
 
         var next = new CrashRecords(folder, Profile);
-        Assert.Empty(next.CollectUnexpectedExits(DateTime.Now, DateTime.Now.AddDays(-1), (_, _) => []));
+        Assert.Empty(next.CollectUnexpectedExits(DateTime.Now, DateTime.Now.AddDays(-1), null, (_, _) => []));
         Assert.True(File.Exists(marker!.Path));
         marker.Dispose();
         Assert.False(File.Exists(marker.Path));
+    }
+
+    // Windows' Fast Startup (2026-10-28, five reports of 16 to 28 Oct): a shutdown signs the user out and hibernates the
+    // system, so the tick count, and the boot time from it, stays at the last full restart, days back. The sign-in is new.
+    [Fact]
+    public void A_marker_from_before_this_Windows_sign_in_ended_with_Windows_and_one_after_it_is_still_an_unexpected_exit()
+    {
+        var folder = Path.Combine(_root, "crashes");
+        var now = DateTime.Now;
+        var boot = now.AddDays(-10);
+        var logon = now.AddHours(-1);
+        WriteMarker(folder, "before", now.AddHours(-3));
+        WriteMarker(folder, "after", now.AddMinutes(-30));
+
+        var found = new CrashRecords(folder, Profile).CollectUnexpectedExits(now, boot, logon, (_, _) => []);
+
+        Assert.Equal("after", Assert.Single(found).Session);
+        Assert.False(File.Exists(Path.Combine(folder, "running-before.json")));
+        Assert.False(File.Exists(Path.Combine(folder, "running-after.json")));
+    }
+
+    // Where Windows gives no sign-in time, the boot rule alone holds, as before.
+    [Fact]
+    public void Without_a_sign_in_time_only_a_marker_from_before_Windows_last_started_is_dropped()
+    {
+        var folder = Path.Combine(_root, "crashes");
+        var now = DateTime.Now;
+        WriteMarker(folder, "before-boot", now.AddDays(-12));
+        WriteMarker(folder, "after-boot", now.AddHours(-3));
+
+        var found = new CrashRecords(folder, Profile).CollectUnexpectedExits(now, now.AddDays(-10), null, (_, _) => []);
+
+        Assert.Equal("after-boot", Assert.Single(found).Session);
+        Assert.Empty(Directory.EnumerateFiles(folder, "running-*.json"));
+    }
+
+    [Fact]
+    public void The_sign_in_is_as_long_before_now_as_Windows_record_says_and_none_without_one()
+    {
+        var utcNow = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        var current = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc).ToFileTimeUtc();
+        var logon = current - TimeSpan.FromHours(2).Ticks;
+        Assert.Equal(utcNow.AddHours(-2).ToLocalTime(), WindowsLogon.FromTimes(logon, current, utcNow));
+        // The record's times in another base (local time): only their distance counts.
+        Assert.Equal(utcNow.AddHours(-2).ToLocalTime(), WindowsLogon.FromTimes(logon + TimeSpan.FromHours(1).Ticks, current + TimeSpan.FromHours(1).Ticks, utcNow));
+        Assert.Null(WindowsLogon.FromTimes(0, current, utcNow));
+        Assert.Null(WindowsLogon.FromTimes(current + 1, current, utcNow));
+        // Read here: never in the future, and never a reason for a start to fail (null where Windows doesn't say).
+        Assert.True(WindowsLogon.Time() is not { } time || time <= DateTime.Now);
+    }
+
+    // ---- Windows ending the session ----
+
+    [Fact]
+    public void Only_Windows_ending_the_session_ends_Shturmap_not_its_question_or_an_end_called_off()
+    {
+        Assert.True(WindowsSessionEnd.Ends(WindowsSessionEnd.EndMessage, 1));
+        Assert.False(WindowsSessionEnd.Ends(WindowsSessionEnd.EndMessage, 0));
+        Assert.False(WindowsSessionEnd.Ends(WindowsSessionEnd.QueryMessage, 1));
+        Assert.Equal("a shutdown or restart", WindowsSessionEnd.Why(0));
+        Assert.Equal("a sign-out", WindowsSessionEnd.Why(unchecked((nint)0x80000000L)));
+        Assert.Equal("an installer needs Shturmap closed, forced", WindowsSessionEnd.Why(0x40000001));
+    }
+
+    // The session-ending path without a real shutdown: what the main window's WM_ENDSESSION runs (App.FollowWindowsEnd).
+    [Fact]
+    public async Task Windows_ending_the_session_closes_once_lets_go_of_the_marker_and_leaves_no_unexpected_exit()
+    {
+        var folder = Path.Combine(_root, "crashes");
+        var running = new CrashRecords(folder, Profile);
+        var marker = running.MarkRunning(DateTime.Now, Info);
+        Assert.NotNull(marker);
+        var steps = new List<string>();
+        var end = new WindowsSessionEnd(() =>
+        {
+            steps.Add("close");
+            marker!.Dispose();
+        }, async () =>
+        {
+            await Task.Yield();
+            lock (steps)
+                steps.Add("data");
+        }, TimeSpan.FromSeconds(10));
+
+        var closing = end.End(unchecked((nint)0x80000000L));
+
+        Assert.NotNull(closing);
+        Assert.True(closing!.IsCompleted);
+        await closing;
+        Assert.True(end.Ended);
+        Assert.Null(end.End(0));
+        Assert.Equal(new[] { "close", "data" }, steps);
+        Assert.False(File.Exists(marker!.Path));
+        // The next start, in the same Windows session: nothing to report.
+        Assert.Empty(new CrashRecords(folder, Profile).CollectUnexpectedExits(DateTime.Now, DateTime.Now.AddDays(-1), DateTime.Now.AddHours(-1), (_, _) => []));
+    }
+
+    [Fact]
+    public async Task Windows_ending_the_session_never_throws_and_waits_for_the_session_s_close_only_so_long()
+    {
+        var dataRan = false;
+        var failing = new WindowsSessionEnd(() => throw new InvalidOperationException("close"), () =>
+        {
+            dataRan = true;
+            throw new IOException("data");
+        }, TimeSpan.FromSeconds(10));
+        var closing = failing.End(0);
+        Assert.NotNull(closing);
+        await closing!;
+        Assert.True(dataRan);
+        Assert.Equal(TaskStatus.RanToCompletion, closing.Status);
+
+        var never = new TaskCompletionSource();
+        var slow = new WindowsSessionEnd(() => { }, () => never.Task, TimeSpan.FromMilliseconds(50));
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        var pending = slow.End(0);
+        Assert.True(started.Elapsed < TimeSpan.FromSeconds(5));
+        Assert.False(pending!.IsCompleted);
+        never.SetResult();
+        await pending;
+    }
+
+    private static void WriteMarker(string folder, string session, DateTime started)
+    {
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, $"running-{session}.json"),
+            JsonSerializer.Serialize(new { Session = session, Started = started, Version = "0.7.1", Build = "installed", Windows = "Windows 11" }));
     }
 
     // ---- what goes out ----

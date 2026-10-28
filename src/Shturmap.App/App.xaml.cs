@@ -78,9 +78,11 @@ public partial class App : Application
         Reporter = new Reporter(AppRoot(cli), ReportEndpoint.Parse(BuiltDsn()), developerRun,
             new ReportInfo(GameSession.Version, BuildKind, Diagnostics.WindowsVersion()));
         // A session that ended without closing left its marker behind: note it before marking this one. One from
-        // before Windows last started was a shutdown, not a crash.
+        // before Windows last started, or from before this Windows sign-in, ended with Windows' session, not in a crash
+        // (Fast Startup keeps the tick count over a shutdown, so the sign-in tells one that the start doesn't).
         var boot = started - TimeSpan.FromMilliseconds(Environment.TickCount64);
-        foreach (var exit in Reporter.Crashes.CollectUnexpectedExits(started, boot, (from, to) => AppLog.TailBetween(from, to, CrashRecords.LogLines)))
+        var logon = WindowsLogon.Time();
+        foreach (var exit in Reporter.Crashes.CollectUnexpectedExits(started, boot, logon, (from, to) => AppLog.TailBetween(from, to, CrashRecords.LogLines)))
             AppLog.Warn($"The last session ({exit.Version}) ended without closing; noted as crash record {exit.Id}");
         _marker = Reporter.Crashes.MarkRunning(started, Reporter.Info);
         // A clean end lets go of the marker, however it comes; a crash leaves it for the next start.
@@ -220,6 +222,8 @@ public partial class App : Application
             _marker?.Dispose();
             await _session.DisposeAsync();
         };
+        // Windows ending the session (a shutdown, restart or sign-out) closes the same way, without the window closing.
+        FollowWindowsEnd(_window, _session);
         Controls.TextScale.Start(_window);
         _window.Open();
         try

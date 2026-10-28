@@ -237,10 +237,14 @@ public sealed class CrashRecords(string folder, string? profile)
 
     /// <summary>
     /// Records for sessions that ended without closing: a marker no running Shturmap holds, whose session left no
-    /// crash record of its own. One from before Windows last started is a shutdown or restart while Shturmap ran, not
-    /// a crash, and is dropped. <paramref name="logBetween"/> gives that session's last log lines.
+    /// crash record of its own. One from before Windows last started (<paramref name="bootTime"/>), or from before the
+    /// user signed in to this Windows session (<paramref name="logonTime"/>, <see cref="WindowsLogon"/>; null when
+    /// Windows didn't say), ended with Windows' session (a shutdown, restart or sign-out while Shturmap ran), not in a
+    /// crash: it is dropped with a log line. Windows' Fast Startup keeps the tick count over a shutdown, so the boot time
+    /// alone can lie days back. <paramref name="logBetween"/> gives that session's last log lines.
     /// </summary>
-    public IReadOnlyList<CrashRecord> CollectUnexpectedExits(DateTime now, DateTime bootTime, Func<DateTime, DateTime, IReadOnlyList<string>> logBetween)
+    public IReadOnlyList<CrashRecord> CollectUnexpectedExits(DateTime now, DateTime bootTime, DateTime? logonTime,
+        Func<DateTime, DateTime, IReadOnlyList<string>> logBetween)
     {
         if (!Directory.Exists(Folder))
             return [];
@@ -267,8 +271,18 @@ public sealed class CrashRecords(string folder, string? profile)
                 TryDelete(path);
                 continue;
             }
-            if (marker is null || marker.Started < bootTime || recorded.Contains(marker.Session))
+            if (marker is null || recorded.Contains(marker.Session))
                 continue;
+            if (marker.Started < bootTime)
+            {
+                AppLog.Info($"The last session ({marker.Version}) began before Windows last started: it ended with a shutdown or restart, not a crash");
+                continue;
+            }
+            if (marker.Started < logonTime)
+            {
+                AppLog.Info($"The last session ({marker.Version}) began before this Windows sign-in: Windows ended it (a shutdown, restart or sign-out), not a crash");
+                continue;
+            }
             var record = new CrashRecord(NewId(), marker.Session, now, true, "exit", [], marker.Version, marker.Build, marker.Windows,
                 logBetween(marker.Started, now).TakeLast(LogLines).Select(l => Clean(l, profile, 2000)).ToList());
             try
