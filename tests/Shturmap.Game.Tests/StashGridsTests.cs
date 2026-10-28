@@ -178,4 +178,38 @@ public class StashGridsTests
         Assert.InRange(x, 806, 807);
         Assert.InRange(y, 406, 407);
     }
+
+    // The layout round of 2026-10-28 (the owner's picture of 2026-10-27 at the stash's top): the stash's first whole row
+    // under its pane's head held two rifles' lower halves, five by two each, their tops and labels under the head, so no
+    // line ran along its top and no cell of it was framed; and a shotgun under the pointer, its ground lit as light as its
+    // frame, left one line showing in its two rows. The stash came out a row short, its first row lost, every cell read a
+    // row off. It runs from its first whole row down, the lit rows between rows that show its own.
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void The_stash_runs_from_its_first_whole_row_down_whatever_lies_across_its_rows(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        var (x, y) = page.StashOrigin;
+        var p = page.Pitch;
+        // The grid from a part-row above the first whole row, twelve whole rows under it.
+        page.Grid(x, y - p, 10, 13, 1);
+        page.Item(x, y - p, 1, 0, 0, 5, 2, "Rifle");
+        page.Item(x, y - p, 1, 5, 0, 5, 2, "Rifle");
+        page.Item(x, y - p, 1, 5, 3, 5, 2, "Shotgun");
+        using (var canvas = new SKCanvas(page.Bitmap))
+        {
+            // The pane's head over the part-row's top quarter (the toolbar and the money).
+            using var head = new SKPaint { Color = new SKColor(18, 20, 22) };
+            canvas.DrawRect(x - p, 0, 11 * p, y - p + p / 4, head);
+            // The item under the pointer: its ground lit as light as the lines round it.
+            using var lit = new SKPaint { Color = new SKColor(96, 100, 104) };
+            canvas.DrawRect(x, y + 2 * p - 2, 5 * p + 3, 2 * p + 5, lit);
+        }
+        var gray = StashGray.Of(page.Bitmap);
+        var stash = Assert.Single(StashGrids.Find(new StashLines(gray), gray, width, height, p), g => g.Place == StashGridPlace.Stash);
+        Assert.InRange(stash.Y0, y - 2, y + 2);
+        Assert.Equal(12, stash.Rows);
+        Assert.Equal(10, stash.Cols);
+    }
 }

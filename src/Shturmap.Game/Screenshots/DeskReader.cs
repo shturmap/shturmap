@@ -226,7 +226,7 @@ public sealed class DeskReader
                 }
             }
             var (grid, covered, gridOdd, unread) = await CellsAsync(bitmap, "stash", stash, hidden, 0, 0, lines, highPassed, pitch, catalogue, looks,
-                DeskSlotKind.Any, false, layout.Over, ct, openTop: true);
+                DeskSlotKind.Any, false, layout.Over, ct, openTop: true, openBottom: true);
             odd += gridOdd;
             regions.Add(new DeskRegion("stash", DeskRegionKind.Stash, stash.Cols, stash.Rows, grid) { Covered = covered, Unread = unread });
         }
@@ -380,8 +380,8 @@ public sealed class DeskReader
         // would be read and counted twice (a Junk window of 2026-10-19 had its GPUs and hoses twice in the total).
         var found = compartments;
         compartments = found.Where((c, n) => !found.Take(n).Any(o => DeskLayout.Overlapping(o, c))).ToList();
-        var xs = Units(compartments.Select(c => (c.Left, (int)Math.Round(c.Width / (double)pitch))), pitch);
-        var ys = Units(compartments.Select(c => (c.Top, (int)Math.Round(c.Height / (double)pitch))), pitch);
+        var xs = Units(compartments.Select(c => (c.Left, c.Right)), pitch);
+        var ys = Units(compartments.Select(c => (c.Top, c.Bottom)), pitch);
         foreach (var c in compartments)
         {
             int cols = Math.Max(1, (int)Math.Round(c.Width / (double)pitch)), rows = Math.Max(1, (int)Math.Round(c.Height / (double)pitch));
@@ -408,17 +408,24 @@ public sealed class DeskReader
     }
 
     // The compartments' places in units: each distinct left edge (or top) a whole number of cells after the one before
-    // it, so the few pixels between compartments never add up to a cell.
-    private static Dictionary<int, int> Units(IEnumerable<(int At, int Size)> spans, int pitch)
+    // it, so the few pixels between compartments never add up to a cell. A compartment whose edge stands inside a
+    // compartment no wider than itself, away from its ends, is set between the columns (or rows) of the others: it takes
+    // the unit of the column it stands in, and adds none (layout round, 2026-10-28: the AVS rig, five pockets over five
+    // over two wide ones set between them, read seven wide, its second pocket a column off).
+    internal static Dictionary<int, int> Units(IEnumerable<(int From, int To)> spans, int pitch)
     {
         // Edges within a quarter of a cell are one (until 2026-10-25 within 4 px: the test set's 01-gear.png
         // had a pocket's frame found 5 px above the others', and the pockets came out three rows high instead of two).
-        var edges = spans.Select(s => s.At).Distinct().Order().ToList();
+        var all = spans.Distinct().ToList();
+        var same = pitch / 4;
+        bool Set(int from, int to) => all.Any(s => s.To - s.From <= to - from && from > s.From + same && from < s.To - same);
+        var between = all.GroupBy(s => s.From).Where(g => g.All(s => Set(s.From, s.To))).Select(g => g.Key).ToHashSet();
+        bool Between(int edge) => between.Contains(edge);
+        var edges = all.Select(s => s.From).Distinct().Order().ToList();
         var units = new Dictionary<int, int>();
         var previous = int.MinValue;
         var unit = 0;
-        var same = pitch / 4;
-        foreach (var edge in edges)
+        foreach (var edge in edges.Where(e => !Between(e)))
         {
             if (previous != int.MinValue)
                 unit += edge - previous <= same ? 0 : Math.Max(1, (int)Math.Round((edge - previous) / (double)pitch));
@@ -426,6 +433,9 @@ public sealed class DeskReader
             if (edge - previous > same || previous == int.MinValue)
                 previous = edge;
         }
+        // An edge set between: the unit of the lattice edge at or before it (the column it stands in).
+        foreach (var edge in edges.Where(Between))
+            units[edge] = units.Where(u => u.Key <= edge).Select(u => (Key: u.Key, Unit: u.Value)).DefaultIfEmpty((Key: edge, Unit: 0)).MaxBy(u => u.Key).Unit;
         return units;
     }
 
@@ -436,7 +446,7 @@ public sealed class DeskReader
     // where quick slots may stand (pockets, a rig), a label whose cell shows a quick slot's number may have lost its start.
     private async Task<(List<DeskCell> Cells, List<DeskRect> Covered, int Odd, int Unread)> CellsAsync(SKBitmap bitmap, string region, StashGrid grid, bool[] hidden,
         int i0, int j0, StashLines lines, StashGray highPassed, int pitch, DeskCatalogue catalogue, List<DeskCellLook> looks, DeskSlotKind kind,
-        bool quickSlots, IReadOnlyList<SKRectI> over, CancellationToken ct, bool openTop = false)
+        bool quickSlots, IReadOnlyList<SKRectI> over, CancellationToken ct, bool openTop = false, bool openBottom = false)
     {
         // Whether a part of the picture lies in part under a window, a toast or a tooltip.
         bool UnderAny(SKRectI r) => over.Any(o => o.IntersectsWith(r));
@@ -627,10 +637,17 @@ public sealed class DeskReader
         // top right: the cells its footprint takes from there are its own when no other label fits there.
         var areas = new Dictionary<int, (int I, int J, int W, int H)>();
         var consumed = new HashSet<int>();
+        // In the stash's last row, an item with no line along its bottom runs on below the view (layout round, 2026-10-28:
+        // the owner's picture of 2026-10-27, a tomahawk one by three and a helmet two by two in the last rows, their feet
+        // under the grid's end, said nothing for their footprints): a footprint as wide and taller is its, never one turned
+        // over the cells beside it, and its count and mark are out of view.
+        bool RunsBelow(int i, int j, int w, int h) => openBottom && j + h == grid.Rows &&
+            lines.Horizontal(grid.Y0 + grid.Rows * pitch, grid.X0 + i * pitch + 4, grid.X0 + (i + w) * pitch - 4) < 0.4;
         for (var n = 0; n < rects.Count; n++)
         {
             var (rect, _, _, fitting) = rects[n];
-            if (!footprints || consumed.Contains(n) || fitting.Count == 0 || Sized(fitting, rect.W, rect.H).Count > 0 || Footprint(fitting) is not { } footprint)
+            if (!footprints || consumed.Contains(n) || fitting.Count == 0 || Sized(fitting, rect.W, rect.H).Count > 0 || Footprint(fitting) is not { } footprint ||
+                RunsBelow(rect.I0, rect.J0, rect.W, rect.H))
                 continue;
             // Only ever larger than the rectangle: a footprint smaller than it means several items read as one.
             var found = new[] { footprint, (footprint.H, footprint.W) }.Distinct()
@@ -650,6 +667,9 @@ public sealed class DeskReader
             var (rect, label, fit, fitting) = rects[n];
             var at = areas.TryGetValue(n, out var area) ? area : (I: rect.I0, J: rect.J0, W: rect.W, H: rect.H);
             var sized = footprints ? Sized(fitting, at.W, at.H) : fitting.ToList();
+            var runsBelow = RunsBelow(at.I, at.J, at.W, at.H);
+            if (runsBelow && footprints && sized.Count == 0)
+                sized = fitting.Where(c => (c.W == at.W && c.H > at.H) || (c.H == at.W && c.W > at.H)).ToList();
             // A larger footprint the label could also have, taking cells read as empty or unread from its top right (a
             // black rig's dark column reads as empty): the reading can't tell the two, so both are among the candidates.
             if (!areas.ContainsKey(n) && sized.Count > 0 && sized.Count < fitting.Count)
@@ -685,7 +705,7 @@ public sealed class DeskReader
             var count = 1;
             bool? fir = null;
             // An item running on under a window: its count and mark at its bottom right are the window's pixels, not read.
-            var bottomHidden = hidden[(at.J + at.H - 1) * grid.Cols + at.I + at.W - 1] ||
+            var bottomHidden = runsBelow || hidden[(at.J + at.H - 1) * grid.Cols + at.I + at.W - 1] ||
                                UnderAny(SKRectI.Create(pixels.Right - pitch, pixels.Bottom - (int)Math.Round(0.3 * pitch), pitch, (int)Math.Round(0.3 * pitch)));
             if (ids.Count > 0 && !bottomHidden)
             {

@@ -328,6 +328,7 @@ internal static class StashGrids
         // The rows the column lines run through, as the longest such run. A window over the stash hides its lines
         // there, so a row under a window between two rows that show counts as inside.
         var inside = new List<bool>();
+        var someLine = new List<bool>();
         var underWindow = new List<bool>();
         for (var y = rowPhase; y + pitch <= h; y += pitch)
         {
@@ -338,11 +339,16 @@ internal static class StashGrids
                     showing++;
             }
             inside.Add(showing >= RowLinesNeeded);
+            someLine.Add(showing > 0);
             underWindow.Add(windows.Any(o => o.Place == StashGridPlace.Window && o.Y0 <= y + pitch / 2 && y + pitch / 2 < o.Y0 + o.Rows * pitch));
         }
+        // So does a row between two that show where a line of the stash's still runs through it: the game's hover lights an
+        // item's ground, and its frame no longer stands out against it (the owner's picture of 2026-10-27 at the stash's
+        // top: a shotgun under the pointer, five by two, one line showing in its rows, split the stash, and its first row,
+        // two rifles' lower halves with no line along its top and no framed cell, was lost with the rows above).
         for (var i = 0; i < inside.Count; i++)
         {
-            if (!inside[i] && underWindow[i] && inside.Take(i).Any(b => b) && inside.Skip(i + 1).Any(b => b))
+            if (!inside[i] && (underWindow[i] || someLine[i]) && inside.Take(i).Any(b => b) && inside.Skip(i + 1).Any(b => b))
                 inside[i] = true;
         }
         int bestStart = -1, bestLength = 0;
@@ -363,7 +369,12 @@ internal static class StashGrids
         if (bestLength < 2)
             return null;
         var y0 = rowPhase + bestStart * pitch;
-        (x0, y0) = Snap(gray, x0, y0, StashColumns, bestLength, pitch);
+        // Snapped onto the first row line that shows across the stash: the first row's top may show none (two items running
+        // on under the pane's head), and moved onto nothing it lands on their art.
+        var lined = Enumerable.Range(0, bestLength).FirstOrDefault(r => lines.Horizontal(y0 + r * pitch, x0 + 2, x1 - 2) >= 0.5);
+        (x0, _) = Snap(gray, x0, y0, StashColumns, bestLength, pitch);
+        (_, var snapped) = Snap(gray, x0, y0 + lined * pitch, StashColumns, bestLength - lined, pitch);
+        y0 = snapped - lined * pitch;
         return new StashGrid(x0, y0, StashColumns, bestLength, StashGridPlace.Stash);
     }
 

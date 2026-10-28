@@ -503,6 +503,34 @@ public sealed class DeskReaderTests : IDisposable
         Assert.Equal([Id(5)], reading.Page.Region("stash")!.Cells.Single().Ids);
     }
 
+    // The owner's picture of 2026-10-27 at the stash's top (04 of the real set): a tomahawk one by three and a helmet two by
+    // two in the last rows in view, their feet under the grid's end, said nothing (their footprints taller than what
+    // showed). In the stash's last row an item whose bottom shows no line runs on below the view: a footprint as wide and
+    // taller is its (layout round, 2026-10-28).
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public async Task An_item_in_the_stashs_last_row_running_on_below_the_view_is_named_by_its_taller_footprint(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        var (x, y) = page.StashOrigin;
+        var p = page.Pitch;
+        page.Grid(x, y, 10, 13, 1);
+        page.Item(x, y, 1, 2, 4, 1, 1, "Hollin");
+        page.Item(x, y, 1, 5, 11, 1, 2, "Tessaril");
+        // The pane's foot over the thirteenth row: the view ends at the twelfth.
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var foot = new SKPaint { Color = new SKColor(18, 20, 22) })
+            canvas.DrawRect(x - 4, y + 12 * p + 2, 10 * p + 8, p + 4, foot);
+        using var picture = page.Bitmap.Copy();
+        var reading = await Reader().ReadAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
+        var stash = reading.Page!.Region("stash")!;
+        Assert.Equal(12, stash.Rows);
+        var tall = In(reading.Page, "stash", c => c.J == 11);
+        Assert.Equal([Id(4)], tall.Ids);
+        Assert.Equal(5, tall.I);
+    }
+
     // A gun in the stash labelled with its preset's name (owner, 2026-10-26: the holster's "USP .45 Expert" in the test set's
     // 09-gear.png, read whole and named nothing; "DVL-10 Urbana" six by two in the stash): the gun, as a gun's cell is, its
     // mods unseen ("+"); an item whose label begins with a name that is no gun's stays unread.
@@ -793,6 +821,118 @@ public sealed class DeskReaderTests : IDisposable
         Assert.True(backpack.SlotDerived);
         Assert.True(window.Area!.Value.IntersectsWith(backpack.SlotBox!.Value));
         Assert.Equal(1, layout.Unplaced);
+    }
+
+    // ---- the layout round of 2026-10-28 (the real set of 2026-10-27 made a scored check) ----
+
+    // A word at 1440p's place, scaled to the page (the game lays its screens out by their height).
+    private static DeskWord Scaled(StashReaderTests.Page page, string text, int x, int y, int line, int h = 15) =>
+        Word(text, (int)Math.Round(x * page.K), (int)Math.Round(y * page.K), line, Math.Max(9, (int)Math.Round(h * page.K)));
+
+    private static int At(StashReaderTests.Page page, int at1440) => (int)Math.Round(at1440 * page.K);
+
+    // The owner's body-loot picture of 2026-10-25 (r1 of the real set): in a raid the BACKPACK's and the POUCH's grids, their
+    // lines two pixels wide as a window's, were read as two windows of no name, 20 of its 55 items in neither region. A
+    // lattice under a middle heading is that region's grid in a raid as in the menus.
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void In_a_raid_a_lattice_under_a_middle_heading_is_that_regions_grid_never_a_window(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        var p = page.Pitch;
+        List<DeskWord> words =
+        [
+            Scaled(page, "EARPIECE", 92, 201, 1), Scaled(page, "HEADWEAR", 337, 201, 2), Scaled(page, "ARMBAND", 91, 422, 4),
+            Scaled(page, "BODY", 338, 422, 5), Scaled(page, "ARMOR", 390, 422, 5), Scaled(page, "BACKPACK", 880, 422, 6),
+            Scaled(page, "POUCH", 880, 989, 7, 14), Scaled(page, "QUICK", 760, 1254, 9), Scaled(page, "USE", 820, 1254, 9),
+        ];
+        page.Grid(At(page, 87), At(page, 220), 2, 2, 1);
+        page.Grid(At(page, 875), At(page, 443), 2, 2, 1);
+        page.Grid(At(page, 1051), At(page, 445), 5, 6, 2);
+        page.Grid(At(page, 875), At(page, 1011), 2, 2, 1);
+        page.Grid(At(page, 1051), At(page, 1011), 3, 3, 2);
+        var layout = Layout(page, words);
+        Assert.Equal(DeskScreen.Raid, layout.Screen);
+        Assert.DoesNotContain(layout.Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        var backpack = Assert.Single(Assert.Single(layout.Regions, r => r.Kind == DeskRegionKind.Backpack).Parts);
+        Assert.Equal((5, 6), ((int)Math.Round(backpack.Width / (double)p), (int)Math.Round(backpack.Height / (double)p)));
+        var pouch = Assert.Single(Assert.Single(layout.Regions, r => r.Kind == DeskRegionKind.Pouch).Parts);
+        Assert.Equal((3, 3), ((int)Math.Round(pouch.Width / (double)p), (int)Math.Round(pouch.Height / (double)p)));
+    }
+
+    // The owner's airdrop picture of 2026-10-27 (r2): the container's kind at the LOOT pane's head, "AIRDROP COMMON SUPPLY
+    // CRATE", starts left of the screen's right tenth; its first word was taken for a window's title over the crate's grid,
+    // and the kind was "SUPPLY CRATE". The kind is its whole phrase, and no title.
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void The_loot_panes_kind_is_its_whole_phrase_and_no_windows_title(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        List<DeskWord> words =
+        [
+            Scaled(page, "EARPIECE", 92, 201, 1), Scaled(page, "HEADWEAR", 337, 201, 2), Scaled(page, "ARMBAND", 91, 422, 4),
+            Scaled(page, "BODY", 338, 422, 5), Scaled(page, "ARMOR", 390, 422, 5), Scaled(page, "QUICK", 760, 1254, 9), Scaled(page, "USE", 820, 1254, 9),
+            Scaled(page, "LOOT", 1690, 80, 10), Scaled(page, "SEARCH", 1880, 80, 10, 13), Scaled(page, "AIRDROP", 2155, 76, 10, 16),
+            Scaled(page, "COMMON", 2262, 76, 10, 16), Scaled(page, "SUPPLY", 2359, 76, 10, 16), Scaled(page, "CRATE", 2449, 76, 10, 16),
+        ];
+        page.Grid(At(page, 87), At(page, 220), 2, 2, 1);
+        page.Grid(At(page, 2107), At(page, 106), 4, 6, 2);
+        var layout = Layout(page, words);
+        Assert.Equal(DeskScreen.Raid, layout.Screen);
+        Assert.DoesNotContain(layout.Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        Assert.Equal("LOOT · AIRDROP COMMON SUPPLY CRATE", layout.Loot!.Title);
+        var grid = Assert.Single(Assert.Single(layout.Loot.Parts).Parts);
+        Assert.Equal((4, 6), ((int)Math.Round(grid.Width / (double)page.Pitch), (int)Math.Round(grid.Height / (double)page.Pitch)));
+    }
+
+    // The same picture: the crate's grid faint, its frames found in two pieces, one with its top on the head's edge 5 px over
+    // the grid's line, so the two stood off one lattice and made two compartments read as two grids of other places. A frame
+    // whose top stands a few pixels over the grid's first line, which is 10 px (at 1440p) under the head, is on its rows.
+    [Fact]
+    public void A_containers_frames_a_few_pixels_over_its_grids_first_line_are_on_its_rows()
+    {
+        var head = Word("LOOT", 1690, 80, 1, 16);
+        SKRectI[] frames = [new(2107, 100, 2444, 1111), new(1686, 442, 2190, 1112)];
+        var loot = DeskLoot.Find([head], head, frames, [], 2560, 1275, 84);
+        var grid = Assert.Single(Assert.Single(loot.Parts).Parts);
+        Assert.Equal(new SKRectI(1686, 106, 2444, 1112), grid);
+    }
+
+    // The owner's picture of 2026-10-26 of the stash's weapons and mods (03): two medkits side by side, both "Meds"; the
+    // first's last letter read on its own stood before the second's label like a window's magnifier, and a frame there made
+    // "Meds" a window of one cell over the stash. Over the stash a window shows its panel or its own grid's two-pixel lines
+    // under the title (A_containers_window_is_read_attached_and_what_it_covers_is_left_as_it_was: it does).
+    [Fact]
+    public void In_the_stash_a_label_after_a_letter_read_alone_is_no_windows_title()
+    {
+        var (page, words) = Tab();
+        var (x, y) = page.StashOrigin;
+        page.Grid(x + 8 * page.Pitch, y + 4 * page.Pitch + 37, 1, 1, 1);
+        words.AddRange([Word("s", x + 7 * page.Pitch + 25, y + 4 * page.Pitch + 4, 12, 12), Word("Meds", x + 7 * page.Pitch + 45, y + 4 * page.Pitch + 4, 12, 12)]);
+        Assert.DoesNotContain(Layout(page, words).Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+    }
+
+    // The AVS rig (the owner's pictures 02 and 03 of 2026-10-26): five pockets over five, and two wide ones set between
+    // them, centred. Placed by each left edge after the one before it, the wide ones' edges added two columns: seven wide,
+    // the second pocket a column off. A compartment set between the columns takes the column it stands in.
+    [Theory]
+    [InlineData(84, 9)]
+    [InlineData(63, 7)]
+    public void A_rigs_wide_pockets_set_between_its_columns_add_none(int pitch, int gap)
+    {
+        var x0 = 1050;
+        var spans = Enumerable.Range(0, 5).Select(i => (From: x0 + i * (pitch + gap), To: x0 + i * (pitch + gap) + pitch)).ToList();
+        var wide = 2 * pitch + gap;
+        spans.Add((x0 + (pitch + gap) / 2, x0 + (pitch + gap) / 2 + wide));
+        spans.Add((x0 + 2 * (pitch + gap) + (pitch + gap) / 2, x0 + 2 * (pitch + gap) + (pitch + gap) / 2 + wide));
+        var units = DeskReader.Units(spans, pitch);
+        Assert.Equal([0, 1, 2, 3, 4], spans.Take(5).Select(s => units[s.From]));
+        Assert.Equal((0, 2), (units[spans[5].From], units[spans[6].From]));
+        // Pockets with one gone between them still stand where they stand.
+        var missing = DeskReader.Units([(x0, x0 + pitch), (x0 + 2 * (pitch + gap), x0 + 2 * (pitch + gap) + pitch)], pitch);
+        Assert.Equal(2, missing[x0 + 2 * (pitch + gap)]);
     }
 
     // The test set's 11-gear.png (2026-10-19): the backpack's grid out of view, its slot alone in it. Read in part: the

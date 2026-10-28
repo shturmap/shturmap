@@ -169,6 +169,11 @@ internal static class DeskLayout
         // GEAR tab, and the glance said nothing). The loadout's headings with no menus' bar and the LOOT pane's head over the
         // right third are the raid's inventory: a grid there is the container's, never the stash.
         var lootHead = gear && !menuBar ? DeskLoot.Head(words, w, h) : null;
+        // The container's kind at the pane's head is the game's words, never a window's title (the owner's picture of
+        // 2026-10-27 of an airdrop: "AIRDROP COMMON SUPPLY CRATE" over the crate's grid was taken for one, and the window
+        // made of it covered the grid).
+        if (lootHead is not null)
+            headingWords.UnionWith(DeskLoot.KindWords(words, lootHead, w, pitch));
         var grids = StashGrids.Find(lines, gray, w, h, pitch, stashPane: lootHead is null);
         if (grids.Any(g => g.Place == StashGridPlace.Left))
             return new DeskLayoutFound(DeskScreen.Trading, [], [], null, [], 0, []);
@@ -231,14 +236,16 @@ internal static class DeskLayout
         var lattices = grids.Where(g => g.Place == StashGridPlace.Window).Select(g => SKRectI.Create(g.X0, g.Y0, g.Cols * pitch, g.Rows * pitch)).ToList();
         // A lattice in the middle column under one of its headings is that region's grid (the layout round's test
         // set, 02-gear.png and 09-gear.png: the POUCH's grid, its lines two pixels wide as a window's, read as a window of no
-        // name, the POUCH left out); one inside a larger compartment is some of that one's cells. In a raid the glance keeps
-        // its reading of before: a region the foot cuts is left out there, and its grid would go with it.
-        var columnLattices = screen == DeskScreen.Gear
+        // name, the POUCH left out); one inside a larger compartment is some of that one's cells. In a raid too (layout
+        // round, 2026-10-28: the owner's body-loot picture of 2026-10-25, the BACKPACK's and the POUCH's grids, their
+        // lines two pixels wide, read as two windows of no name, 20 of its 55 items in neither region); there a grid the
+        // foot cuts, or whose lines run on past it, is left out with its region, as before (Column).
+        var columnLattices = screen is DeskScreen.Gear or DeskScreen.Raid
             ? lattices.Where(l => InColumn(l) && HeadOf(l) is not null && !InsideCompartment(l, frames, pitch)).ToList()
             : [];
         var loadoutRows = loadout.Select(x => x.Word.MidY).ToList();
         var paneLeft = stash is not null ? stash.X0 - (int)(0.6 * pitch) : lootHead is not null ? lootHead.X - pitch : (int)(w * 0.66);
-        var windows = Windows(words, gray, lines, frames, lattices, columnLattices, headingWords, loadoutRows, paneLeft, w, h, pitch, notes, cutFound, over);
+        var windows = Windows(words, gray, lines, frames, lattices, columnLattices, headingWords, loadoutRows, paneLeft, w, h, pitch, notes, cutFound, over, stashRect);
         // The LOOT pane's grids have a window's two-pixel lines and no title, or a part's "SEARCHING ✕" over them: the
         // pane's, not windows.
         if (lootHead is not null)
@@ -473,7 +480,7 @@ internal static class DeskLayout
     // window whose bar stands inside another's outline lies over it.
     private static List<DeskPlace> Windows(IReadOnlyList<DeskWord> words, StashGray gray, StashLines lines, List<SKRectI> frames, List<SKRectI> lattices,
         List<SKRectI> columnLattices, HashSet<DeskWord> headings, IReadOnlyList<int> loadoutRows, int paneLeft, int w, int h, int pitch, List<string> notes,
-        IReadOnlySet<SKRectI> cut, IReadOnlyList<SKRectI> over)
+        IReadOnlySet<SKRectI> cut, IReadOnlyList<SKRectI> over, SKRectI stashRect)
     {
         var windows = new List<DeskPlace>();
         var used = new HashSet<SKRectI>();
@@ -523,6 +530,15 @@ internal static class DeskLayout
                     .OrderBy(f => f.Top - word.Bottom).ThenBy(f => Math.Abs(word.X - f.Left)).Select(f => (SKRectI?)f).FirstOrDefault();
                 if (start is not { } first)
                     continue;
+                // Over the stash, a window shows its panel or its own grid under the title, two-pixel lines; a label there
+                // has a cell of the stash under it, or a highlight's frame (layout round, 2026-10-28: the owner's picture of
+                // 2026-10-26, two medkits side by side labelled "Meds", the first's last letter read on its own like a
+                // magnifier, and the second made a window of one cell over a frame off the stash's lattice).
+                if (stashRect.Contains(word.MidX, word.MidY) && !(lattices.Contains(first) && LineWidth(gray, first, pitch) >= 2))
+                {
+                    notes.Add($"\"{word.Text}\" at ({word.X},{word.Y}) in the stash over no window's grid: no title");
+                    continue;
+                }
                 if (!magnifier && close is null && word.X < paneLeft && !word.Text.Any(char.IsLower) &&
                     !(lattices.Contains(first) && !columnLattices.Contains(first) && LineWidth(gray, first, pitch) >= 2))
                 {

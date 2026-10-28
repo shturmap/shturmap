@@ -54,6 +54,28 @@ internal static class DeskLoot
             .OrderBy(x => x.Y).FirstOrDefault();
 
     /// <summary>
+    /// The container's kind as the game names it, its words in order: the capitals in the head's row that end at the
+    /// screen's right edge (BACK stands above them), the phrase as far left as its words stand a space apart (the owner's
+    /// picture of 2026-10-27 of an airdrop: "AIRDROP COMMON SUPPLY CRATE" starts left of the right tenth, which took "SUPPLY
+    /// CRATE" alone, and its first word was made a window's title). A slot's label in the pane's first row, level with the
+    /// head further left, stands apart.
+    /// </summary>
+    public static List<DeskWord> KindWords(IReadOnlyList<DeskWord> words, DeskWord head, int w, int pitch)
+    {
+        var row = words.Where(x => x.X > head.Right && Math.Abs(x.MidY - head.MidY) < 0.4 * pitch && x.Text.Any(char.IsLetter) && !x.Text.Any(char.IsLower))
+            .OrderByDescending(x => x.X).ToList();
+        var kind = new List<DeskWord>();
+        foreach (var x in row)
+        {
+            if (kind.Count == 0 ? x.X <= w * 0.9 : kind[^1].X - x.Right > 0.6 * pitch)
+                break;
+            kind.Add(x);
+        }
+        kind.Reverse();
+        return kind;
+    }
+
+    /// <summary>
     /// The pane's parts. <paramref name="frames"/> are the framed compartments of the whole picture and
     /// <paramref name="lattices"/> the windows' lattices the grid finding saw (a container's grid among them); both are
     /// taken where they lie in the pane.
@@ -63,10 +85,7 @@ internal static class DeskLoot
     {
         var k = pitch / 84.0;
         var pane = new SKRectI(head.X - pitch, head.Bottom, w, bottom);
-        // The kind: the capitals in the head's row at the screen's right edge (BACK stands above it; a slot's label in the
-        // pane's first row may stand level with the head, further left).
-        var kindWords = words.Where(x => x.X > w * 0.9 && Math.Abs(x.MidY - head.MidY) < 0.4 * pitch && x.Text.Any(char.IsLetter) &&
-                                         !x.Text.Any(char.IsLower)).OrderBy(x => x.X).ToList();
+        var kindWords = KindWords(words, head, w, pitch);
         var kind = kindWords.Count > 0 ? string.Join(" ", kindWords.Select(x => x.Text)) : null;
         bool InPane(DeskWord x) => pane.Contains(x.MidX, x.MidY);
         bool Within(SKRectI r) => r.Left >= pane.Left - 4 && r.Top >= pane.Top - 4 && r.Right <= pane.Right + 4;
@@ -91,6 +110,12 @@ internal static class DeskLoot
             // only the cells framed all round, the frames the items' rows too (the owner's weapon box of 2026-10-26: a 4×5
             // lattice of its empty cells, its rifles' rows framed beside and above it, the grid 6×6).
             compartments.AddRange(frames.Where(f => Within(f) && lattices.Any(l => Within(l) && DeskLayout.Overlapping(l, f) && OnLattice(l, f, pitch))));
+            // The grid's rows stand on the head's: its top line 10 px (at 1440p) under the head. A frame whose top was found
+            // on the head's edge a few pixels above it (the owner's airdrop of 2026-10-27: 5 px, its grid faint) is on the
+            // grid's rows too, so the grid's frames make one grid.
+            var gridTop = pane.Top + (int)Math.Round(10 * k);
+            compartments = compartments.Select(c => Math.Abs(c.Top - gridTop) is var off && off > 4 && off <= pitch / 8 && c.Top < gridTop
+                ? new SKRectI(c.Left, gridTop, c.Right, c.Bottom) : c).ToList();
             compartments = OneGrid(compartments, pitch);
             // Its grid starts right under the head; a first row whose items hid the grid's top line (a weapon box of the
             // same screenshots: a rifle part's red ground) left the frame found a row lower.

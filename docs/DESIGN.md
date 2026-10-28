@@ -444,8 +444,9 @@ day, for the in-raid glance: "Which pictures", below):
     POUCH's grid below the Keys window, the POUCH's heading under it, was the BACKPACK's grid of one cell).
   - Compartments whose tops (or lefts) stand within a quarter of a cell are on one row of their region (until now within
     4 px: a pocket's frame found 5 px above the others' made the pockets three rows high).
-  - In a raid the glance reads as before (a region the foot cuts left out, a lattice under a heading no region's grid):
-    the 22 raid screenshots of 2026-10-19 read the same regions and cells.
+  - In a raid the glance reads as before (a region the foot cuts left out, a lattice under a heading no region's grid;
+    the lattice is the region's since 2026-10-28, *The real set's layout round*, below): the 22 raid screenshots of
+    2026-10-19 read the same regions and cells.
   Measured with `shturmap-cli desk` on the 13 screenshots and one more of the same evening (ARMBAND half under the Keys
   window), renamed in their order without their time into the git-ignored `tests\fixtures\ocr\desk\session` with the
   regions each should make (`regions-<picture>.txt`) and, for three, every item whose label shows (`truth-<picture>.txt`,
@@ -562,6 +563,36 @@ day, for the in-raid glance: "Which pictures", below):
   B (the presets as candidates of their own) and C (left unread) were not taken. Measured with `shturmap-cli desk` on
   the four test sets and the 22 raid screenshots (docs/NEXT.md): 41 cells named that said nothing, each a preset of the
   gun it names; no other cell changed, 0 wrong.
+
+  **The real set's layout round** (owner, 2026-10-28: "the readers' layout before other text engines", docs/NEXT.md;
+  `StashGrids`, `DeskLayout`, `DeskLoot`, `DeskReader`): the owner's eight screenshots of 2026-10-25 to 2026-10-27 in the
+  git-ignored `tests\fixtures\ocr\real-2026-10-27` (five of the GEAR tab, three of the raid's inventory screen), each
+  with its answers by hand (the items, the regions and their sizes, each item's count and found-in-raid mark), are a
+  scored check (`DeskTruth`, `DeskRealSetTests`, `shturmap-cli desk`). Fixed, each on those pictures:
+  - **The stash is one grid, from its first whole row down**: a row its column lines don't run through, between rows they
+    do, is its own where a line of it still shows (the game's hover lights an item's ground as light as its frame: a
+    shotgun under the pointer, five by two, split the stash and its first row was lost); the rows are snapped onto the
+    first row line that shows across the stash (two rifles' lower halves in the first row under the pane's head showed no
+    line along its top). Every cell of that picture had been read a row off.
+  - **In the stash's last row, an item whose bottom shows no line runs on below the view**: a footprint as wide and
+    taller is its (a tomahawk one by three, a helmet two by two), never one turned over the cells beside it; its count
+    and mark are out of view.
+  - **In a raid, a lattice under a middle heading is that region's grid**, as in the menus since 2026-10-25 (the BACKPACK's
+    and the POUCH's grids, their lines two pixels wide, were two windows of no name, 20 of the picture's 55 items in
+    neither region); a grid the column's foot cuts, or whose lines run on past it, is still left out in a raid with its
+    region.
+  - **The LOOT pane's container kind is its whole phrase at the head's right, and no window's title**: the capitals ending
+    at the screen's right edge, as far left as its words stand a space apart ("AIRDROP COMMON SUPPLY CRATE", read "SUPPLY
+    CRATE" until now, its first word a window's title over the crate's grid). A container's frame whose top stands a few
+    pixels over the grid's first line, 10 px (at 1440p) under the head, is on its rows (the crate's faint grid found as
+    two frames off one lattice, read as two grids of other places).
+  - **Over the stash, a window shows its panel or its own grid's two-pixel lines under its title**: two medkits side by
+    side, both "Meds", the first's last letter read on its own like a magnifier, made the second a window of one cell
+    over a highlight's frame, and covered four items round it.
+  - **A compartment set between a region's columns takes the column it stands in**: a compartment whose edge stands inside
+    one no wider than itself, away from its ends, adds no column (or row). The AVS rig, five pockets over five over two
+    wide ones centred between them, read seven wide with its second pocket a column off; five by five now, its size the
+    columns and rows its compartments take (the wide ones from the column of their left edge).
 - **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
   the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
   cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until
