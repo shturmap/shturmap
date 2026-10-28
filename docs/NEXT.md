@@ -82,6 +82,23 @@ fresh pictures the test of the fixes, with a batch at 1920×1080 and one with th
   foot cuts is left out with its region (r3's backpack, a raid-loot picture's), where the desk reads it as far as it shows
   since 2026-10-25: read it so in the glance too?
 
+**The owner's play session** (2026-10-28, evening; German skipped): 26 screenshots, all in a raid, in the ignored
+`tests\fixtures\ocr\real-2026-10-28` (`raid-1440` 7 and `raid-1080` 9 answered by hand before the reader ran; `none` 4
+without an inventory; `pending` 6 near-duplicates). The first real pictures at 1920×1080. Scored unseen, before the round
+(04beff4) → after (aedf76e): at 2560×1440 items right 132 → 154 of 189, regions 25 → 31 of 39, made up 11 → 2; at
+1920×1080 items right 156 → 174 of 296, wrong 12 → 5, regions 18 → 22 of 43, missing 17 → 17. At 1920×1080 the LOOT
+pane is never found, before or after; the AVS rig, read before in two pictures, is missing after (a length that doesn't
+scale, a guess); at 2560×1440 two nameless windows are made up. Cut grids of the player's own regions left out in a raid:
+25, with 84 items whole in them (17 % of all); items in slots 134, 38 of them found in raid. Nothing read on the four
+without an inventory. The stash side got no unseen picture.
+
+**Picked** (owner, 2026-10-28, from the decision page): (1) A, fix now: the LOOT pane at 1920×1080, the rig's
+regression, the made-up windows, the new pictures in the scored check. (2) A, in a raid the player's own grids the
+column cuts are read as far as they show, the ON YOU figure ending in "+", as the LOOT pane's and the desk's. (3) A, the
+found-in-raid mark is read on slot cells too (the loadout's slots, a body's, a container's slot), not only on grids'
+cells: a new thing read from the picture, the owner's decision (CLAUDE.md, "Essentials"). Once fixed against, the 16
+pictures are no longer unseen: the next unseen test is the stash's pictures and the game in German.
+
 ## 2026-10-27: 0.7.1's What's New lines, each its own key (the release UI QA pass)
 
 **Found** (the release UI QA pass of 0.7.1, 2026-10-27; repro `tools\qa\whatsnew-lines.devscript` at 900×560): F1
