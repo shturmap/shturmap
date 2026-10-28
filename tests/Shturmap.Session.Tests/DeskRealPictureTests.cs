@@ -21,7 +21,7 @@ public class DeskRealPictureTests
     private static string Fixtures(string folder) => Path.Combine(AppContext.BaseDirectory, "fixtures", "ocr", folder);
 
     // One for the class: its model is loaded once.
-    private static readonly PaddleReader? Paddle = PaddleReader.IsBundled ? PaddleReader.Bundled() : null;
+    internal static readonly PaddleReader? Paddle = PaddleReader.IsBundled ? PaddleReader.Bundled() : null;
 
     private sealed class Offline : HttpMessageHandler
     {
@@ -29,7 +29,7 @@ public class DeskRealPictureTests
             throw new HttpRequestException("offline: the test reads the cache only");
     }
 
-    private static async Task<(GameData Data, DeskCatalogue Catalogue)> CatalogueAsync()
+    internal static async Task<(GameData Data, DeskCatalogue Catalogue)> CatalogueAsync()
     {
         var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
         if (!File.Exists(Path.Combine(cache, "pve_items.json")))

@@ -32,8 +32,12 @@ internal static class DeskCommand
 
     private sealed class Tally
     {
+        // The stash spike's truths ("A 3,0 Marl 214").
         public int Truths, Right, Wrong, OneOf, OneOfOther, Silent, Missing, Pictures;
-        public int RegionPictures, Regions, RegionsRight, RegionsMissing, RegionsWrongSize, RegionsExtra, ScreensWrong;
+
+        // The answers by the page's regions (DeskTruth): the items, the regions, the counts and marks.
+        public DeskScore ByRegion = new();
+        public int ItemPictures, RegionPictures, ExtraPictures;
     }
 
     public static async Task RunAsync(IReadOnlyList<string> args)
@@ -78,6 +82,8 @@ internal static class DeskCommand
             Console.WriteLine("  them) and \"<region> [<slot>] <short name>\" (a slot: loadout [earpiece], backpack [backpack]); \"#\" a comment.");
             Console.WriteLine("  With regions-<picture>.txt beside it, the regions the reading should make: \"screen Gear\" (None, Gear, Stash),");
             Console.WriteLine("  then a line a region, \"loadout\" or \"<region> <cols>x<rows>\" (the whole rows in view; 0x0, none of its grid).");
+            Console.WriteLine("  With extra-<picture>.txt, each item's count and found-in-raid mark: \"stash 0,5 | 45/45 | fir yes\" (\"-\" nothing");
+            Console.WriteLine("  printed; \"?/20\", \"~Full\" the game's, not scored; \"fir ?\" the mark out of view).");
             Console.WriteLine("  --no-icons: a \"one of N\" cell's picture not compared with its candidates' grid images (the label alone).");
             Console.WriteLine("  --quiet: the tallies only. A raid's inventory screen (by recognition, or --raid: as the in-raid glance reads it,");
             Console.WriteLine("  the world's pictures said none) prints its LOOT regions and is never taken into the page in hand.");
@@ -190,9 +196,23 @@ internal static class DeskCommand
             var truthPath = Path.Combine(Path.GetDirectoryName(file)!, "truth-" + Path.GetFileNameWithoutExtension(file) + ".txt");
             if (File.Exists(truthPath))
                 Score(look, picture, truthPath, data, tally);
-            var regionsPath = Path.Combine(Path.GetDirectoryName(file)!, "regions-" + Path.GetFileNameWithoutExtension(file) + ".txt");
-            if (File.Exists(regionsPath))
-                ScoreRegions(look, regionsPath, tally);
+            // By the page's regions: the items, the regions, the counts and the marks (DeskTruth, as DeskRealSetTests).
+            if (DeskTruth.Beside(file) is { } answers)
+            {
+                var score = answers.Score(look.Layout.Screen, look.Page, data.ItemName, data.ItemShortName);
+                foreach (var note in score.Notes)
+                    Console.WriteLine("   " + note);
+                if (answers.Items.Count > 0)
+                    Console.WriteLine("   truth by region: " + score.ItemsLine);
+                if (answers.Screen is not null)
+                    Console.WriteLine($"   regions: {score.RegionsRight} of {score.Regions} right");
+                if (answers.Extras.Count > 0)
+                    Console.WriteLine($"   {score.CountsLine}; {score.MarksLine}");
+                tally.ByRegion += score;
+                tally.ItemPictures += answers.Items.Count > 0 ? 1 : 0;
+                tally.RegionPictures += answers.Screen is not null ? 1 : 0;
+                tally.ExtraPictures += answers.Extras.Count > 0 ? 1 : 0;
+            }
         }
         if (files.Count > 1 && ledger.Page(mode) is { } merged)
         {
@@ -211,11 +231,13 @@ internal static class DeskCommand
             Console.WriteLine($"Against {tally.Pictures} truths ({tally.Truths} items): right {tally.Right}, wrong {tally.Wrong}, one of N {tally.OneOf} (the truth among them) + " +
                               $"{tally.OneOfOther} (not among them), nothing said {tally.Silent}, no cell read there {tally.Missing}");
         }
+        var byRegion = tally.ByRegion;
+        if (tally.ItemPictures > 0)
+            Console.WriteLine($"Against {tally.ItemPictures} truths by region: {byRegion.ItemsLine}");
         if (tally.RegionPictures > 0)
-        {
-            Console.WriteLine($"Regions against {tally.RegionPictures} truths ({tally.Regions} regions): right {tally.RegionsRight}, missing {tally.RegionsMissing}, " +
-                              $"of another size {tally.RegionsWrongSize}, made up {tally.RegionsExtra}; screens told wrong {tally.ScreensWrong}");
-        }
+            Console.WriteLine($"Regions against {tally.RegionPictures} truths: {byRegion.RegionsLine}");
+        if (tally.ExtraPictures > 0)
+            Console.WriteLine($"Counts and marks against {tally.ExtraPictures} truths: {byRegion.CountsLine}; {byRegion.MarksLine}");
         Console.WriteLine($"{files.Count} pictures, {(files.Count > 0 ? totalMs / files.Count : 0)} ms a picture" + (online ? "" : $"; requests refused: {refused}"));
         if (paddle is not null)
             Console.WriteLine(paddle.Summary(files.Count));
@@ -458,8 +480,8 @@ internal static class DeskCommand
     // truth's row 0 may be a row lower in the reading (the offset that matches most names is the truth's, as the spike's).
     private static void Score(DeskLook look, SKBitmap picture, string truthPath, GameData data, Tally tally)
     {
+        // The stash spike's lines ("A 3,0 Marl 214"); those by the page's regions are DeskTruth's.
         var truth = new List<(char Grid, int I, int J, string Name)>();
-        var byRegion = new List<(string Region, string? Slot, int I, int J, string Name)>();
         foreach (var line in File.ReadAllLines(truthPath).Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith('#')))
         {
             var parts = line.Split(' ', 3);
@@ -468,16 +490,7 @@ internal static class DeskCommand
                 var cell = parts[1].Split(',');
                 truth.Add((parts[0][0], int.Parse(cell[0], CultureInfo.InvariantCulture), int.Parse(cell[1], CultureInfo.InvariantCulture), parts[2].Trim()));
             }
-            else if (parts[1].StartsWith('['))
-                byRegion.Add((parts[0], parts[1].Trim('[', ']'), 0, 0, parts[2].Trim()));
-            else
-            {
-                var cell = parts[1].Split(',');
-                byRegion.Add((parts[0], null, int.Parse(cell[0], CultureInfo.InvariantCulture), int.Parse(cell[1], CultureInfo.InvariantCulture), parts[2].Trim()));
-            }
         }
-        if (byRegion.Count > 0)
-            ScoreByRegion(look, byRegion, data, tally);
         if (truth.Count == 0)
             return;
         var gray = StashGray.Of(picture);
@@ -538,84 +551,6 @@ internal static class DeskCommand
         tally.OneOfOther += other;
         tally.Silent += silent;
         tally.Missing += missing;
-    }
-
-    // A truth by the page's regions (2026-10-25): each line's cell found in the reading's region of that key, a slot by its
-    // key, a grid's cell by the cell that takes its top left; the same tally as the grids' truth.
-    private static void ScoreByRegion(DeskLook look, List<(string Region, string? Slot, int I, int J, string Name)> truth, GameData data, Tally tally)
-    {
-        int right = 0, wrong = 0, oneOf = 0, other = 0, silent = 0, missing = 0;
-        foreach (var t in truth)
-        {
-            var region = look.Page?.Region(t.Region);
-            var found = region?.Cells.FirstOrDefault(c => t.Slot is not null ? c.Slot == t.Slot : !c.IsSlot && c.Rect.Contains(new DeskRect(t.I, t.J, 1, 1)));
-            var names = found?.Ids.Select(id => data.ItemName(id) == t.Name ? t.Name : data.ItemShortName(id)).ToList() ?? [];
-            var where = t.Slot is not null ? $"{t.Region} [{t.Slot}]" : $"{t.Region} {t.I},{t.J}";
-            if (found is null)
-            {
-                missing++;
-                Console.WriteLine($"   NO CELL {where}: truth {t.Name}");
-            }
-            else if (names.Count == 0)
-                silent++;
-            else if (names.Count == 1 && names[0] == t.Name)
-                right++;
-            else if (names.Count == 1)
-            {
-                wrong++;
-                Console.WriteLine($"   WRONG {where}: read {names[0]}, truth {t.Name}");
-            }
-            else if (names.Contains(t.Name))
-                oneOf++;
-            else
-            {
-                other++;
-                Console.WriteLine($"   NOT AMONG {where}: one of {names.Count} ({string.Join(", ", names.Distinct().Take(4))}), truth {t.Name}");
-            }
-        }
-        Console.WriteLine($"   truth by region: {truth.Count} items: right {right}, wrong {wrong}, one of N {oneOf} + {other} not among them, nothing said {silent}, no cell read {missing}");
-        tally.Pictures++;
-        tally.Truths += truth.Count;
-        tally.Right += right;
-        tally.Wrong += wrong;
-        tally.OneOf += oneOf;
-        tally.OneOfOther += other;
-        tally.Silent += silent;
-        tally.Missing += missing;
-    }
-
-    // The regions a picture should make (regions-<picture>.txt, 2026-10-25): its screen, then each region's key and the size
-    // of its grid in view; a region made that the truth hasn't is made up (a window of a misread heading, a region's grid
-    // taken for a window). A key listed twice counts once, by its first line, and is said (code review, 2026-10-25: it threw).
-    private static void ScoreRegions(DeskLook look, string path, Tally tally)
-    {
-        var lines = File.ReadAllLines(path).Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith('#')).ToList();
-        var screen = lines.FirstOrDefault(l => l.StartsWith("screen ", StringComparison.Ordinal))?["screen ".Length..].Trim() ?? "None";
-        var truth = new Dictionary<string, string>(StringComparer.Ordinal);
-        var repeated = new List<string>();
-        foreach (var p in lines.Where(l => !l.StartsWith("screen ", StringComparison.Ordinal)).Select(l => l.Split(' ', 2)))
-        {
-            if (!truth.TryAdd(p[0], p.Length > 1 ? p[1].Trim() : ""))
-                repeated.Add(p[0]);
-        }
-        var read = look.Page?.Regions ?? [];
-        string Size(DeskRegion r) => r.Kind == DeskRegionKind.Loadout ? "" : $"{r.Cols}x{r.Rows}";
-        var right = truth.Count(t => read.FirstOrDefault(r => r.Key == t.Key) is { } r && Size(r) == t.Value);
-        var missing = truth.Keys.Where(k => read.All(r => r.Key != k)).ToList();
-        var wrongSize = truth.Where(t => read.FirstOrDefault(r => r.Key == t.Key) is { } r && Size(r) != t.Value).Select(t => $"{t.Key} {Size(read.First(r => r.Key == t.Key))} (truth {t.Value})").ToList();
-        var extra = read.Where(r => !truth.ContainsKey(r.Key)).Select(r => $"{r.Key} {Size(r)}").ToList();
-        var screenRight = look.Layout.Screen.ToString() == screen;
-        Console.WriteLine($"   regions: {right} of {truth.Count} right" + (screenRight ? "" : $"; SCREEN {look.Layout.Screen}, truth {screen}") +
-                          (missing.Count > 0 ? $"; missing {string.Join(", ", missing)}" : "") + (wrongSize.Count > 0 ? $"; of another size {string.Join(", ", wrongSize)}" : "") +
-                          (extra.Count > 0 ? $"; MADE UP {string.Join(", ", extra)}" : "") +
-                          (repeated.Count > 0 ? $"; the truth lists {string.Join(", ", repeated)} again, its first line taken" : ""));
-        tally.RegionPictures++;
-        tally.Regions += truth.Count;
-        tally.RegionsRight += right;
-        tally.RegionsMissing += missing.Count;
-        tally.RegionsWrongSize += wrongSize.Count;
-        tally.RegionsExtra += extra.Count;
-        tally.ScreensWrong += screenRight ? 0 : 1;
     }
 
     // Against the items' footprints as the picture shows them (footprints-<picture>.txt beside the truth, "A 0,7 2x1"; one by
