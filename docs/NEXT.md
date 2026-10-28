@@ -6,6 +6,26 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-28: the readers' layout before other text engines (owner's picks)
+
+**Found** (an assessment of the desk's and the glance's reading on 2026-10-27, main `bb21cf9`; owner: "the OCR is
+still super-buggy … maybe this is subjective"): hand-written answers for seven of the owner's own screenshots
+(2560×1440, English, PvE) in the ignored `tests\fixtures\ocr\real-2026-10-27` (`desk`, `raid`, `tasks`; four more in
+`pending` unanswered). The desk's cells 90 of 125 right (72 %), 2 wrong, the rest unread or one of N; the raid's
+inventory screen 23 of 55; the trader screens all right. Of 51 failures only 3 were misread labels: the rest is the
+layout, regions found wrong or not at all, big stash items' cell bounds at the label's column, cut cells. In the raid
+picture the BACKPACK's and the POUCH's slot frames counted as cut ("its lines run on"), so their grids came out as two
+nameless windows (20 of the 55 cells); the pockets read 4×3 for 4×2 and the special slots 3×1 for 3×2. On the desk a
+stash item's label "Meds" became a container window; an irregular rig read 7×5 (the answer's 5×5 a guess at the
+convention). Counts 18 right, 5 wrong (a magazine's icon read as "1"), 15 unread; found in raid 17 of 112 wrong, in the
+raid all on slot cells. Every real picture in `tests\fixtures\ocr` (113) is 2560×1440 and English: other sizes are
+tested only on drawn pictures (`StashReaderTests`).
+
+**Picked** (owner, 2026-10-28): (1) fix the layout now: the real set made a scored check, the four pending pictures
+answered first, then the faults they show. Trying other ways to read (PaddleOCR on whole pictures, Tesseract), step 3
+of the 2026-10-27 plan, waits: it would reach about 6 % of the failures. (2) The owner's play session comes after, its
+fresh pictures the test of the fixes, with a batch at 1920×1080 and one with the game in German.
+
 ## 2026-10-27: 0.7.1's What's New lines, each its own key (the release UI QA pass)
 
 **Found** (the release UI QA pass of 0.7.1, 2026-10-27; repro `tools\qa\whatsnew-lines.devscript` at 900×560): F1
