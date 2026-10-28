@@ -445,8 +445,9 @@ day, for the in-raid glance: "Which pictures", below):
   - Compartments whose tops (or lefts) stand within a quarter of a cell are on one row of their region (until now within
     4 px: a pocket's frame found 5 px above the others' made the pockets three rows high).
   - In a raid the glance reads as before (a region the foot cuts left out, a lattice under a heading no region's grid;
-    the lattice is the region's since 2026-10-28, *The real set's layout round*, below): the 22 raid screenshots of
-    2026-10-19 read the same regions and cells.
+    the lattice is the region's since 2026-10-28, *The real set's layout round*, below, and a grid the foot cuts is read
+    as far as it shows since the owner's pick of the same evening, *The play session's layout round*, below): the 22 raid
+    screenshots of 2026-10-19 read the same regions and cells (six of them a cut grid more since that pick).
   Measured with `shturmap-cli desk` on the 13 screenshots and one more of the same evening (ARMBAND half under the Keys
   window), renamed in their order without their time into the git-ignored `tests\fixtures\ocr\desk\session` with the
   regions each should make (`regions-<picture>.txt`) and, for three, every item whose label shows (`truth-<picture>.txt`,
@@ -579,8 +580,8 @@ day, for the in-raid glance: "Which pictures", below):
     and mark are out of view.
   - **In a raid, a lattice under a middle heading is that region's grid**, as in the menus since 2026-10-25 (the BACKPACK's
     and the POUCH's grids, their lines two pixels wide, were two windows of no name, 20 of the picture's 55 items in
-    neither region); a grid the column's foot cuts, or whose lines run on past it, is still left out in a raid with its
-    region.
+    neither region); a grid the column's foot cuts, or whose lines run on past it, was still left out in a raid with its
+    region (the one the foot cuts read as far as it shows since the owner's pick of the same evening, below).
   - **The LOOT pane's container kind is its whole phrase at the head's right, and no window's title**: the capitals ending
     at the screen's right edge, as far left as its words stand a space apart ("AIRDROP COMMON SUPPLY CRATE", read "SUPPLY
     CRATE" until now, its first word a window's title over the crate's grid). A container's frame whose top stands a few
@@ -604,6 +605,57 @@ day, for the in-raid glance: "Which pictures", below):
   - **A magazine's count is read right of its loaded mark, and its last "1" is its own**: the mark at its cell's bottom
     left (a small green square with a light glyph) was read as a "1" before the count ("10/41" for "0/41"), and a "1" after
     the maximum was taken off as a window's two-pixel line ("4/4" for "4/41"); it is taken off only beside such a line.
+
+  **The play session's layout round** (owner, 2026-10-28, evening, the play session's picks 1 and 2: "fix the 1920×1080
+  layout now" and the player's own cut grids in a raid; docs/NEXT.md; `DeskWords`, `DeskFrames`, `StashGrids`,
+  `DeskLayout`, `DeskReader`): the owner's 26 in-raid screenshots of that evening in the git-ignored
+  `tests\fixtures\ocr\real-2026-10-28`, the first real pictures at 1920×1080, sixteen of them answered by hand
+  (`raid-1440`, `raid-1080`; `none`, four without an inventory, must read nothing), are a scored check beside the first
+  round's (`DeskRealSetTests`). Fixed, each on those pictures, the lengths among the rules scaling with the cell:
+  - **The LOOT pane's head is read as a label is where the whole picture's reading misses it**: at 1920×1080 "LOOT" is
+    about 8 px high, grey beside the pane's cube, and the whole picture's reading never read it, so the pane was never
+    found. Where that reading has no "LOOT" at its place (and no menus' bar), the band where the head stands (4 to 8 % of
+    the picture's height, 0.6 to 0.8 of its width) is read once more enlarged to the labels' size (a cell of about 336 px)
+    in a dark margin, and where it has the head, its row's words there stand in for the whole reading's. The container's
+    kind at the right edge is left to the whole reading (read so too, "BODY" half under the raid timer's black band came
+    out "DUUM"): where it reads none, a body's slots stand under BODY and a container's grid under LOOT, as before.
+    One more reading, of that band alone, on a raid's inventory picture whose whole reading has no "LOOT".
+  - **The pane's head word is no window's title**: "LOOT" with a container being searched beside it ("SEARCHING ✕
+    0:04"), its cross read as a window's close glyph, made a window "LOOT" over the pane's grid.
+  - **In the middle column a lattice under no heading and no window's panel is no window**: the column scrolled, the AVS
+    rig's two-by-two pocket at its top, its lines two pixels wide and its TACTICAL RIG out of view above, was a window of
+    no name. Such a compartment stays under no heading (not read); a window there shows its panel.
+  - **A frame is moved onto its own line, never onto the next compartment's**: two compartments' lines stand a twelfth of
+    a cell apart (5 px at 1080p, 7 at 1440p) and a frame is found up to two pixels off its line, so the reach that moves it
+    onto its line is that twelfth less three (4 px at 1440p as before, 2 at 1080p). At 1080p the AVS rig's two-by-two
+    pocket was moved onto the line of the pockets above it, its sides then ran on past its corners and the rig was left
+    out.
+  - **The gap between compartments and the slack of a frame's sides scale with the cell** (the gap 5 px at 1440p, 4 at
+    1080p; the slack 3 and 2): a gap of 1440p's width was never found between two compartments 4 px apart.
+  - **One compartment framed twice is the frame whose corner turns**: where a frame was found from the next compartment's
+    line (more than the two pixels a corner is found off its own) and another of its size from its own corner, the one
+    whose top doesn't run on left of its corner, nor its left side above it, is the compartment (a rig's pocket framed
+    from its left neighbour's line to an item's light border 3 px inside its own).
+  - **A compartment framed down to the foot is cut there**: a frame of its first rows inside it is some of it, never a
+    compartment of its own (the backpack's grid framed three rows high, a pixel taller than the one framed to the foot,
+    was taken, and its sides ran on past its corners); a region's lattice in place of such a compartment is cut with it.
+  - **In a raid, a grid the column's foot cuts is read as far as it shows** (owner, 2026-10-28, pick 2, "as the LOOT
+    pane's and the desk's"): its whole rows in view, as the desk reads it since 2026-10-25 (a row cut within a quarter of a
+    cell of the foot counting as in view), its slot, the region `Cut`, the glance's ON YOU figure "+" (§4, *The in-raid
+    glance*). Until then the region was left out. A region with a frame whose lines run on past its corners above the foot
+    is still left out in a raid: its compartments in view can't be placed in its grid (the backpack beside light items,
+    its looted items' highlights a lattice of their own, seven names in the wrong cells when read so). A compartment whose
+    heading the column scrolled away above stays under no heading, as the desk's and the LOOT pane's part whose heading
+    scrolled away: not read (open: below).
+  Measured with `shturmap-cli desk --raid` (docs/NEXT.md, "the readers' layout before other text engines", *Built*
+  (layout, 1920×1080 and cut grids)): the nine at 1920×1080 174 of 296 items right before (main aedf76e) → 219 of 296
+  on the same answers, 265 of 343 with the cut grids' answers; wrong 5 → 3; regions 22 of 43 → 41 of 48 (missing 17 →
+  1, made up 2 → 0). The seven at 2560×1440 154 of 189 → 177 of 215, wrong 3 → 3, regions 31 of 39 → 36 of 44 (made up
+  2 → 0). Nothing read on the four without an inventory, before and after. The first round's raid three 86 of 127 → 88
+  of 131 (r3's cut backpack added, its AEM-5's label misread "AEM-\", one wrong); the menu sets unchanged picture by
+  picture. Open: a region whose heading the column scrolled away above (16 items whole in the set; reading it would
+  place compartments by the column's order, the owner's call), the special slots' frames lost against the light world
+  behind the column, a backpack unframed beside light items.
 - **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
   the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
   cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until
@@ -3024,7 +3076,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     NEITHER for a window attached to none; each cell's figure and keep notch; `Totals.OnYou` and `OnYouPlus`,
     `Totals.Loot` and `LootPlus`), `Loot` (the pane's title in the game's words, "LOOT · BODY", or null for the player's
     inventory alone), `TakenAt` and `Reading` (a new reading is a higher number). A LOOT region's `Search` (searched,
-    searching, unsearched) and `Cut` say where contents went unseen; its region's figure ends in "+". The tick's words
+    searching, unsearched) and `Cut` say where contents went unseen; its region's figure ends in "+". A region of the
+    player's own whose grid the middle column's foot cuts is read as far as it shows and is `Cut` too, ON YOU's figure
+    ending in "+" (owner, 2026-10-28, the play session's pick 2; until then it was left out; §2, *The play session's
+    layout round*). The tick's words
     came with the plate (*Built*, below); the top five per slot gave way to the mirrored layout (*Its look*, above).
   - **Built** (2026-10-19; `Controls.GlancePlate`, `Rules.GlancePlateRules`, `MainWindow.GlancePlate`; Variant 1's
     drawing and words where the panel gave them, the coordinator's rules where it left a choice, for the owner to judge

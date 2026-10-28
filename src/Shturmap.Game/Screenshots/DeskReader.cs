@@ -121,6 +121,10 @@ public sealed class DeskReader
         var gray = StashGray.Of(bitmap);
         var lines = new StashLines(gray);
         var words = await DeskWords.ReadAsync(_labels.Engine, bitmap, ct);
+        // The LOOT pane's head, too small at 1920×1080 for the whole picture's reading, read again enlarged (the glance's,
+        // and the CLI's; never in the menus, whose bar stands at the foot).
+        if (raid != false && DeskLoot.Head(words, w, h) is null && !DeskLoot.MenuBar(words, h))
+            words = await DeskWords.WithLootHeadAsync(_labels.Engine, bitmap, words, pitch, ct);
         var layout = DeskLayout.Find(words, lines, gray, w, h, pitch);
         var layoutMs = sw.ElapsedMilliseconds;
         // The desk reads the menus' screens, the glance the raid's inventory (the CLI either); to the desk, the raid's is none.
@@ -205,6 +209,10 @@ public sealed class DeskReader
                 var emptySlot = place.SlotBox is not null && !place.SlotDerived && coveredSlots.Count == 0 && !cells.Any(c => c.IsSlot);
                 if (place.Cut || (place.Parts.Count == 0 && !emptySlot))
                     region = region with { Partial = true };
+                // In a raid the glance reads it as far as it shows, its contents past the foot unseen: ON YOU "+" (owner,
+                // 2026-10-28, as the LOOT pane's grid its scrolling cuts).
+                if (place.Cut && layout.Screen == DeskScreen.Raid)
+                    region = region with { Cut = true };
             }
             regions.Add(region);
         }

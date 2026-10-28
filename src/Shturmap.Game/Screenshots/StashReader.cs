@@ -49,7 +49,7 @@ public sealed class StashReader
     // letters are 10 px tall there, 40 enlarged), five times at 1080p, three at 4K.
     private const int ReadCell = 336;
 
-    private static int ZoomFor(int pitch) => Math.Clamp((int)Math.Round(ReadCell / (double)pitch), 2, 8);
+    internal static int ZoomFor(int pitch) => Math.Clamp((int)Math.Round(ReadCell / (double)pitch), 2, 8);
 
     // The margin set around a band before reading it: the recognition reads letters at an edge badly.
     private const int Margin = 24;

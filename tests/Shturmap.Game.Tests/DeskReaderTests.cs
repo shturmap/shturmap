@@ -1236,54 +1236,99 @@ public sealed class DeskReaderTests : IDisposable
     // "LOOT" at its head and the container's kind at the screen's right edge. A body: its slots under the loadout's
     // headings, its TACTICAL RIG (a slot, "UNSEARCHED" where its grid stands), its POCKETS (searched) and its BACKPACK (a
     // slot, "SEARCHING" at its heading, what was found so far in its grid). A drawer: one grid.
-    private static StashReaderTests.Page Raid(string? loot)
+    // At another size the game lays the screen out by its height (1920×1080: three quarters of each length). With the
+    // head as the game draws it (gameHead), "LOOT" in small grey type beside the pane's cube in a dark tab, about 8 px high
+    // at 1080p.
+    private static StashReaderTests.Page Raid(string? loot, int width = 2560, int height = 1440, bool gameHead = false)
     {
-        var page = new StashReaderTests.Page(2560, 1440).Start();
+        var page = new StashReaderTests.Page(width, height).Start();
         var p = page.Pitch;
-        Text(page, "OVERALL", 80, 20, 16);
-        Text(page, "GEAR", 330, 20, 16);
-        Text(page, "HEALTH", 530, 20, 16);
-        Text(page, "SKILLS", 760, 20, 16);
-        Text(page, "EARPIECE", 92, 199);
-        Text(page, "HEADWEAR", 337, 199);
-        Text(page, "ARMBAND", 91, 420);
-        Text(page, "BODY ARMOR", 338, 420);
-        Text(page, "EYEWEAR", 583, 420);
-        page.Grid(87, 220, 2, 2, 1);
-        page.Item(87, 220, 1, 0, 0, 2, 2, "Zorblat");
-        Text(page, "POCKETS", 880, 106);
-        page.Grid(875, 130, 1, 2, 1);
-        page.Item(875, 130, 1, 0, 0, 1, 1, "Quenvik", "250");
-        Text(page, "QUICK USE", 760, 1262, 15);
+        var k = page.K;
+        int S(int at1440) => (int)Math.Round(at1440 * k);
+        Text(page, "OVERALL", S(80), S(20), 16 * k);
+        Text(page, "GEAR", S(330), S(20), 16 * k);
+        Text(page, "HEALTH", S(530), S(20), 16 * k);
+        Text(page, "SKILLS", S(760), S(20), 16 * k);
+        Text(page, "EARPIECE", S(92), S(199), 18 * k);
+        Text(page, "HEADWEAR", S(337), S(199), 18 * k);
+        Text(page, "ARMBAND", S(91), S(420), 18 * k);
+        Text(page, "BODY ARMOR", S(338), S(420), 18 * k);
+        Text(page, "EYEWEAR", S(583), S(420), 18 * k);
+        page.Grid(S(87), S(220), 2, 2, 1);
+        page.Item(S(87), S(220), 1, 0, 0, 2, 2, "Zorblat");
+        Text(page, "POCKETS", S(880), S(106), 18 * k);
+        page.Grid(S(875), S(130), 1, 2, 1);
+        page.Item(S(875), S(130), 1, 0, 0, 1, 1, "Quenvik", "250");
+        Text(page, "QUICK USE", S(760), S(1262), 15 * k);
         if (loot is null)
             return page;
-        Text(page, "LOOT", 1690, 80, 15);
-        Text(page, loot, 2440, 76);
+        if (gameHead)
+            GameLootHead(page, S(1660), S(74));
+        else
+            Text(page, "LOOT", S(1690), S(80), 15 * k);
+        Text(page, loot, S(2440), S(76), 18 * k);
         if (loot == "DRAWER")
         {
-            page.Grid(1686, 106, 4, 3, 2);
-            page.Item(1686, 106, 2, 0, 0, 1, 1, "Hollin");
-            page.Item(1686, 106, 2, 1, 0, 2, 1, "Drevak", "330");
+            page.Grid(S(1686), S(106), 4, 3, 2);
+            page.Item(S(1686), S(106), 2, 0, 0, 1, 1, "Hollin");
+            page.Item(S(1686), S(106), 2, 1, 0, 2, 1, "Drevak", "330");
             return page;
         }
-        Text(page, "ON SLING", 1767, 150);
-        page.Grid(1762, 171, 5, 2, 1);
-        page.Item(1762, 171, 1, 0, 0, 5, 2, "Hollin");
-        Text(page, "TACTICAL RIG", 1767, 420);
-        page.Grid(1762, 441, 2, 2, 1);
-        page.Item(1762, 441, 1, 0, 0, 2, 2, "Ostrel");
-        Text(page, "UNSEARCHED", 2010, 480, 30);
-        Text(page, "POCKETS", 1767, 640);
-        page.Grid(1762, 664, 1, 2, 1);
-        page.Grid(1762 + p + 8, 664, 1, 2, 1);
-        page.Item(1762 + p + 8, 664, 1, 0, 0, 1, 1, "Marl 214");
-        Text(page, "BACKPACK", 1767, 880);
-        Text(page, "SEARCHING", 1995, 880, 15);
-        page.Grid(1762, 901, 2, 2, 1);
-        page.Item(1762, 901, 1, 0, 0, 2, 2, "Pindrake");
-        page.Grid(1951, 901, 4, 3, 1);
-        page.Item(1951, 901, 1, 0, 0, 1, 2, "Tessaril");
+        Text(page, "ON SLING", S(1767), S(150), 18 * k);
+        page.Grid(S(1762), S(171), 5, 2, 1);
+        page.Item(S(1762), S(171), 1, 0, 0, 5, 2, "Hollin");
+        Text(page, "TACTICAL RIG", S(1767), S(420), 18 * k);
+        page.Grid(S(1762), S(441), 2, 2, 1);
+        page.Item(S(1762), S(441), 1, 0, 0, 2, 2, "Ostrel");
+        Text(page, "UNSEARCHED", S(2010), S(480), 30 * k);
+        Text(page, "POCKETS", S(1767), S(640), 18 * k);
+        page.Grid(S(1762), S(664), 1, 2, 1);
+        page.Grid(S(1762) + p + S(8), S(664), 1, 2, 1);
+        page.Item(S(1762) + p + S(8), S(664), 1, 0, 0, 1, 1, "Marl 214");
+        Text(page, "BACKPACK", S(1767), S(880), 18 * k);
+        Text(page, "SEARCHING", S(1995), S(880), 15 * k);
+        page.Grid(S(1762), S(901), 2, 2, 1);
+        page.Item(S(1762), S(901), 1, 0, 0, 2, 2, "Pindrake");
+        page.Grid(S(1951), S(901), 4, 3, 1);
+        page.Item(S(1951), S(901), 1, 0, 0, 1, 2, "Tessaril");
         return page;
+    }
+
+    // The LOOT pane's head as the game draws it (the owner's play session of 2026-10-28): a dark tab, the pane's cube, and
+    // "LOOT" in grey, 15 px type at 1440p.
+    private static void GameLootHead(StashReaderTests.Page page, int x, int y)
+    {
+        var k = page.K;
+        using var canvas = new SKCanvas(page.Bitmap);
+        using var tab = new SKPaint { Color = new SKColor(30, 31, 33), IsAntialias = true };
+        canvas.DrawRoundRect(x, y, 150 * k, 26 * k, 3 * k, 3 * k, tab);
+        // The cube: a light hexagon, its three faces parted by dark lines, a few pixels before the word.
+        float cx = x + 17 * k, cy = y + 13 * k, r = 8 * k;
+        using (var hexagon = new SKPath())
+        {
+            for (var i = 0; i < 6; i++)
+            {
+                var angle = Math.PI / 3 * i - Math.PI / 2;
+                var (px, py) = (cx + r * (float)Math.Cos(angle), cy + r * (float)Math.Sin(angle));
+                if (i == 0)
+                    hexagon.MoveTo(px, py);
+                else
+                    hexagon.LineTo(px, py);
+            }
+            hexagon.Close();
+            using var cube = new SKPaint { Color = new SKColor(200, 200, 186), IsAntialias = true };
+            canvas.DrawPath(hexagon, cube);
+        }
+        using (var edge = new SKPaint { Color = new SKColor(30, 31, 33), IsAntialias = true, StrokeWidth = 1.5f * k })
+        {
+            canvas.DrawLine(cx, cy, cx, cy + r, edge);
+            canvas.DrawLine(cx, cy, cx - 0.87f * r, cy - r / 2, edge);
+            canvas.DrawLine(cx, cy, cx + 0.87f * r, cy - r / 2, edge);
+        }
+        using var face = SKTypeface.FromFamilyName("Bahnschrift", SKFontStyleWeight.Light, SKFontStyleWidth.SemiCondensed, SKFontStyleSlant.Upright) ?? SKTypeface.Default;
+        using var font = new SKFont(face, 15 * k);
+        using var ink = new SKPaint { Color = new SKColor(140, 140, 130), IsAntialias = true };
+        canvas.DrawText("LOOT", x + 30 * k, y + 19 * k, SKTextAlign.Left, font, ink);
     }
 
     [Fact]
@@ -1446,5 +1491,168 @@ public sealed class DeskReaderTests : IDisposable
         var reading = await Reader().ReadAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
         Assert.Equal(DeskScreen.Trading, reading.Screen);
         Assert.Null(reading.Page);
+    }
+
+    // ---- the second layout round of 2026-10-28: 1920×1080, and a raid's grids the column cuts (the owner's play session) ----
+
+    // b01, b02, b07 and b09 of the play session (1920×1080): the LOOT pane's head, "LOOT" in small grey type beside the
+    // pane's cube, about 8 px high at 1080p, was never read by the whole picture's reading, and the pane never found. Where
+    // that reading has no "LOOT", the head's band is read again as a cell's label is, enlarged to the labels' size in a
+    // dark margin.
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public async Task The_loot_panes_head_in_its_small_type_is_read_at_either_size(int width, int height)
+    {
+        var raid = Raid("BODY", width, height, gameHead: true);
+        Dump(raid, $"raid-body-{height}.png");
+        using var picture = raid.Bitmap.Copy();
+        var reading = await Reader().ReadRaidAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
+        Assert.Equal(DeskScreen.Raid, reading.Screen);
+        var page = reading.Page!;
+        Assert.All(page.Regions.Where(r => r.IsLoot), r => Assert.Equal("LOOT · BODY", r.Title));
+        Assert.Equal([Id(5)], In(page, "loot:slots", c => c.Slot == "onsling").Ids);
+        Assert.Equal([Id(8)], In(page, "loot:pockets", c => !c.IsSlot).Ids);
+        Assert.Contains(page.Region("loot:backpack")!.Cells, c => c.Ids.Contains(Id(4)));
+    }
+
+    // a11 of the play session: the LOOT pane's head "LOOT", the container being searched beside it ("SEARCHING ✕ 0:04"), its
+    // cross read as a window's close glyph, made a window "LOOT" over the pane's grid, which then read as the window's and
+    // no LOOT region. The head's word is the pane's, never a title.
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void The_loot_panes_head_word_beside_a_close_glyph_is_no_windows_title(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        List<DeskWord> words =
+        [
+            Scaled(page, "EARPIECE", 92, 201, 1), Scaled(page, "HEADWEAR", 337, 201, 2), Scaled(page, "ARMBAND", 91, 422, 4),
+            Scaled(page, "BODY", 338, 422, 5), Scaled(page, "ARMOR", 390, 422, 5), Scaled(page, "QUICK", 760, 1254, 9), Scaled(page, "USE", 820, 1254, 9),
+            Scaled(page, "LOOT", 1722, 83, 10, 13), Scaled(page, "SEARCHING", 1880, 83, 10, 13), Scaled(page, "x", 1985, 83, 10, 13),
+            Scaled(page, "0:04", 2020, 83, 10, 13), Scaled(page, "GRENADE", 2355, 76, 11, 16), Scaled(page, "BOX", 2470, 76, 11, 16),
+        ];
+        page.Grid(At(page, 87), At(page, 220), 2, 2, 1);
+        page.Grid(At(page, 1686), At(page, 106), 3, 2, 2);
+        var layout = Layout(page, words);
+        Assert.Equal(DeskScreen.Raid, layout.Screen);
+        Assert.DoesNotContain(layout.Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        var grid = Assert.Single(Assert.Single(layout.Loot!.Parts).Parts);
+        Assert.Equal((3, 2), ((int)Math.Round(grid.Width / (double)page.Pitch), (int)Math.Round(grid.Height / (double)page.Pitch)));
+    }
+
+    // a04 of the play session: the middle column scrolled, the AVS rig's last rows at its top, its TACTICAL RIG heading out
+    // of view above; its two-by-two pocket, its cells' lines two pixels wide, was taken for a window of no name. In the
+    // middle column a lattice under none of its headings, with no window's panel round it, is no window.
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void In_the_middle_column_a_lattice_under_no_heading_and_no_panel_is_no_window(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        List<DeskWord> words =
+        [
+            Scaled(page, "EARPIECE", 92, 201, 1), Scaled(page, "HEADWEAR", 337, 201, 2), Scaled(page, "ARMBAND", 91, 422, 4),
+            Scaled(page, "BODY", 338, 422, 5), Scaled(page, "ARMOR", 390, 422, 5), Scaled(page, "QUICK", 760, 1254, 9), Scaled(page, "USE", 820, 1254, 9),
+            Scaled(page, "POCKETS", 880, 370, 6),
+        ];
+        page.Grid(At(page, 87), At(page, 220), 2, 2, 1);
+        page.Grid(At(page, 1108), At(page, 158), 2, 2, 2);
+        page.Grid(At(page, 875), At(page, 391), 1, 1, 1);
+        var layout = Layout(page, words);
+        Assert.Equal(DeskScreen.Raid, layout.Screen);
+        Assert.DoesNotContain(layout.Regions, r => r.Kind == DeskRegionKind.ContainerWindow);
+        Assert.Contains(layout.Notes, n => n.Contains("under no heading and no panel: no window", StringComparison.Ordinal));
+        Assert.Single(Assert.Single(layout.Regions, r => r.Kind == DeskRegionKind.Pockets).Parts);
+    }
+
+    // b01 of the play session (1920×1080): the AVS rig's two-by-two pocket, a twelfth of a cell (5 px) under the pockets
+    // above it, found two pixels above its own line and moved onto theirs, its sides then running on past its corners: the
+    // rig was left out as cut. A frame is moved onto its own line, never onto the next compartment's: the reach stops
+    // short of it (4 px at 1440p, as before; 2 at 1080p).
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void A_frame_snaps_onto_its_own_line_and_never_onto_the_next_compartments(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        var p = page.Pitch;
+        var gap = (int)Math.Round(p / 12.0);
+        int x0 = At(page, 1000), y0 = At(page, 400);
+        // A row of pockets, and a twelfth of a cell under them a compartment two by two, an item's lighter ground under its
+        // top line (the BP rounds in b01).
+        page.Grid(x0, y0, 1, 1, 1);
+        page.Grid(x0 + p + gap, y0, 1, 1, 1);
+        var top = y0 + p + gap;
+        page.Grid(x0, top, 2, 2, 1);
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var ground = new SKPaint { Color = new SKColor(62, 60, 50) })
+            canvas.DrawRect(x0 + 1, top + 1, 2 * p - 1, p / 3, ground);
+        var gray = StashGray.Of(page.Bitmap);
+        Assert.Equal(top, StashGrids.Snap(gray, x0, top - 2, 2, 2, p).Y0);
+        Assert.Equal(top, StashGrids.Snap(gray, x0, top + 1, 2, 2, p).Y0);
+        Assert.Equal((4, 2), (StashGrids.SnapReach(84), StashGrids.SnapReach(63)));
+    }
+
+    // b04 of the play session (1920×1080): two of the AVS rig's pockets side by side, 5 px apart line to line, an item's
+    // light border 3 px inside the right one's right line; a frame from the left one's right line to that border was framed
+    // first, a compartment 4 px off its own, and the rig was left out as cut. One compartment framed twice a few pixels
+    // apart is the frame whose corner turns, the other's top running on left of its corner.
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public void A_compartment_framed_twice_a_few_pixels_apart_is_the_frame_whose_corner_turns(int width, int height)
+    {
+        var page = new StashReaderTests.Page(width, height).Start();
+        var p = page.Pitch;
+        var gap = (int)Math.Round(p / 12.0);
+        int x0 = At(page, 1000), y0 = At(page, 400);
+        var right = x0 + p + gap;
+        page.Grid(x0, y0, 1, 2, 1);
+        page.Grid(right, y0, 1, 2, 1);
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var border = new SKPaint { Color = new SKColor(150, 150, 120) })
+            canvas.DrawRect(right + p - 3, y0 + 2, 1, 2 * p - 3, border);
+        var lines = new StashLines(StashGray.Of(page.Bitmap));
+        var frames = DeskFrames.Find(lines, p, new SKRectI(At(page, 900), At(page, 300), At(page, 1400), At(page, 700)), []);
+        Assert.Contains(frames, f => Math.Abs(f.Left - right) <= 2 && Math.Abs(f.Top - y0) <= 2);
+        Assert.DoesNotContain(frames, f => f.Left > x0 + p - 3 && f.Left < right - 2);
+    }
+
+    // The owner's pick of 2026-10-28 (2): in a raid the player's own grid the middle column's foot cuts is read as far as it
+    // shows, as the desk reads it since 2026-10-25 and the glance the LOOT pane's grid its scrolling cuts: its rows in view,
+    // its contents past the foot unseen ("+" on ON YOU). Until then it was left out with its region (b01, b02, b04 and b12
+    // of the play session: the Trooper 35's grid, eleven items whole in view).
+    [Theory]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1080)]
+    public async Task In_a_raid_a_grid_the_columns_foot_cuts_is_read_as_far_as_it_shows_and_its_rest_unseen(int width, int height)
+    {
+        var raid = Raid(null, width, height);
+        var k = raid.K;
+        int S(int at1440) => (int)Math.Round(at1440 * k);
+        Text(raid, "BACKPACK", S(880), S(842), 18 * k);
+        raid.Grid(S(875), S(864), 2, 2, 1);
+        raid.Item(S(875), S(864), 1, 0, 0, 2, 2, "Pindrake");
+        raid.Grid(S(1051), S(864), 5, 6, 1);
+        raid.Item(S(1051), S(864), 1, 0, 0, 1, 2, "Tessaril");
+        raid.Item(S(1051), S(864), 1, 2, 1, 1, 1, "Quenvik", "250");
+        // The column's view ends a few pixels above the QUICK USE bar's top: nothing of the grid below.
+        using (var canvas = new SKCanvas(raid.Bitmap))
+        using (var ground = new SKPaint { Color = new SKColor(18, 20, 22) })
+            canvas.DrawRect(S(1040), S(1265), S(500), raid.Height - S(1265), ground);
+        Dump(raid, $"raid-cut-{height}.png");
+        using var picture = raid.Bitmap.Copy();
+        var reading = await Reader().ReadRaidAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
+        var page = reading.Page!;
+        var backpack = page.Region("backpack")!;
+        Assert.True(backpack.Cut);
+        Assert.True(backpack.ContentsUnseen);
+        Assert.Equal((5, 4), (backpack.Cols, backpack.Rows));
+        Assert.Equal([Id(3)], In(page, "backpack", c => c.IsSlot).Ids);
+        Assert.Equal([Id(4)], In(page, "backpack", c => !c.IsSlot && c.I == 0 && c.J == 0).Ids);
+        Assert.Equal([Id(2)], In(page, "backpack", c => !c.IsSlot && c.I == 2 && c.J == 1).Ids);
+        // The pockets in view whole: no contents unseen.
+        Assert.False(page.Region("pockets")!.ContentsUnseen);
     }
 }
