@@ -30,6 +30,10 @@ that language (docs/DESIGN.md §8, "Texts"): a section per version this file has
 with on, each with this section's lines in the same order and their previews as they are, the names and words
 translated. A version the translation lacks, or whose lines aren't this section's, shows from this file.
 
+## 0.7.2 · Kaomoji
+
+- glance · Loot at a glance, at 1080p · Now at 1920×1080 too: in a raid, screenshot a body or a container for its loot's prices.
+
 ## 0.7.1 · Kaomoji
 
 - desk-look · Your newest screenshot in front · The desk shows what you just screenshotted; earlier parts step back; point at one to see it whole.
